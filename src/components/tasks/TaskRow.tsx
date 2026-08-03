@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Copy,
   Eye,
+  GripVertical,
   Pencil,
   Play,
   RotateCcw,
@@ -10,6 +11,7 @@ import {
   Trash2,
   UserCog,
 } from 'lucide-react';
+import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
@@ -24,9 +26,27 @@ interface TaskRowProps {
   task: Task;
   onConfirmComplete: (task: Task) => void;
   onDeleteRequest: (task: Task) => void;
+  draggable?: boolean;
+  isDragging?: boolean;
+  isDropTarget?: boolean;
+  onDragStart?: (e: DragEvent) => void;
+  onDragOver?: (e: DragEvent) => void;
+  onDrop?: () => void;
+  onDragEnd?: () => void;
 }
 
-export default function TaskRow({ task, onConfirmComplete, onDeleteRequest }: TaskRowProps) {
+export default function TaskRow({
+  task,
+  onConfirmComplete,
+  onDeleteRequest,
+  draggable = false,
+  isDragging = false,
+  isDropTarget = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+}: TaskRowProps) {
   const { state, dispatch } = useApp();
   const role = roleOf(state.currentUserId);
   const responsavel = findUser(task.responsavelId);
@@ -65,13 +85,27 @@ export default function TaskRow({ task, onConfirmComplete, onDeleteRequest }: Ta
   };
 
   return (
-    <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/70">
+    <tr
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`border-b border-slate-100 transition-colors hover:bg-slate-50/70 ${
+        isDragging ? 'opacity-40' : ''
+      } ${isDropTarget ? 'bg-indigo-50/60 ring-2 ring-inset ring-indigo-300' : ''}`}
+    >
       <td className="px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-800">{task.titulo}</p>
-          <p className="truncate text-xs text-slate-400">
-            {task.id} · {NOME_POR_ID[task.responsavelId]}
-          </p>
+        <div className="flex min-w-0 items-center gap-2">
+          {draggable && (
+            <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-slate-300" aria-hidden />
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-800">{task.titulo}</p>
+            <p className="truncate text-xs text-slate-400">
+              {task.id} · {NOME_POR_ID[task.responsavelId]}
+            </p>
+          </div>
         </div>
       </td>
       <td className="px-4 py-3">

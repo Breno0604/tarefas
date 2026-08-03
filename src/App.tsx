@@ -3,7 +3,7 @@ import { AlertTriangle, Clock } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import { COLABORADORES, NOME_POR_ID } from './data/mockData';
-import { filterTasks, computeIndicators } from './utils/tasks';
+import { filterTasks, computeIndicators, hasActiveFilters } from './utils/tasks';
 import { formatDate } from './utils/date';
 import type { Task } from './types';
 import Sidebar from './components/layout/Sidebar';
@@ -36,6 +36,7 @@ function SectionTarefas() {
     [state.tasks, state.filters]
   );
   const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
+  const reorderEnabled = state.filters.sortBy === null && !hasActiveFilters(state.filters);
 
   const confirmComplete = (task: Task) => setConfirm({ task });
 
@@ -67,11 +68,20 @@ function SectionTarefas() {
       {state.view === 'lista' ? (
         <TasksTable
           tasks={visibleTasks}
+          totalCount={state.tasks.length}
           onConfirmComplete={confirmComplete}
           onDeleteRequest={(task) => setConfirmDelete({ task })}
+          reorderEnabled={reorderEnabled}
+          onReorder={(taskId, toTaskId) =>
+            dispatch({ type: 'REORDER_TASKS', taskId, toTaskId })
+          }
         />
       ) : (
-        <TaskKanban tasks={visibleTasks} onConfirmComplete={confirmComplete} />
+        <TaskKanban
+          tasks={visibleTasks}
+          totalCount={state.tasks.length}
+          onConfirmComplete={confirmComplete}
+        />
       )}
       <ConfirmDialog
         open={Boolean(confirm)}
