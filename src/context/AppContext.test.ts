@@ -35,6 +35,7 @@ const baseState: AppState = {
   sidebarCollapsed: false,
   filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, categorias: [], sortBy: null },
   modal: { type: 'none' },
+  past: [],
 };
 
 describe('appReducer — CHANGE_STATUS', () => {
@@ -234,5 +235,30 @@ describe('appReducer — REORDER_TASKS / timestamps', () => {
     const task = next.tasks.find((t) => t.id === 'TA-002')!;
     expect(task.status).toBe('FINALIZADA');
     expect(task.atualizadaEm).toBeDefined();
+  });
+});
+
+describe('appReducer — UNDO', () => {
+  it('desfaz a última mutação restaurando as tarefas anteriores', () => {
+    const afterDelete = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-001' });
+    expect(afterDelete.tasks.map((t) => t.id)).toEqual(['TA-002']);
+    const undone = appReducer(afterDelete, { type: 'UNDO' });
+    expect(undone.tasks.map((t) => t.id)).toEqual(['TA-001', 'TA-002']);
+  });
+
+  it('desfaz múltiplas mutações em LIFO', () => {
+    let s = appReducer(baseState, {
+      type: 'CREATE_TASK',
+      task: { ...baseState.tasks[0], id: 'TA-003', titulo: 'Terceira' },
+    });
+    s = appReducer(s, { type: 'DELETE_TASK', taskId: 'TA-001' });
+    s = appReducer(s, { type: 'UNDO' });
+    expect(s.tasks.map((t) => t.id)).toEqual(['TA-001', 'TA-002', 'TA-003']);
+    s = appReducer(s, { type: 'UNDO' });
+    expect(s.tasks.map((t) => t.id)).toEqual(['TA-001', 'TA-002']);
+  });
+
+  it('undo com histórico vazio não altera o estado', () => {
+    expect(appReducer(baseState, { type: 'UNDO' })).toBe(baseState);
   });
 });

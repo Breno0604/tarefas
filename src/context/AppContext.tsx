@@ -22,6 +22,7 @@ export interface AppState {
   sidebarCollapsed: boolean;
   filters: Filters;
   modal: ModalState;
+  past: Task[][]; // pilha de estados anteriores (undo), não persistida
 }
 
 export type AppAction =
@@ -40,7 +41,8 @@ export type AppAction =
   | { type: 'DUPLICATE_TASK'; taskId: string; usuario: string }
   | { type: 'DELETE_TASK'; taskId: string }
   | { type: 'TOGGLE_FAVORITE'; taskId: string }
-  | { type: 'REORDER_TASKS'; taskId: string; toTaskId: string };
+  | { type: 'REORDER_TASKS'; taskId: string; toTaskId: string }
+  | { type: 'UNDO' };
 
 const initialState: AppState = {
   tasks: TAREFAS,
@@ -50,6 +52,7 @@ const initialState: AppState = {
   sidebarCollapsed: false,
   filters: EMPTY_FILTERS,
   modal: { type: 'none' },
+  past: [],
 };
 
 function newHistoryEntry(
@@ -74,7 +77,7 @@ export function roleOf(userId: string): 'gestor' | 'colaborador' {
   return userId === GESTOR_ID ? 'gestor' : 'colaborador';
 }
 
-export function appReducer(state: AppState, action: AppAction): AppState {
+function appReducerCore(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_CURRENT_USER':
       return { ...state, currentUserId: action.userId };
@@ -215,6 +218,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   }
 }
 
+const UNDO_LIMIT = 50;
+
+/**
+ * Reducer público: aplica a ação e empilha o estado anterior em `past` sempre que
+ * as tarefas mudam (base para o Desfazer). UNDO é tratado aqui, fora da pilha.
+ */
+export function appReducer(state: AppState, action: AppAction): AppState {
+  if (action.type === 'UNDO') {
+    if (state.past.length === 0) return state;
+    const tasks = state.past[state.past.length - 1];
+    return { ...state, tasks, past: state.past.slice(0, -1) };
+  }
+  const next = appReducerCore(state, action);
+  if (next.tasks === state.tasks) return next;
+  return { ...next, past: [...state.past, state.tasks].slice(-UNDO_LIMIT) };
+}
+
 const STATUS_TOAST: Record<TaskStatus, string> = {
   NOVA: 'Tarefa criada',
   RECEBIDA: 'Tarefa recebida',
@@ -275,7 +295,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch(action);
     if (next.tasks === state.tasks) return; // ação sem efeito (ex.: transição inválida)
     const message = toastMessage(action);
-    if (message) toast.success(message);
+    if (message) {
+      toast.success(message, {
+        label: 'Desfazer',
+        onClick: () => dispatch({ type: 'UNDO' }),
+      });
+    }
   };
 
   const value = useMemo(() => ({ state, dispatch: dispatchWithToast }), [state]);

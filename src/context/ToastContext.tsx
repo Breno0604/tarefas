@@ -11,16 +11,22 @@ import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info';
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: number;
   type: ToastType;
   message: string;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
+  success: (message: string, action?: ToastAction) => void;
+  error: (message: string, action?: ToastAction) => void;
+  info: (message: string, action?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -38,6 +44,7 @@ const COLORS: Record<ToastType, string> = {
 };
 
 const AUTO_DISMISS_MS = 4000;
+const ACTION_DISMISS_MS = 6000;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -48,19 +55,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const push = useCallback(
-    (type: ToastType, message: string) => {
+    (type: ToastType, message: string, action?: ToastAction) => {
       const id = nextId.current++;
-      setToasts((prev) => [...prev, { id, type, message }]);
-      window.setTimeout(() => remove(id), AUTO_DISMISS_MS);
+      setToasts((prev) => [...prev, { id, type, message, action }]);
+      window.setTimeout(() => remove(id), action ? ACTION_DISMISS_MS : AUTO_DISMISS_MS);
     },
     [remove]
   );
 
   const value = useMemo(
     () => ({
-      success: (message: string) => push('success', message),
-      error: (message: string) => push('error', message),
-      info: (message: string) => push('info', message),
+      success: (message: string, action?: ToastAction) => push('success', message, action),
+      error: (message: string, action?: ToastAction) => push('error', message, action),
+      info: (message: string, action?: ToastAction) => push('info', message, action),
     }),
     [push]
   );
@@ -79,6 +86,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${COLORS[t.type]}`} />
               <p className="flex-1 text-sm leading-relaxed text-slate-700">{t.message}</p>
+              {t.action && (
+                <button
+                  onClick={() => {
+                    t.action?.onClick();
+                    remove(t.id);
+                  }}
+                  className="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100"
+                >
+                  {t.action.label}
+                </button>
+              )}
               <button
                 onClick={() => remove(t.id)}
                 className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
