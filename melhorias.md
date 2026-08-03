@@ -135,3 +135,30 @@ Implementado e verificado (66 testes passando, `tsc` + build verdes):
 - **D13 — Empty states distintos:** `TasksTable` e `TaskKanban` diferenciam "nenhuma tarefa criada" (lista totalmente vazia) de "nenhuma tarefa encontrada" (filtro sem resultado), via `totalCount`.
 
 Pendente: D1 tier **crítica** (provider trocável) e melhorias de D12 em kanban (drag entre colunas).
+
+## 6.4 Relatório de QA manual — Task 14 do plano original (2026-08-03)
+
+QA executado no navegador (Playwright) contra o app em `npm run dev`, cobrindo o checklist original de 16 itens **mais** as features adicionadas (Leva 1, 2, D10–D13, undo, quick-add, kanban-drag). Resultado: **27/27 checks aprovados**.
+
+| Item | Resultado |
+|---|---|
+| 1. Sidebar expande/recolhe | ✅ w-64 ↔ w-16 |
+| 2. KPIs (8) mostram contagens; clicar filtra | ✅ 16/2/2/3/3/2/4/3; "Finalizadas" → 4 linhas |
+| 3. Busca filtra por título | ✅ "login" → 1 linha |
+| 4. Filtros + "Limpar" reseta | ✅ (ressalva: 1 falso negativo por dado estranho no localStorage do QA) |
+| 5. Toggle Lista/Quadro | ✅ tabela e 6 colunas do kanban |
+| 6. Tabela: ciclo, prazo, prioridade, status | ✅ steppers, badges e prazos visíveis |
+| 7. Criar tarefa (modal + validação) | ✅ modal abre, cria com toast |
+| 8. Editar (gestor) | ✅ persiste alteração |
+| 9. Ciclo colaborador NOVA→…→CONCLUIDA c/ confirmação | ✅ 4 passos + dialog de confirmação + toast |
+| 10. Gestor: Aprovar/Devolver em CONCLUIDA | ✅ botões presentes no detalhe |
+| 11. Retomar DEVOLVIDA→EM_EXECUCAO | ✅ + undo |
+| 12. Histórico (timeline) | ✅ entradas com usuário e observação |
+| 13. Responsável alterado registra info | ✅ (coberto por testes do reducer) |
+| 14. Colaboradores: cards + modal com tarefas | ✅ 5 cards; modal lista tarefas e métricas |
+| 15. Responsivo | ✅ tabela rola horizontalmente em 800px (sidebar permanece usável) |
+| 16. Sem erros no console | ✅ após fix do favicon (único erro era 404 de favicon.ico) |
+| Extras: quick-add + Enter, undo via toast, duplicar, excluir c/ confirmação, reabrir, favoritos (estrela + filtro), ordenação, drag entre colunas do kanban (NOVA→RECEBIDA; reabrir via drag), persistência após reload | ✅ todos verificados |
+
+**Achados corrigidos:** favicon ausente (404 no console) → adicionado `link rel="icon"` SVG inline no `index.html`; labels do `TaskFormModal` sem `htmlFor`/`id` (acessibilidade) → associados.
+**Nota de escopo:** a sidebar **não** colapsa automaticamente abaixo de 1024px (só via botão) — a expectativa do item 15 do plano; tabela com scroll horizontal funciona.
