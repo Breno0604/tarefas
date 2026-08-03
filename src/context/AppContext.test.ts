@@ -282,4 +282,16 @@ describe('appReducer — guards (sem mutação fantasma)', () => {
     const next = appReducer(baseState, { type: 'TOGGLE_FAVORITE', taskId: 'TA-999' });
     expect(next).toBe(baseState);
   });
+
+  it('RESET_FILTERS limpa filtros e preserva a ordenação', () => {
+    const comFiltros: AppState = {
+      ...baseState,
+      filters: { ...baseState.filters, status: ['NOVA'], favoritas: true, sortBy: 'titulo' },
+    };
+    const next = appReducer(comFiltros, { type: 'RESET_FILTERS' });
+    expect(next.filters.sortBy).toBe('titulo');
+    expect(next.filters.status).toEqual([]);
+    expect(next.filters.favoritas).toBe(false);
+    expect(next.filters.search).toBe('');
+  });
 });

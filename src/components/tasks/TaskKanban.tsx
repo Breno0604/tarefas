@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react';
-import { Inbox, Sparkles } from 'lucide-react';
+import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp, roleOf } from '../../context/AppContext';
 import { NOME_POR_ID } from '../../data/mockData';
@@ -15,9 +15,15 @@ interface TaskKanbanProps {
   onConfirmComplete: (task: Task) => void;
 }
 
+interface DragInfo {
+  id: string;
+  status: TaskStatus;
+}
+
 export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: TaskKanbanProps) {
   const { state, dispatch } = useApp();
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
+  const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
 
   if (tasks.length === 0) {
     return (
@@ -35,25 +41,33 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     );
   }
 
+  const role = roleOf(state.currentUserId);
+
   const handleDragStart = (taskId: string) => (e: DragEvent) => {
     e.dataTransfer.setData('text/plain', taskId);
     e.dataTransfer.effectAllowed = 'move';
+    const dragged = state.tasks.find((t) => t.id === taskId);
+    if (dragged) setDragInfo({ id: dragged.id, status: dragged.status });
   };
+
+  const canDropOn = (status: TaskStatus): boolean =>
+    dragInfo ? canTransition(dragInfo.status, status, role) : true;
 
   const handleDragOver = (status: TaskStatus) => (e: DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = canDropOn(status) ? 'move' : 'none';
     setOverStatus(status);
   };
 
   const handleDrop = (status: TaskStatus) => (e: DragEvent) => {
     e.preventDefault();
     setOverStatus(null);
+    setDragInfo(null);
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);
     if (!dragged || dragged.status === status) return;
-    if (!canTransition(dragged.status, status, roleOf(state.currentUserId))) return;
+    if (!canTransition(dragged.status, status, role)) return;
     dispatch({
       type: 'CHANGE_STATUS',
       taskId,
@@ -62,13 +76,18 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     });
   };
 
-  const handleDragEnd = () => setOverStatus(null);
+  const handleDragEnd = () => {
+    setOverStatus(null);
+    setDragInfo(null);
+  };
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
       {COLUMNS.map((status) => {
         const columnTasks = tasks.filter((t) => t.status === status);
         const isOver = overStatus === status;
+        const allowed = canDropOn(status);
+        const highlight = isOver ? (allowed ? 'indigo' : 'blocked') : null;
         return (
           <div
             key={status}
@@ -76,11 +95,26 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
             onDrop={handleDrop(status)}
             onDragEnd={handleDragEnd}
             className={`flex min-w-[240px] flex-1 flex-col rounded-xl p-2 transition-colors ${
-              isOver ? 'bg-indigo-100/70 ring-2 ring-inset ring-indigo-300' : 'bg-slate-200/60'
+              highlight === 'indigo'
+                ? 'bg-indigo-100/70 ring-2 ring-inset ring-indigo-300'
+                : highlight === 'blocked'
+                  ? 'bg-rose-100/70 ring-2 ring-inset ring-rose-300'
+                  : 'bg-slate-200/60'
             }`}
           >
             <div className="mb-2 flex items-center justify-between px-1">
-              <StatusBadge status={status} />
+              <div className="flex items-center gap-1.5">
+                <StatusBadge status={status} />
+                {highlight === 'blocked' && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700"
+                    title="Transição não permitida para o papel atual"
+                  >
+                    <Ban className="h-3 w-3" />
+                    não permitido
+                  </span>
+                )}
+              </div>
               <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-500">
                 {columnTasks.length}
               </span>

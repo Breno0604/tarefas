@@ -168,3 +168,10 @@ QA executado no navegador (Playwright) contra o app em `npm run dev`, cobrindo o
 - **Abrir sempre como gestor:** `currentUserId` deixou de ser persistido — o app abre como Carlos (gestor), restaurando o comportamento pré-D1. O seletor de usuário continua disponível para testar papéis (editar/excluir são ações de gestor).
 - **Sem reset silencioso de dados:** `loadState` passou a **filtrar** tarefas com shape inválido em vez de descartar o estado inteiro (uma tarefa corrompida não derruba mais as demais).
 - **Sem undo fantasma:** `UPDATE_TASK`/`TOGGLE_FAVORITE` com id inexistente (ou `UPDATE_TASK` sem alterações) agora retornam o estado inalterado — sem empilhar `past` nem disparar toast falso.
+
+## 6.6 Correções de feedback UX + testes de componentes (2026-08-03)
+
+- **DnD da tabela com feedback:** o ícone de arrastar fica sempre visível (mudo + tooltip quando indisponível) e uma dica explica que a reordenação só funciona sem filtros/busca/ordenação.
+- **Kanban com feedback de bloqueio:** ao arrastar sobre uma coluna com transição não permitida para o papel atual, a coluna fica vermelha com selo "não permitido" (e `dropEffect: none`).
+- **"Limpar" não zera mais a ordenação:** `RESET_FILTERS` preserva `sortBy`; resetar a ordem agora é feito pelo seletor "Ordem original".
+- **Testes de componentes (Testing Library):** infraestrutura (`@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `jsdom`; vitest com `maxWorkers: 1` para evitar OOM dos workers jsdom) + 22 testes cobrindo `TaskRow` (ações por papel, favoritar, excluir), `TaskQuickAdd` (Enter cria, valida vazio), `TasksTable` (empty states, dica de reordenação, drop → `onReorder`), `TaskDetailModal` (Aprovar/Devolver por papel, categoria/tags, data) e `FilterBar` (Limpar, categorias derivadas, ordenação). **Total: 96 testes.**

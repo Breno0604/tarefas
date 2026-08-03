@@ -97,9 +97,17 @@ export default function TaskRow({
     >
       <td className="px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          {draggable && (
-            <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-slate-300" aria-hidden />
-          )}
+          <span
+            title={draggable ? undefined : 'Remova filtros e ordenação para reordenar'}
+            className="shrink-0"
+          >
+            <GripVertical
+              className={`h-4 w-4 ${
+                draggable ? 'cursor-grab text-slate-300' : 'cursor-not-allowed text-slate-200'
+              }`}
+              aria-hidden
+            />
+          </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-800">{task.titulo}</p>
             <p className="truncate text-xs text-slate-400">

@@ -90,7 +90,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.filters } };
     case 'RESET_FILTERS':
-      return { ...state, filters: EMPTY_FILTERS };
+      // Limpa apenas os filtros; a ordenação escolhida é preservada (reset via seletor "Ordem original").
+      return { ...state, filters: { ...EMPTY_FILTERS, sortBy: state.filters.sortBy } };
     case 'OPEN_MODAL':
       return { ...state, modal: action.modal };
     case 'CLOSE_MODAL':

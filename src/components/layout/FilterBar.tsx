@@ -108,7 +108,7 @@ export default function FilterBar() {
     { value: 'prioridade', label: 'Prioridade' },
   ];
 
-  const hasFilters = hasActiveFilters(filters) || filters.sortBy !== null;
+  const hasFilters = hasActiveFilters(filters);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
