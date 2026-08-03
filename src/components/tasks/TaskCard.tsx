@@ -1,0 +1,80 @@
+import { ArrowDownToLine, CheckCircle2, Play, RotateCcw } from 'lucide-react';
+import type { Task, TaskStatus } from '../../types';
+import { useApp, roleOf } from '../../context/AppContext';
+import { findUser, NOME_POR_ID } from '../../data/mockData';
+import { availableTransitions } from '../../utils/status';
+import PriorityBadge from './PriorityBadge';
+import DueDateCell from './DueDateCell';
+
+interface TaskCardProps {
+  task: Task;
+  onConfirmComplete: (task: Task) => void;
+}
+
+export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
+  const { state, dispatch } = useApp();
+  const role = roleOf(state.currentUserId);
+  const responsavel = findUser(task.responsavelId);
+  const can = availableTransitions(task.status, role);
+
+  const changeStatus = (novoStatus: TaskStatus) => {
+    if (novoStatus === 'CONCLUIDA') {
+      onConfirmComplete(task);
+      return;
+    }
+    dispatch({
+      type: 'CHANGE_STATUS',
+      taskId: task.id,
+      novoStatus,
+      usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
+    });
+  };
+
+  const quickAction = () => {
+    if (can.includes('RECEBIDA')) {
+      return { icon: ArrowDownToLine, label: 'Receber', target: 'RECEBIDA' as TaskStatus, cls: 'text-cyan-600 hover:bg-cyan-50' };
+    }
+    if (can.includes('EM_EXECUCAO')) {
+      return { icon: Play, label: 'Iniciar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-amber-600 hover:bg-amber-50' };
+    }
+    if (can.includes('CONCLUIDA')) {
+      return { icon: CheckCircle2, label: 'Concluir', target: 'CONCLUIDA' as TaskStatus, cls: 'text-violet-600 hover:bg-violet-50' };
+    }
+    if (can.includes('EM_EXECUCAO') && task.status === 'DEVOLVIDA') {
+      return { icon: RotateCcw, label: 'Retomar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
+    }
+    return null;
+  };
+
+  const action = quickAction();
+
+  return (
+    <button
+      onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } })}
+      className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
+        <PriorityBadge prioridade={task.prioridade} />
+      </div>
+      <p className="mt-1 truncate text-xs text-slate-400">
+        {task.id} · {responsavel?.nome.split(' ')[0]}
+      </p>
+      <div className="mt-3 flex items-center justify-between">
+        <DueDateCell task={task} />
+        {action && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              changeStatus(action.target);
+            }}
+            title={action.label}
+            className={`rounded-lg p-1.5 ${action.cls}`}
+          >
+            <action.icon className="h-4 w-4" />
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
