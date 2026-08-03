@@ -3,7 +3,7 @@ import { AlertTriangle, Clock } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import { COLABORADORES, NOME_POR_ID } from './data/mockData';
-import { filterTasks, computeIndicators, hasActiveFilters } from './utils/tasks';
+import { filterTasks, computeIndicators, hasActiveFilters, EMPTY_FILTERS } from './utils/tasks';
 import { formatDate } from './utils/date';
 import type { Task } from './types';
 import Sidebar from './components/layout/Sidebar';
@@ -106,7 +106,7 @@ function SectionTarefas() {
         open={Boolean(confirmDelete)}
         danger
         title="Excluir tarefa"
-        message={`Excluir permanentemente a tarefa "${confirmDelete?.task.titulo ?? ''}"? Esta ação não pode ser desfeita.`}
+        message={`Excluir a tarefa "${confirmDelete?.task.titulo ?? ''}"? Você poderá desfazer pelo aviso exibido em seguida.`}
         confirmLabel="Excluir"
         onConfirm={() => {
           if (confirmDelete) {
@@ -123,17 +123,17 @@ function SectionVisaoGeral() {
   const { state } = useApp();
   const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
   const atrasadas = useMemo(
-    () =>
-      filterTasks(state.tasks, { ...state.filters, search: '', prazo: 'vencidas' }, NOME_POR_ID).slice(
-        0,
-        5
-      ),
-    [state.tasks, state.filters]
+    () => filterTasks(state.tasks, { ...EMPTY_FILTERS, prazo: 'vencidas' }, NOME_POR_ID).slice(0, 5),
+    [state.tasks]
   );
-  const proximas = state.tasks
-    .filter((t) => t.prazo !== null && t.status !== 'FINALIZADA' && t.status !== 'CONCLUIDA')
-    .sort((a, b) => (a.prazo ?? '').localeCompare(b.prazo ?? ''))
-    .slice(0, 5);
+  const proximas = useMemo(
+    () =>
+      state.tasks
+        .filter((t) => t.prazo !== null && t.status !== 'FINALIZADA' && t.status !== 'CONCLUIDA')
+        .sort((a, b) => (a.prazo ?? '').localeCompare(b.prazo ?? ''))
+        .slice(0, 5),
+    [state.tasks]
+  );
 
   return (
     <div className="space-y-6">

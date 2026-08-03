@@ -21,6 +21,7 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProps) {
   const { state, dispatch } = useApp();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmConcluir, setConfirmConcluir] = useState(false);
   const task = state.tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -114,7 +115,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
             </button>
           )}
           {can.includes('CONCLUIDA') && (
-            <button onClick={() => changeStatus('CONCLUIDA')} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+            <button onClick={() => setConfirmConcluir(true)} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
               Marcar como concluída
             </button>
           )}
@@ -170,7 +171,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           <CycleStepper status={task.status} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
           <div className="flex items-center gap-2">
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold text-white"
@@ -198,6 +199,12 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
             <p className="text-[11px] text-slate-400">Prazo</p>
             <DueDateCell task={task} />
           </div>
+          <div>
+            <p className="text-[11px] text-slate-400">Concluída em</p>
+            <p className="font-medium text-slate-700">
+              {task.concluidaEm ? formatDateTime(task.concluidaEm) : '—'}
+            </p>
+          </div>
         </div>
       </div>
       </Modal>
@@ -206,13 +213,23 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           open
           danger
           title="Excluir tarefa"
-          message={`Excluir permanentemente a tarefa "${task.titulo}"? Esta ação não pode ser desfeita.`}
+          message={`Excluir a tarefa "${task.titulo}"? Você poderá desfazer pelo aviso exibido em seguida.`}
           confirmLabel="Excluir"
           onConfirm={() => {
             dispatch({ type: 'DELETE_TASK', taskId: task.id });
             onClose();
           }}
           onClose={() => setConfirmDelete(false)}
+        />
+      )}
+      {confirmConcluir && (
+        <ConfirmDialog
+          open
+          title="Confirmar conclusão"
+          message={`Marcar a tarefa "${task.titulo}" como concluída? Ela ficará aguardando a análise do gestor.`}
+          confirmLabel="Concluir"
+          onConfirm={() => changeStatus('CONCLUIDA')}
+          onClose={() => setConfirmConcluir(false)}
         />
       )}
     </>
