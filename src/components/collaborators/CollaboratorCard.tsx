@@ -1,12 +1,12 @@
 import { AlertTriangle, CheckCircle2, ListChecks, TrendingUp } from 'lucide-react';
 import type { Colaborador } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { colaboradorMetrics, colaboradorResumo } from '../../utils/tasks';
+import { colaboradorMetrics } from '../../utils/tasks';
+import Avatar from '../ui/Avatar';
 
 export default function CollaboratorCard({ colaborador }: { colaborador: Colaborador }) {
   const { state, dispatch } = useApp();
   const m = colaboradorMetrics(colaborador.id, state.tasks);
-  const iniciais = colaboradorResumo(colaborador.nome).iniciais;
 
   const open = () =>
     dispatch({ type: 'OPEN_MODAL', modal: { type: 'colaborador', colaboradorId: colaborador.id } });
@@ -17,12 +17,7 @@ export default function CollaboratorCard({ colaborador }: { colaborador: Colabor
       className="rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
     >
       <div className="flex items-center gap-3">
-        <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-          style={{ backgroundColor: colaborador.cor }}
-        >
-          {iniciais}
-        </span>
+        <Avatar nome={colaborador.nome} cor={colaborador.cor} size="lg" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-800">{colaborador.nome}</p>
           <p className="truncate text-xs text-slate-500">{colaborador.cargo}</p>

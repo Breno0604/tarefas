@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { ALL_USERS, COLABORADORES, findUser, GESTOR } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
-import { colaboradorMetrics, colaboradorResumo } from '../../utils/tasks';
+import { openTarefas } from '../../context/navigation';
+import { colaboradorMetrics } from '../../utils/tasks';
+import Avatar from '../ui/Avatar';
 import type { Section } from '../../types';
 
 const NAV: { section: Section; label: string; icon: typeof LayoutDashboard }[] = [
@@ -42,26 +44,17 @@ export default function Sidebar() {
     {
       label: 'Atrasadas',
       icon: AlertTriangle,
-      onClick: () => {
-        dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-        dispatch({ type: 'SET_FILTERS', filters: { prazo: 'vencidas' } });
-      },
+      onClick: () => openTarefas(dispatch, { prazo: 'vencidas' }),
     },
     {
       label: 'Finalizadas',
       icon: CheckCircle2,
-      onClick: () => {
-        dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-        dispatch({ type: 'SET_FILTERS', filters: { status: ['FINALIZADA'] } });
-      },
+      onClick: () => openTarefas(dispatch, { status: ['FINALIZADA'] }),
     },
     {
       label: 'Devolvidas',
       icon: Undo2,
-      onClick: () => {
-        dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-        dispatch({ type: 'SET_FILTERS', filters: { status: ['DEVOLVIDA'] } });
-      },
+      onClick: () => openTarefas(dispatch, { status: ['DEVOLVIDA'] }),
     },
   ];
 
@@ -138,7 +131,6 @@ export default function Sidebar() {
         )}
         {COLABORADORES.map((c) => {
           const metrics = colaboradorMetrics(c.id, state.tasks);
-          const iniciais = colaboradorResumo(c.nome).iniciais;
           return (
             <button
               key={c.id}
@@ -151,12 +143,7 @@ export default function Sidebar() {
                 collapsed ? 'justify-center' : ''
               }`}
             >
-              <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                style={{ backgroundColor: c.cor }}
-              >
-                {iniciais}
-              </span>
+              <Avatar nome={c.nome} cor={c.cor} size="xs" />
               {!collapsed && (
                 <span className="flex min-w-0 flex-1 items-center justify-between">
                   <span className="truncate text-slate-300">{c.nome.split(' ')[0]}</span>
@@ -176,12 +163,11 @@ export default function Sidebar() {
       <div className="border-t border-slate-800 p-3">
         <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
           <div className="relative">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-              style={{ backgroundColor: findUser(state.currentUserId)?.cor ?? '#64748b' }}
-            >
-              {colaboradorResumo((findUser(state.currentUserId) ?? GESTOR).nome).iniciais}
-            </span>
+            <Avatar
+              nome={(findUser(state.currentUserId) ?? GESTOR).nome}
+              cor={findUser(state.currentUserId)?.cor ?? '#64748b'}
+              size="md"
+            />
             <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
           </div>
           {!collapsed && (

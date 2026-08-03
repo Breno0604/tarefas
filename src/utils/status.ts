@@ -1,4 +1,9 @@
 import type { Priority, Role, TaskStatus } from '../types';
+import { GESTOR_ID } from '../data/mockData';
+
+export function roleOf(userId: string): Role {
+  return userId === GESTOR_ID ? 'gestor' : 'colaborador';
+}
 
 export const STATUS_ORDER: TaskStatus[] = [
   'NOVA',

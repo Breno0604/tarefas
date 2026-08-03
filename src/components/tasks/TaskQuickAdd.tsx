@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useApp, roleOf } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { roleOf } from '../../utils/status';
 import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
 import { createTask } from '../../utils/tasks';
 

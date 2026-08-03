@@ -1,7 +1,8 @@
 import { useState, type DragEvent } from 'react';
 import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
-import { useApp, roleOf } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { roleOf } from '../../utils/status';
 import { NOME_POR_ID } from '../../data/mockData';
 import { canTransition, STATUS_LABELS } from '../../utils/status';
 import StatusBadge from './StatusBadge';

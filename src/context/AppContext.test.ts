@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../types';
-import { appReducer, type AppState } from './AppContext';
+import { appReducer } from './appReducer';
+import type { AppState } from './types';
 
 const baseState: AppState = {
   tasks: [

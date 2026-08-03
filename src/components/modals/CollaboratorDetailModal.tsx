@@ -1,8 +1,9 @@
 import { Mail } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { findUser } from '../../data/mockData';
-import { colaboradorMetrics, colaboradorResumo } from '../../utils/tasks';
+import { colaboradorMetrics } from '../../utils/tasks';
 import Modal from '../modal/Modal';
+import Avatar from '../ui/Avatar';
 import StatusBadge from '../tasks/StatusBadge';
 import DueDateCell from '../tasks/DueDateCell';
 
@@ -18,17 +19,11 @@ export default function CollaboratorDetailModal({ colaboradorId, onClose }: Coll
 
   const m = colaboradorMetrics(colaborador.id, state.tasks);
   const tarefas = state.tasks.filter((t) => t.responsavelId === colaborador.id);
-  const iniciais = colaboradorResumo(colaborador.nome).iniciais;
 
   return (
     <Modal open title="Colaborador" onClose={onClose} size="lg">
       <div className="flex items-start gap-4">
-        <span
-          className="flex h-14 w-14 items-center justify-center rounded-full text-base font-semibold text-white"
-          style={{ backgroundColor: colaborador.cor }}
-        >
-          {iniciais}
-        </span>
+        <Avatar nome={colaborador.nome} cor={colaborador.cor} size="xl" />
         <div>
           <h3 className="text-lg font-semibold text-slate-800">{colaborador.nome}</h3>
           <p className="text-sm text-slate-500">{colaborador.cargo}</p>

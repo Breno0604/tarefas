@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { openTarefas } from '../../context/navigation';
 import type { Indicators } from '../../utils/tasks';
 import type { TaskStatus } from '../../types';
 
@@ -27,18 +28,9 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
   const { state, dispatch } = useApp();
   const { filters } = state;
 
-  const openWithStatus = (statuses: TaskStatus[]) => {
-    dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-    dispatch({ type: 'SET_FILTERS', filters: { status: statuses } });
-  };
-  const openVencidas = () => {
-    dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-    dispatch({ type: 'SET_FILTERS', filters: { prazo: 'vencidas' } });
-  };
-  const openAll = () => {
-    dispatch({ type: 'SET_SECTION', section: 'tarefas' });
-    dispatch({ type: 'RESET_FILTERS' });
-  };
+  const openWithStatus = (statuses: TaskStatus[]) => openTarefas(dispatch, { status: statuses });
+  const openVencidas = () => openTarefas(dispatch, { prazo: 'vencidas' });
+  const openAll = () => openTarefas(dispatch);
 
   const kpis: KpiDef[] = [
     { key: 'total', label: 'Total de tarefas', icon: ClipboardList, value: indicators.total, color: 'bg-slate-100 text-slate-600', active: filters.status.length === 0 && filters.prazo === 'todas', onClick: openAll },

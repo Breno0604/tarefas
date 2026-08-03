@@ -9,10 +9,11 @@ import {
 } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
-import { useApp, roleOf } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { roleOf } from '../../utils/status';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
-import { colaboradorResumo } from '../../utils/tasks';
+import Avatar from '../ui/Avatar';
 import StatusBadge from './StatusBadge';
 import PriorityBadge from './PriorityBadge';
 import CycleStepper from './CycleStepper';
@@ -100,12 +101,7 @@ export default function TaskRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-            style={{ backgroundColor: responsavel?.cor ?? '#64748b' }}
-          >
-            {colaboradorResumo(responsavel?.nome ?? '?').iniciais}
-          </span>
+          <Avatar nome={responsavel?.nome ?? '?'} cor={responsavel?.cor ?? '#64748b'} size="xs" />
           <span className="text-sm text-slate-600">{responsavel?.nome.split(' ')[0]}</span>
         </div>
       </td>

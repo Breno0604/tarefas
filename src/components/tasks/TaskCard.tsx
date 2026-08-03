@@ -1,7 +1,8 @@
 import { Star } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
-import { useApp, roleOf } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { roleOf } from '../../utils/status';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
 import PriorityBadge from './PriorityBadge';

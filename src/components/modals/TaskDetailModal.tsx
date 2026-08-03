@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Copy, History, Pencil, Star, Trash2, UserCog } from 'lucide-react';
-import { useApp, roleOf } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
+import { roleOf } from '../../utils/status';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
 import { formatDate, formatDateTime } from '../../utils/date';
-import { colaboradorResumo } from '../../utils/tasks';
 import Modal from '../modal/Modal';
 import ConfirmDialog from '../modal/ConfirmDialog';
+import Avatar from '../ui/Avatar';
 import StatusBadge from '../tasks/StatusBadge';
 import PriorityBadge from '../tasks/PriorityBadge';
 import CycleStepper from '../tasks/CycleStepper';
@@ -173,12 +174,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
 
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
           <div className="flex items-center gap-2">
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-              style={{ backgroundColor: responsavel?.cor ?? '#64748b' }}
-            >
-              {colaboradorResumo(responsavel?.nome ?? '?').iniciais}
-            </span>
+            <Avatar nome={responsavel?.nome ?? '?'} cor={responsavel?.cor ?? '#64748b'} size="sm" />
             <div>
               <p className="text-[11px] text-slate-400">Responsável</p>
               <p className="font-medium text-slate-700">{responsavel?.nome}</p>
