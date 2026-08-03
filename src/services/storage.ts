@@ -6,12 +6,10 @@ const VERSION = 1;
 export interface PersistedState {
   version: number;
   tasks: Task[];
-  currentUserId: string;
 }
 
 export interface LoadedState {
   tasks: Task[];
-  currentUserId: string;
 }
 
 function isTask(value: unknown): value is Task {
@@ -29,7 +27,11 @@ function isTask(value: unknown): value is Task {
   );
 }
 
-/** Retorna o estado persistido ou null quando não há dados, a versão não bate ou o JSON é inválido. */
+/**
+ * Retorna as tarefas persistidas ou null quando não há dados, a versão não bate
+ * ou o JSON está corrompido. Tarefas individuais com shape inválido são
+ * descartadas (não derrubam o estado inteiro).
+ */
 export function loadState(): LoadedState | null {
   if (typeof localStorage === 'undefined') return null;
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -37,9 +39,8 @@ export function loadState(): LoadedState | null {
   try {
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     if (parsed.version !== VERSION) return null;
-    if (!Array.isArray(parsed.tasks) || !parsed.tasks.every(isTask)) return null;
-    if (typeof parsed.currentUserId !== 'string') return null;
-    return { tasks: parsed.tasks, currentUserId: parsed.currentUserId };
+    if (!Array.isArray(parsed.tasks)) return null;
+    return { tasks: parsed.tasks.filter(isTask) };
   } catch {
     return null; // JSON corrompido → cai no seed
   }

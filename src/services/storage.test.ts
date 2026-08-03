@@ -33,9 +33,9 @@ afterEach(() => {
 describe('storage', () => {
   it('salva e carrega o estado', () => {
     const tasks = [fakeTask('TA-001'), fakeTask('TA-002', 'CONCLUIDA')];
-    saveState({ tasks, currentUserId: 'joao' });
+    saveState({ tasks });
 
-    expect(loadState()).toEqual({ tasks, currentUserId: 'joao' });
+    expect(loadState()).toEqual({ tasks });
   });
 
   it('retorna null quando não há dados salvos', () => {
@@ -60,12 +60,21 @@ describe('storage', () => {
   });
 
   it('retorna null quando o shape do estado é inválido', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, tasks: 'x', currentUserId: 'carlos' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, tasks: 'x' }));
     expect(loadState()).toBeNull();
   });
 
+  it('descarta apenas tarefas inválidas, mantendo as válidas', () => {
+    const invalida = { id: 'TA-BAD', titulo: 42 }; // sem shape de Task
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+    );
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
   it('clearState remove os dados', () => {
-    saveState({ tasks: [fakeTask('TA-001')], currentUserId: 'carlos' });
+    saveState({ tasks: [fakeTask('TA-001')] });
     clearState();
     expect(loadState()).toBeNull();
   });

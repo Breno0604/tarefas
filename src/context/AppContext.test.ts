@@ -262,3 +262,24 @@ describe('appReducer — UNDO', () => {
     expect(appReducer(baseState, { type: 'UNDO' })).toBe(baseState);
   });
 });
+
+describe('appReducer — guards (sem mutação fantasma)', () => {
+  it('UPDATE_TASK com id inexistente não altera o estado nem empilha undo', () => {
+    const next = appReducer(baseState, {
+      type: 'UPDATE_TASK',
+      taskId: 'TA-999',
+      changes: { titulo: 'X' },
+    });
+    expect(next).toBe(baseState);
+  });
+
+  it('UPDATE_TASK sem alterações não altera o estado', () => {
+    const next = appReducer(baseState, { type: 'UPDATE_TASK', taskId: 'TA-001', changes: {} });
+    expect(next).toBe(baseState);
+  });
+
+  it('TOGGLE_FAVORITE com id inexistente não altera o estado', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_FAVORITE', taskId: 'TA-999' });
+    expect(next).toBe(baseState);
+  });
+});

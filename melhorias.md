@@ -162,3 +162,9 @@ QA executado no navegador (Playwright) contra o app em `npm run dev`, cobrindo o
 
 **Achados corrigidos:** favicon ausente (404 no console) → adicionado `link rel="icon"` SVG inline no `index.html`; labels do `TaskFormModal` sem `htmlFor`/`id` (acessibilidade) → associados.
 **Nota de escopo:** a sidebar **não** colapsa automaticamente abaixo de 1024px (só via botão) — a expectativa do item 15 do plano; tabela com scroll horizontal funciona.
+
+## 6.5 Correções pós-QA (2026-08-03)
+
+- **Abrir sempre como gestor:** `currentUserId` deixou de ser persistido — o app abre como Carlos (gestor), restaurando o comportamento pré-D1. O seletor de usuário continua disponível para testar papéis (editar/excluir são ações de gestor).
+- **Sem reset silencioso de dados:** `loadState` passou a **filtrar** tarefas com shape inválido em vez de descartar o estado inteiro (uma tarefa corrompida não derruba mais as demais).
+- **Sem undo fantasma:** `UPDATE_TASK`/`TOGGLE_FAVORITE` com id inexistente (ou `UPDATE_TASK` sem alterações) agora retornam o estado inalterado — sem empilhar `past` nem disparar toast falso.

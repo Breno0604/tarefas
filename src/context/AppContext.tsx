@@ -103,7 +103,9 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
           { ...action.task, atualizadaEm: action.task.criadaEm },
         ],
       };
-    case 'UPDATE_TASK':
+    case 'UPDATE_TASK': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      if (!task || Object.keys(action.changes).length === 0) return state;
       return {
         ...state,
         tasks: state.tasks.map((t) =>
@@ -112,6 +114,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
             : t
         ),
       };
+    }
     case 'CHANGE_STATUS': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
@@ -193,7 +196,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       if (!state.tasks.some((t) => t.id === action.taskId)) return state;
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.taskId) };
     }
-    case 'TOGGLE_FAVORITE':
+    case 'TOGGLE_FAVORITE': {
+      if (!state.tasks.some((t) => t.id === action.taskId)) return state;
       return {
         ...state,
         tasks: state.tasks.map((t) =>
@@ -202,6 +206,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
             : t
         ),
       };
+    }
     case 'REORDER_TASKS': {
       const from = state.tasks.findIndex((t) => t.id === action.taskId);
       const to = state.tasks.findIndex((t) => t.id === action.toTaskId);
@@ -273,10 +278,10 @@ const AppContext = createContext<AppContextValue | null>(null);
 function initState(): AppState {
   const saved = loadState();
   if (saved) {
+    // Persiste apenas as tarefas; o app sempre abre como gestor (usuário atual é estado de sessão).
     return {
       ...initialState,
       tasks: saved.tasks,
-      currentUserId: saved.currentUserId,
     };
   }
   return initialState;
@@ -287,8 +292,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toast = useToast();
 
   useEffect(() => {
-    saveState({ tasks: state.tasks, currentUserId: state.currentUserId });
-  }, [state.tasks, state.currentUserId]);
+    saveState({ tasks: state.tasks });
+  }, [state.tasks]);
 
   const dispatchWithToast = (action: AppAction) => {
     const next = appReducer(state, action);
