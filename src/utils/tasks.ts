@@ -9,8 +9,21 @@ export const EMPTY_FILTERS: Filters = {
   responsavel: [],
   prazo: 'todas',
   favoritas: false,
+  categorias: [],
   sortBy: null,
 };
+
+export function hasActiveFilters(filters: Filters): boolean {
+  return (
+    filters.search.trim() !== '' ||
+    filters.status.length > 0 ||
+    filters.prioridade.length > 0 ||
+    filters.responsavel.length > 0 ||
+    filters.prazo !== 'todas' ||
+    filters.favoritas ||
+    filters.categorias.length > 0
+  );
+}
 
 const SORTERS: Record<TaskSort, (a: Task, b: Task) => number> = {
   criadaEm: (a, b) => a.criadaEm.localeCompare(b.criadaEm),
@@ -36,6 +49,8 @@ export function filterTasks(
     if (filters.prioridade.length > 0 && !filters.prioridade.includes(t.prioridade)) return false;
     if (filters.responsavel.length > 0 && !filters.responsavel.includes(t.responsavelId)) return false;
     if (filters.favoritas && !t.favorita) return false;
+    if (filters.categorias.length > 0 && (!t.categoria || !filters.categorias.includes(t.categoria)))
+      return false;
     if (filters.prazo === 'hoje' && !isDueToday(t.prazo, now)) return false;
     if (filters.prazo === 'vencidas' && !isOverdue(t.prazo, t.status, now)) return false;
     if (filters.prazo === 'proximos7' && !isWithinDays(t.prazo, 7, now)) return false;

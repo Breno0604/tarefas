@@ -33,7 +33,11 @@ export interface Task {
   prazo: string | null; // ISO date (yyyy-mm-dd)
   status: TaskStatus;
   favorita?: boolean; // padrão: false
+  categoria?: string; // string livre; undefined = sem categoria
+  tags?: string[]; // strings livres; padrão: []
   criadaEm: string; // ISO datetime
+  atualizadaEm?: string; // ISO datetime
+  concluidaEm?: string; // ISO datetime (última vez que entrou em CONCLUIDA)
   historico: HistoryEntry[];
 }
 
@@ -52,6 +56,7 @@ export interface Filters {
   responsavel: string[]; // ids de colaboradores
   prazo: PrazoFilter;
   favoritas: boolean;
+  categorias: string[];
   sortBy: TaskSort | null; // null = ordem original (do seed)
 }
 

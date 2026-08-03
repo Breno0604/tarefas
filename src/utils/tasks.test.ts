@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { COLABORADORES, TAREFAS } from '../data/mockData';
-import { colaboradorMetrics, computeIndicators, EMPTY_FILTERS, filterTasks } from './tasks';
+import {
+  colaboradorMetrics,
+  computeIndicators,
+  EMPTY_FILTERS,
+  filterTasks,
+  hasActiveFilters,
+} from './tasks';
 
 const NOW = new Date('2026-08-03T12:00:00');
 const nomes = Object.fromEntries(COLABORADORES.map((c) => [c.id, c.nome]));
@@ -43,6 +49,29 @@ describe('filterTasks', () => {
     expect(result[0].id).toBe('TA-FAV');
   });
 
+  it('filtra por categoria', () => {
+    const comCategoria = { ...TAREFAS[0], id: 'TA-CAT', categoria: 'Desenvolvimento' };
+    const result = filterTasks(
+      [TAREFAS[1], comCategoria],
+      { ...EMPTY_FILTERS, categorias: ['Desenvolvimento'] },
+      nomes,
+      NOW
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-CAT');
+  });
+
+  it('exclui tarefas sem a categoria filtrada', () => {
+    const semCategoria = { ...TAREFAS[0], id: 'TA-SEM', categoria: undefined };
+    const result = filterTasks(
+      [semCategoria, { ...TAREFAS[1], id: 'TA-MKT', categoria: 'Marketing' }],
+      { ...EMPTY_FILTERS, categorias: ['Marketing'] },
+      nomes,
+      NOW
+    );
+    expect(result.map((t) => t.id)).toEqual(['TA-MKT']);
+  });
+
   it('filtra por prazo vencendo hoje', () => {
     const hoje = { ...TAREFAS[0], id: 'TA-HOJE', prazo: '2026-08-03' };
     const result = filterTasks([TAREFAS[1], hoje], { ...EMPTY_FILTERS, prazo: 'hoje' }, nomes, NOW);
@@ -65,6 +94,24 @@ describe('filterTasks', () => {
   it('ordena por prioridade (crítica primeiro)', () => {
     const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, nomes, NOW);
     expect(result[0].prioridade).toBe('critica');
+  });
+});
+
+describe('hasActiveFilters', () => {
+  it('retorna false para filtros vazios', () => {
+    expect(hasActiveFilters(EMPTY_FILTERS)).toBe(false);
+  });
+
+  it('detecta busca e filtros ativos', () => {
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, search: 'x' })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, status: ['NOVA'] })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, favoritas: true })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, categorias: ['Marketing'] })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, prazo: 'hoje' })).toBe(true);
+  });
+
+  it('ordenação não conta como filtro', () => {
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, sortBy: 'titulo' })).toBe(false);
   });
 });
 

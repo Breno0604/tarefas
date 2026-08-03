@@ -50,6 +50,8 @@ export const TAREFAS: Task[] = [
     prioridade: 'alta',
     prazo: '2026-07-28',
     status: 'FINALIZADA',
+    categoria: 'Desenvolvimento',
+    tags: ['auth', 'segurança'],
     criadaEm: '2026-08-03T07:45:00',
     historico: [
       h('h1', '2026-08-03T08:30:00', 'João Silva', 'NOVA', 'RECEBIDA'),
@@ -87,6 +89,8 @@ export const TAREFAS: Task[] = [
     prioridade: 'alta',
     prazo: '2026-08-01',
     status: 'FINALIZADA',
+    categoria: 'Desenvolvimento',
+    tags: ['performance', 'banco de dados'],
     criadaEm: '2026-07-27T11:00:00',
     historico: [
       h('h12', '2026-07-27T13:00:00', 'Lucas Pereira', 'NOVA', 'RECEBIDA'),
@@ -104,6 +108,7 @@ export const TAREFAS: Task[] = [
     prioridade: 'media',
     prazo: '2026-07-30',
     status: 'FINALIZADA',
+    categoria: 'Marketing',
     criadaEm: '2026-07-25T09:00:00',
     historico: [
       h('h16', '2026-07-25T15:00:00', 'Maria Souza', 'NOVA', 'RECEBIDA'),
@@ -170,6 +175,8 @@ export const TAREFAS: Task[] = [
     prioridade: 'alta',
     prazo: '2026-08-02',
     status: 'CONCLUIDA',
+    categoria: 'Marketing',
+    tags: ['email'],
     criadaEm: '2026-07-29T09:00:00',
     historico: [
       h('h26', '2026-07-29T10:00:00', 'Maria Souza', 'NOVA', 'RECEBIDA'),
@@ -282,6 +289,8 @@ export const TAREFAS: Task[] = [
     prioridade: 'critica',
     prazo: '2026-08-04',
     status: 'NOVA',
+    categoria: 'Desenvolvimento',
+    tags: ['bug', 'crítico'],
     criadaEm: '2026-08-03T08:00:00',
     historico: [],
   },
@@ -294,6 +303,7 @@ export const TAREFAS: Task[] = [
     prioridade: 'baixa',
     prazo: '2026-08-15',
     status: 'NOVA',
+    categoria: 'Treinamento',
     criadaEm: '2026-08-03T09:00:00',
     historico: [],
   },
