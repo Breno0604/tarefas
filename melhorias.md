@@ -163,6 +163,20 @@ Bônus: `colaboradorResumo` corrigido para nomes de uma palavra. **Total: 109 te
 
 **Total: 115 testes.**
 
+## 6.10 Aderência ao clean-code-principles (2026-08-03)
+
+Refatoração pura (sem mudança de comportamento) cobrindo os achados da auditoria:
+
+- **DRY — factory `createTask()`** em `src/utils/tasks.ts`: unifica a construção de tarefa NOVA usada por `TaskFormModal` e `TaskQuickAdd` (id sequencial, timestamps e entrada de histórico via `newHistoryEntry` em `src/utils/history.ts`, agora compartilhado com o reducer). 3 testes novos.
+- **DRY — `colaboradorResumo(nome)`** agora recebe a string (não um objeto `Colaborador`), eliminando o objeto fake `{ nome: '?', ... }` duplicado em `TaskRow` e `TaskDetailModal`.
+- **Dead code — `STATUS_TOAST['NOVA']` removido** (CREATE_TASK tem toast próprio; nenhuma transição chega a NOVA).
+- **SRP — `AppContext.tsx` reduzido de 320 → ~100 linhas:** `AppState`/`AppAction` → `src/context/types.ts`; reducer + undo + `NO_UNDO` → `src/context/appReducer.ts`; mapeamento de toast → `src/context/toastMessage.ts`. `roleOf` migrou para `src/utils/status.ts` (junto das transições).
+- **SRP — `App.tsx` de 270 → ~130 linhas:** seções extraídas para `src/components/sections/` (`SectionTarefas`, `SectionVisaoGeral`, `SectionColaboradores`); `App.tsx` virou composition root (providers + `Shell`).
+- **DRY — componente `Avatar`** (`src/components/ui/Avatar.tsx`) com 5 tamanhos, usado em Sidebar, `TaskRow`, `TaskDetailModal`, `CollaboratorCard` e `CollaboratorDetailModal` (antes: markup repetido em 6 lugares).
+- **DRY — `openTarefas(dispatch, filters?)`** em `src/context/navigation.ts`: unifica os atalhos da Sidebar e os KPIs (navegação + filtros em uma chamada).
+
+**Total: 118 testes** (eram 115; +3 `createTask`), build limpo, grafo de imports acíclico.
+
 ## 6.3 Status de implementação — D10 a D13 (2026-08-03)
 
 Implementado e verificado (66 testes passando, `tsc` + build verdes):
