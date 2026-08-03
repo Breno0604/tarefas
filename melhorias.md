@@ -4,7 +4,7 @@
 **Escopo da análise:** apenas o **ciclo de vida das tarefas** e o **comportamento do usuário** da versão do repositório https://github.com/Breno0604/lista_de_tarefas.git.
 **Fora de escopo:** layout/visual (nada foi copiado da outra versão).
 
-> **Status de implementação (2026-08-03):** Leva 1 (D2–D5), Leva 2 (D6–D9) e **D1 parcial (persistência em localStorage)** implementadas. Ver seção 6.
+> **Status de implementação (2026-08-03):** Leva 1 (D2–D5), Leva 2 (D6–D9), **D1 parcial (persistência)** e **D10–D13 (timestamps, empty states, categorias/tags, drag-and-drop)** implementadas. Ver seção 6.
 
 ---
 
@@ -124,4 +124,14 @@ Implementado e verificado (54 testes passando, `tsc` + build verdes):
 - **Testes:** `src/services/storage.test.ts` com `localStorage` mockado (round-trip, sem dados, JSON corrompido, versão incompatível, shape inválido, clear).
 
 Pendente da D1 (tier **crítica**): arquitetura de **provider trocável** (`LocalStorageProvider`/`FutureApiProvider`) com troca por env var — preparação para backend real.
-Pendente para levas futuras: D10–D13 (fáceis) e D11–D12 (moderadas).
+
+## 6.3 Status de implementação — D10 a D13 (2026-08-03)
+
+Implementado e verificado (66 testes passando, `tsc` + build verdes):
+
+- **D10 — Timestamps de auditoria:** campos `atualizadaEm`/`concluidaEm` em `Task`; o reducer preenche `atualizadaEm` em toda mutação, define `concluidaEm` ao entrar em CONCLUIDA e **limpa** ao reabrir/devolver (mantém ao finalizar). Exibido como "atualizada em …" no modal de detalhes.
+- **D11 — Categorias e tags:** campos `categoria`/`tags` em `Task`, inputs no formulário (criar/editar), chips (`CategoryTag`) no kanban e no modal de detalhes, filtro derivado (MultiSelect de categorias na `FilterBar`) e 6 tarefas do seed com categoria/tags para demonstração.
+- **D12 — Drag-and-drop de reordenação (v1):** ação `REORDER_TASKS` no reducer (insere "antes" do alvo, com correção do deslocamento ao mover para baixo) + DnD nativo (HTML5) nas linhas da **tabela** com indicador visual. **Escopo:** habilitado apenas na visão Lista **sem filtros ativos e sem ordenação** (semântica inequívoca de posição); a ordem é a ordem do array e **persiste** via D1. Kanban (arrastar entre colunas = mudança de status) fica como evolução futura.
+- **D13 — Empty states distintos:** `TasksTable` e `TaskKanban` diferenciam "nenhuma tarefa criada" (lista totalmente vazia) de "nenhuma tarefa encontrada" (filtro sem resultado), via `totalCount`.
+
+Pendente: D1 tier **crítica** (provider trocável) e melhorias de D12 em kanban (drag entre colunas).
