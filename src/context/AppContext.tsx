@@ -39,7 +39,8 @@ export type AppAction =
   | { type: 'REASSIGN'; taskId: string; responsavelId: string; usuario: string; observacao: string }
   | { type: 'DUPLICATE_TASK'; taskId: string; usuario: string }
   | { type: 'DELETE_TASK'; taskId: string }
-  | { type: 'TOGGLE_FAVORITE'; taskId: string };
+  | { type: 'TOGGLE_FAVORITE'; taskId: string }
+  | { type: 'REORDER_TASKS'; taskId: string; toTaskId: string };
 
 const initialState: AppState = {
   tasks: TAREFAS,
@@ -92,12 +93,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'CLOSE_MODAL':
       return { ...state, modal: { type: 'none' } };
     case 'CREATE_TASK':
-      return { ...state, tasks: [...state.tasks, action.task] };
+      return {
+        ...state,
+        tasks: [
+          ...state.tasks,
+          { ...action.task, atualizadaEm: action.task.criadaEm },
+        ],
+      };
     case 'UPDATE_TASK':
       return {
         ...state,
         tasks: state.tasks.map((t) =>
-          t.id === action.taskId ? { ...t, ...action.changes } : t
+          t.id === action.taskId
+            ? { ...t, ...action.changes, atualizadaEm: new Date().toISOString() }
+            : t
         ),
       };
     case 'CHANGE_STATUS': {
@@ -111,11 +120,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         'status',
         action.observacao
       );
+      const agora = new Date().toISOString();
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.taskId
-            ? { ...t, status: action.novoStatus, historico: [...t.historico, entry] }
+            ? {
+                ...t,
+                status: action.novoStatus,
+                atualizadaEm: agora,
+                concluidaEm:
+                  action.novoStatus === 'CONCLUIDA'
+                    ? agora
+                    : action.novoStatus === 'FINALIZADA'
+                      ? t.concluidaEm
+                      : undefined,
+                historico: [...t.historico, entry],
+              }
             : t
         ),
       };
@@ -134,7 +155,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.taskId
-            ? { ...t, responsavelId: action.responsavelId, historico: [...t.historico, entry] }
+            ? {
+                ...t,
+                responsavelId: action.responsavelId,
+                atualizadaEm: new Date().toISOString(),
+                historico: [...t.historico, entry],
+              }
             : t
         ),
       };
@@ -146,11 +172,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         const n = Number(t.id.replace(/\D/g, ''));
         return Number.isFinite(n) ? Math.max(max, n) : max;
       }, 0);
+      const agora = new Date().toISOString();
       const copy: Task = {
         ...task,
         id: `TA-${String(maxNum + 1).padStart(3, '0')}`,
         status: 'NOVA',
-        criadaEm: new Date().toISOString(),
+        favorita: false,
+        criadaEm: agora,
+        atualizadaEm: agora,
+        concluidaEm: undefined,
         criadorId: state.currentUserId,
         historico: [newHistoryEntry(action.usuario, null, 'NOVA', 'status', `Tarefa duplicada de ${task.id}.`)],
       };
@@ -164,9 +194,22 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         tasks: state.tasks.map((t) =>
-          t.id === action.taskId ? { ...t, favorita: !t.favorita } : t
+          t.id === action.taskId
+            ? { ...t, favorita: !t.favorita, atualizadaEm: new Date().toISOString() }
+            : t
         ),
       };
+    case 'REORDER_TASKS': {
+      const from = state.tasks.findIndex((t) => t.id === action.taskId);
+      const to = state.tasks.findIndex((t) => t.id === action.toTaskId);
+      if (from < 0 || to < 0 || from === to) return state;
+      const tasks = [...state.tasks];
+      const [moved] = tasks.splice(from, 1);
+      // Ao mover para baixo, a remoção desloca o alvo em -1; insere "antes" do alvo.
+      const target = from < to ? to - 1 : to;
+      tasks.splice(target, 0, moved);
+      return { ...state, tasks };
+    }
     default:
       return state;
   }

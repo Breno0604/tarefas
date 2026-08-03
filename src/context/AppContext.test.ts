@@ -33,7 +33,7 @@ const baseState: AppState = {
   section: 'tarefas',
   view: 'lista',
   sidebarCollapsed: false,
-  filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, sortBy: null },
+  filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, categorias: [], sortBy: null },
   modal: { type: 'none' },
 };
 
@@ -174,5 +174,65 @@ describe('appReducer — CREATE_TASK / REASSIGN', () => {
     expect(next.tasks.find((t) => t.id === 'TA-001')!.favorita).toBe(true);
     const back = appReducer(next, { type: 'TOGGLE_FAVORITE', taskId: 'TA-001' });
     expect(back.tasks.find((t) => t.id === 'TA-001')!.favorita).toBe(false);
+  });
+});
+
+describe('appReducer — REORDER_TASKS / timestamps', () => {
+  it('reordena movendo a tarefa para antes do alvo', () => {
+    const next = appReducer(baseState, { type: 'REORDER_TASKS', taskId: 'TA-002', toTaskId: 'TA-001' });
+    expect(next.tasks.map((t) => t.id)).toEqual(['TA-002', 'TA-001']);
+  });
+
+  it('reordena para baixo considerando o deslocamento da remoção', () => {
+    const three = appReducer(baseState, {
+      type: 'CREATE_TASK',
+      task: { ...baseState.tasks[0], id: 'TA-003', titulo: 'Terceira' },
+    });
+    // ordem atual: TA-001, TA-002, TA-003; mover TA-001 para antes de TA-003
+    const next = appReducer(three, { type: 'REORDER_TASKS', taskId: 'TA-001', toTaskId: 'TA-003' });
+    expect(next.tasks.map((t) => t.id)).toEqual(['TA-002', 'TA-001', 'TA-003']);
+  });
+
+  it('reordenar para a mesma posição não altera o estado', () => {
+    const next = appReducer(baseState, { type: 'REORDER_TASKS', taskId: 'TA-001', toTaskId: 'TA-001' });
+    expect(next).toBe(baseState);
+  });
+
+  it('define atualizadaEm ao editar', () => {
+    const next = appReducer(baseState, { type: 'UPDATE_TASK', taskId: 'TA-001', changes: { titulo: 'Novo título' } });
+    const task = next.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.titulo).toBe('Novo título');
+    expect(task.atualizadaEm).toBeDefined();
+  });
+
+  it('define concluidaEm e atualizadaEm ao concluir', () => {
+    let s: AppState = { ...baseState, currentUserId: 'joao' };
+    s = appReducer(s, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'RECEBIDA', usuario: 'João Silva' });
+    s = appReducer(s, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' });
+    s = appReducer(s, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'CONCLUIDA', usuario: 'João Silva' });
+    const task = s.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.status).toBe('CONCLUIDA');
+    expect(task.concluidaEm).toBeDefined();
+    expect(task.atualizadaEm).toBeDefined();
+  });
+
+  it('limpa concluidaEm ao reabrir', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' }
+    );
+    expect(next.tasks.find((t) => t.id === 'TA-002')!.concluidaEm).toBeUndefined();
+  });
+
+  it('atualiza atualizadaEm ao finalizar', () => {
+    const next = appReducer(baseState, {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-002',
+      novoStatus: 'FINALIZADA',
+      usuario: 'Carlos Mendes',
+    });
+    const task = next.tasks.find((t) => t.id === 'TA-002')!;
+    expect(task.status).toBe('FINALIZADA');
+    expect(task.atualizadaEm).toBeDefined();
   });
 });
