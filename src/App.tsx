@@ -12,6 +12,7 @@ import KPICards from './components/layout/KPICards';
 import FilterBar from './components/layout/FilterBar';
 import TasksTable from './components/tasks/TasksTable';
 import TaskKanban from './components/tasks/TaskKanban';
+import TaskQuickAdd from './components/tasks/TaskQuickAdd';
 import CollaboratorCard from './components/collaborators/CollaboratorCard';
 import ConfirmDialog from './components/modal/ConfirmDialog';
 import TaskFormModal from './components/modals/TaskFormModal';
@@ -43,6 +44,7 @@ function SectionTarefas() {
   const header = (
     <div className="mb-5 space-y-4">
       <KPICards indicators={indicators} />
+      <TaskQuickAdd />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FilterBar />
         <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
