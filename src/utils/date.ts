@@ -42,9 +42,10 @@ export function isWithinDays(
 ): boolean {
   if (!prazo) return false;
   const prazoDate = parsePrazo(prazo);
-  const limit = new Date(startOfToday(now));
+  const hoje = startOfToday(now);
+  const limit = new Date(hoje);
   limit.setDate(limit.getDate() + days);
-  return prazoDate >= startOfToday(now) && prazoDate <= limit;
+  return prazoDate >= hoje && prazoDate <= limit;
 }
 
 export function isDueToday(prazo: string | null, now: Date = new Date()): boolean {

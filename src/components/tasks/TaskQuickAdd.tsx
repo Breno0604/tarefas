@@ -27,7 +27,7 @@ export default function TaskQuickAdd() {
         criadaEm: now,
         historico: [
           {
-            id: `h-${Date.now()}`,
+            id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             dataHora: now,
             usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
             statusAnterior: null,

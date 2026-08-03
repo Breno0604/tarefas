@@ -1,12 +1,8 @@
 import {
-  ArrowDownToLine,
-  CheckCircle2,
   Copy,
   Eye,
   GripVertical,
   Pencil,
-  Play,
-  RotateCcw,
   Star,
   Trash2,
   UserCog,
@@ -21,6 +17,7 @@ import StatusBadge from './StatusBadge';
 import PriorityBadge from './PriorityBadge';
 import CycleStepper from './CycleStepper';
 import DueDateCell from './DueDateCell';
+import { cycleActionFor } from './cycleActions';
 
 interface TaskRowProps {
   task: Task;
@@ -67,21 +64,6 @@ export default function TaskRow({
       novoStatus,
       usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
     });
-  };
-
-  const actionFor = (target: TaskStatus) => {
-    if (target === 'RECEBIDA')
-      return { icon: ArrowDownToLine, label: 'Receber', className: 'text-cyan-600 hover:bg-cyan-50' };
-    if (target === 'EM_EXECUCAO') {
-      if (task.status === 'DEVOLVIDA')
-        return { icon: RotateCcw, label: 'Retomar', className: 'text-rose-600 hover:bg-rose-50' };
-      if (task.status === 'CONCLUIDA')
-        return { icon: RotateCcw, label: 'Reabrir', className: 'text-rose-600 hover:bg-rose-50' };
-      return { icon: Play, label: 'Iniciar', className: 'text-amber-600 hover:bg-amber-50' };
-    }
-    if (target === 'CONCLUIDA')
-      return { icon: CheckCircle2, label: 'Concluir', className: 'text-violet-600 hover:bg-violet-50' };
-    return null;
   };
 
   return (
@@ -198,7 +180,7 @@ export default function TaskRow({
             </>
           )}
           {can.map((target) => {
-            const act = actionFor(target);
+            const act = cycleActionFor(task, target);
             if (!act) return null;
             const Icon = act.icon;
             return (
@@ -206,7 +188,7 @@ export default function TaskRow({
                 key={target}
                 onClick={() => changeStatus(target)}
                 title={act.label}
-                className={`rounded-lg p-1.5 transition-colors ${act.className}`}
+                className={`rounded-lg p-1.5 transition-colors ${act.cls}`}
               >
                 <Icon className="h-4 w-4" />
               </button>

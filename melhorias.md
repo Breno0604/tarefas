@@ -153,6 +153,16 @@ Revisão em 5 frentes (objetivo, QA hands-on, qualidade, segurança, contexto) �
 
 Bônus: `colaboradorResumo` corrigido para nomes de uma palavra. **Total: 109 testes.**
 
+## 6.9 Limpeza dos achados menores da revisão (2026-08-03)
+
+- **`TaskCard` sem elementos interativos aninhados:** o card deixou de ser um `<button>` com `<span>` clicáveis (HTML inválido/inacessível por teclado) — virou `<div draggable>` com um `<button>` de detalhes e botões reais de favoritar/ação (com `aria-label`).
+- **Fim da duplicação `actionFor`/`quickAction`:** helper `cycleActionFor(task, target)` em `src/components/tasks/cycleActions.ts`, usado por `TaskRow` e `TaskCard` (6 testes novos).
+- **`computeIndicators` em passada única** (antes 7 filtros sobre o array).
+- **`isWithinDays` sem chamada dupla** de `startOfToday`.
+- **Ids de histórico com sufixo aleatório** em `TaskFormModal`/`TaskQuickAdd` (alinhados a `newHistoryEntry`).
+
+**Total: 115 testes.**
+
 ## 6.3 Status de implementação — D10 a D13 (2026-08-03)
 
 Implementado e verificado (66 testes passando, `tsc` + build verdes):

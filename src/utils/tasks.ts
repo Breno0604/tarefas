@@ -74,17 +74,29 @@ export interface Indicators {
 }
 
 export function computeIndicators(tasks: Task[], now: Date = new Date()): Indicators {
-  const count = (s: TaskStatus) => tasks.filter((t) => t.status === s).length;
-  const finalizadas = count('FINALIZADA');
+  const counts: Record<TaskStatus, number> = {
+    NOVA: 0,
+    RECEBIDA: 0,
+    EM_EXECUCAO: 0,
+    CONCLUIDA: 0,
+    DEVOLVIDA: 0,
+    FINALIZADA: 0,
+  };
+  let atrasadas = 0;
+  for (const t of tasks) {
+    counts[t.status]++;
+    if (isOverdue(t.prazo, t.status, now)) atrasadas++;
+  }
+  const finalizadas = counts.FINALIZADA;
   return {
     total: tasks.length,
-    novas: count('NOVA'),
-    recebidas: count('RECEBIDA'),
-    emExecucao: count('EM_EXECUCAO'),
-    concluidas: count('CONCLUIDA'),
-    devolvidas: count('DEVOLVIDA'),
+    novas: counts.NOVA,
+    recebidas: counts.RECEBIDA,
+    emExecucao: counts.EM_EXECUCAO,
+    concluidas: counts.CONCLUIDA,
+    devolvidas: counts.DEVOLVIDA,
     finalizadas,
-    atrasadas: tasks.filter((t) => isOverdue(t.prazo, t.status, now)).length,
+    atrasadas,
     percentConclusao: tasks.length === 0 ? 0 : Math.round((finalizadas / tasks.length) * 100),
   };
 }

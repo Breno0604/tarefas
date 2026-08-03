@@ -1,4 +1,4 @@
-import { ArrowDownToLine, CheckCircle2, Play, RotateCcw, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp, roleOf } from '../../context/AppContext';
@@ -7,6 +7,7 @@ import { availableTransitions } from '../../utils/status';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
 import CategoryTag from './CategoryTag';
+import { cycleActionFor } from './cycleActions';
 
 interface TaskCardProps {
   task: Task;
@@ -39,55 +40,44 @@ export default function TaskCard({
     });
   };
 
-  const quickAction = () => {
-    if (can.includes('RECEBIDA')) {
-      return { icon: ArrowDownToLine, label: 'Receber', target: 'RECEBIDA' as TaskStatus, cls: 'text-cyan-600 hover:bg-cyan-50' };
-    }
-    if (can.includes('EM_EXECUCAO')) {
-      if (task.status === 'DEVOLVIDA')
-        return { icon: RotateCcw, label: 'Retomar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
-      if (task.status === 'CONCLUIDA')
-        return { icon: RotateCcw, label: 'Reabrir', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
-      return { icon: Play, label: 'Iniciar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-amber-600 hover:bg-amber-50' };
-    }
-    if (can.includes('CONCLUIDA')) {
-      return { icon: CheckCircle2, label: 'Concluir', target: 'CONCLUIDA' as TaskStatus, cls: 'text-violet-600 hover:bg-violet-50' };
-    }
-    return null;
-  };
+  const action = can.map((target) => cycleActionFor(task, target)).find((a) => a !== null) ?? null;
 
-  const action = quickAction();
+  const openDetail = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } });
 
   return (
-    <button
+    <div
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } })}
-      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
+      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
-        <PriorityBadge prioridade={task.prioridade} />
-      </div>
-      <p className="mt-1 truncate text-xs text-slate-400">
-        {task.id} · {responsavel?.nome.split(' ')[0]}
-      </p>
-      {(task.categoria || (task.tags && task.tags.length > 0)) && (
-        <div className="mt-2 flex flex-wrap items-center gap-1">
-          {task.categoria && <CategoryTag label={task.categoria} />}
-          {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
+      <button
+        onClick={openDetail}
+        aria-label={`Ver detalhes — ${task.titulo}`}
+        className="block w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
+          <PriorityBadge prioridade={task.prioridade} />
         </div>
-      )}
+        <p className="mt-1 truncate text-xs text-slate-400">
+          {task.id} · {responsavel?.nome.split(' ')[0]}
+        </p>
+        {(task.categoria || (task.tags && task.tags.length > 0)) && (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {task.categoria && <CategoryTag label={task.categoria} />}
+            {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
+          </div>
+        )}
+      </button>
+
       <div className="mt-3 flex items-center justify-between">
         <DueDateCell task={task} />
-        <div className="flex items-center">
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id });
-            }}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
             title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
+            aria-label={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
             className={`rounded-lg p-1.5 transition-colors ${
               task.favorita
                 ? 'text-amber-500'
@@ -95,21 +85,19 @@ export default function TaskCard({
             }`}
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
-          </span>
+          </button>
           {action && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                changeStatus(action.target);
-              }}
+            <button
+              onClick={() => changeStatus(action.target)}
               title={action.label}
-              className={`rounded-lg p-1.5 ${action.cls}`}
+              aria-label={action.label}
+              className={`rounded-lg p-1.5 transition-colors ${action.cls}`}
             >
               <action.icon className="h-4 w-4" />
-            </span>
+            </button>
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
