@@ -5,6 +5,7 @@ import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
+import CategoryTag from './CategoryTag';
 
 interface TaskCardProps {
   task: Task;
@@ -61,6 +62,12 @@ export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
       <p className="mt-1 truncate text-xs text-slate-400">
         {task.id} · {responsavel?.nome.split(' ')[0]}
       </p>
+      {(task.categoria || (task.tags && task.tags.length > 0)) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {task.categoria && <CategoryTag label={task.categoria} />}
+          {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
+        </div>
+      )}
       <div className="mt-3 flex items-center justify-between">
         <DueDateCell task={task} />
         <div className="flex items-center">

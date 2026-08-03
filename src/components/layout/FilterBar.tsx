@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, FilterX, Star } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { COLABORADORES } from '../../data/mockData';
+import { hasActiveFilters } from '../../utils/tasks';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
 import type { Filters, PrazoFilter, Priority, TaskSort, TaskStatus } from '../../types';
 
@@ -87,6 +88,9 @@ export default function FilterBar() {
     label: PRIORITY_LABELS[p],
   }));
   const responsavelOptions = COLABORADORES.map((c) => ({ value: c.id, label: c.nome }));
+  const categoriaOptions = Array.from(
+    new Set(state.tasks.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
+  ).map((c) => ({ value: c, label: c }));
 
   const prazoOptions: { value: PrazoFilter; label: string }[] = [
     { value: 'todas', label: 'Todas as datas' },
@@ -104,19 +108,14 @@ export default function FilterBar() {
     { value: 'prioridade', label: 'Prioridade' },
   ];
 
-  const hasFilters =
-    filters.status.length > 0 ||
-    filters.prioridade.length > 0 ||
-    filters.responsavel.length > 0 ||
-    filters.prazo !== 'todas' ||
-    filters.favoritas ||
-    filters.sortBy !== null;
+  const hasFilters = hasActiveFilters(filters) || filters.sortBy !== null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <MultiSelect label="Status" options={statusOptions} selected={filters.status} onChange={(v) => update({ status: v })} />
       <MultiSelect label="Prioridade" options={prioridadeOptions} selected={filters.prioridade} onChange={(v) => update({ prioridade: v })} />
       <MultiSelect label="Responsável" options={responsavelOptions} selected={filters.responsavel} onChange={(v) => update({ responsavel: v })} />
+      <MultiSelect label="Categoria" options={categoriaOptions} selected={filters.categorias} onChange={(v) => update({ categorias: v })} />
       <select
         value={filters.prazo}
         onChange={(e) => update({ prazo: e.target.value as PrazoFilter })}

@@ -23,6 +23,8 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
   const [responsavelId, setResponsavelId] = useState(editing?.responsavelId ?? COLABORADORES[0].id);
   const [prioridade, setPrioridade] = useState<Priority>(editing?.prioridade ?? 'media');
   const [prazo, setPrazo] = useState(editing?.prazo ?? '');
+  const [categoria, setCategoria] = useState(editing?.categoria ?? '');
+  const [tags, setTags] = useState(editing?.tags?.join(', ') ?? '');
 
   const isEdit = Boolean(editing);
   const valid = titulo.trim().length > 0 && responsavelId.trim().length > 0;
@@ -39,6 +41,8 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
           responsavelId,
           prioridade,
           prazo: prazo || null,
+          categoria: categoria.trim() || undefined,
+          tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         },
       });
     } else {
@@ -58,6 +62,8 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
           prioridade,
           prazo: prazo || null,
           status: 'NOVA',
+          categoria: categoria.trim() || undefined,
+          tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
           criadaEm: now,
           historico: [
             {
@@ -139,6 +145,16 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Prazo</label>
           <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} className={inputCls} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
+            <input value={categoria} onChange={(e) => setCategoria(e.target.value)} className={inputCls} placeholder="Ex.: Desenvolvimento" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Tags (separadas por vírgula)</label>
+            <input value={tags} onChange={(e) => setTags(e.target.value)} className={inputCls} placeholder="Ex.: bug, urgente" />
+          </div>
         </div>
       </div>
     </Modal>

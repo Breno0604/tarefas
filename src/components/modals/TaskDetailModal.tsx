@@ -3,7 +3,7 @@ import { Copy, History, Pencil, Star, Trash2, UserCog } from 'lucide-react';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
-import { formatDate } from '../../utils/date';
+import { formatDate, formatDateTime } from '../../utils/date';
 import { colaboradorResumo } from '../../utils/tasks';
 import Modal from '../modal/Modal';
 import ConfirmDialog from '../modal/ConfirmDialog';
@@ -11,6 +11,7 @@ import StatusBadge from '../tasks/StatusBadge';
 import PriorityBadge from '../tasks/PriorityBadge';
 import CycleStepper from '../tasks/CycleStepper';
 import DueDateCell from '../tasks/DueDateCell';
+import CategoryTag from '../tasks/CategoryTag';
 
 interface TaskDetailModalProps {
   taskId: string;
@@ -156,6 +157,12 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           </div>
           <h3 className="mt-2 text-lg font-semibold text-slate-800">{task.titulo}</h3>
           <p className="mt-1 text-sm leading-relaxed text-slate-600">{task.descricao || 'Sem descrição.'}</p>
+          {(task.categoria || (task.tags && task.tags.length > 0)) && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {task.categoria && <CategoryTag label={task.categoria} />}
+              {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg bg-slate-50 p-4">
@@ -183,6 +190,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           <div>
             <p className="text-[11px] text-slate-400">Criada em</p>
             <p className="font-medium text-slate-700">{formatDate(task.criadaEm)}</p>
+            {task.atualizadaEm && task.atualizadaEm !== task.criadaEm && (
+              <p className="text-xs text-slate-400">atualizada em {formatDateTime(task.atualizadaEm)}</p>
+            )}
           </div>
           <div>
             <p className="text-[11px] text-slate-400">Prazo</p>
