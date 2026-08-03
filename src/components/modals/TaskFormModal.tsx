@@ -107,12 +107,13 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
     >
       <div className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Título *</label>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className={inputCls} placeholder="Ex.: Corrigir bug de checkout" />
+          <label htmlFor="task-titulo" className="mb-1 block text-sm font-medium text-slate-700">Título *</label>
+          <input id="task-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} className={inputCls} placeholder="Ex.: Corrigir bug de checkout" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
+          <label htmlFor="task-descricao" className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
           <textarea
+            id="task-descricao"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             rows={4}
@@ -122,8 +123,8 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Responsável *</label>
-            <select value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)} className={inputCls}>
+            <label htmlFor="task-responsavel" className="mb-1 block text-sm font-medium text-slate-700">Responsável *</label>
+            <select id="task-responsavel" value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)} className={inputCls}>
               {COLABORADORES.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
@@ -132,8 +133,8 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
-            <select value={prioridade} onChange={(e) => setPrioridade(e.target.value as Priority)} className={inputCls}>
+            <label htmlFor="task-prioridade" className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
+            <select id="task-prioridade" value={prioridade} onChange={(e) => setPrioridade(e.target.value as Priority)} className={inputCls}>
               {(Object.keys(PRIORITY_LABELS) as Priority[]).map((p) => (
                 <option key={p} value={p}>
                   {PRIORITY_LABELS[p]}
@@ -143,17 +144,17 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Prazo</label>
-          <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} className={inputCls} />
+          <label htmlFor="task-prazo" className="mb-1 block text-sm font-medium text-slate-700">Prazo</label>
+          <input id="task-prazo" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} className={inputCls} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
-            <input value={categoria} onChange={(e) => setCategoria(e.target.value)} className={inputCls} placeholder="Ex.: Desenvolvimento" />
+            <label htmlFor="task-categoria" className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
+            <input id="task-categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} className={inputCls} placeholder="Ex.: Desenvolvimento" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tags (separadas por vírgula)</label>
-            <input value={tags} onChange={(e) => setTags(e.target.value)} className={inputCls} placeholder="Ex.: bug, urgente" />
+            <label htmlFor="task-tags" className="mb-1 block text-sm font-medium text-slate-700">Tags (separadas por vírgula)</label>
+            <input id="task-tags" value={tags} onChange={(e) => setTags(e.target.value)} className={inputCls} placeholder="Ex.: bug, urgente" />
           </div>
         </div>
       </div>
