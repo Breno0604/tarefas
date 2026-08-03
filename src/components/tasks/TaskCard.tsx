@@ -1,4 +1,5 @@
 import { ArrowDownToLine, CheckCircle2, Play, RotateCcw, Star } from 'lucide-react';
+import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
@@ -10,9 +11,16 @@ import CategoryTag from './CategoryTag';
 interface TaskCardProps {
   task: Task;
   onConfirmComplete: (task: Task) => void;
+  onDragStart?: (e: DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
-export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onConfirmComplete,
+  onDragStart,
+  onDragEnd,
+}: TaskCardProps) {
   const { state, dispatch } = useApp();
   const role = roleOf(state.currentUserId);
   const responsavel = findUser(task.responsavelId);
@@ -52,8 +60,11 @@ export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
 
   return (
     <button
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } })}
-      className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md"
+      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
