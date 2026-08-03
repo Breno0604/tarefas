@@ -5,9 +5,10 @@ import TaskRow from './TaskRow';
 interface TasksTableProps {
   tasks: Task[];
   onConfirmComplete: (task: Task) => void;
+  onDeleteRequest: (task: Task) => void;
 }
 
-export default function TasksTable({ tasks, onConfirmComplete }: TasksTableProps) {
+export default function TasksTable({ tasks, onConfirmComplete, onDeleteRequest }: TasksTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full min-w-[900px] text-left">
@@ -24,7 +25,12 @@ export default function TasksTable({ tasks, onConfirmComplete }: TasksTableProps
         </thead>
         <tbody>
           {tasks.map((task) => (
-            <TaskRow key={task.id} task={task} onConfirmComplete={onConfirmComplete} />
+            <TaskRow
+              key={task.id}
+              task={task}
+              onConfirmComplete={onConfirmComplete}
+              onDeleteRequest={onDeleteRequest}
+            />
           ))}
         </tbody>
       </table>

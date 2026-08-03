@@ -10,6 +10,7 @@ import { GESTOR_ID, TAREFAS } from '../data/mockData';
 import type { Filters, HistoryEntry, ModalState, Section, Task, TaskStatus, TaskView } from '../types';
 import { canTransition } from '../utils/status';
 import { EMPTY_FILTERS } from '../utils/tasks';
+import { useToast } from './ToastContext';
 
 export interface AppState {
   tasks: Task[];
@@ -33,7 +34,9 @@ export type AppAction =
   | { type: 'CREATE_TASK'; task: Task }
   | { type: 'UPDATE_TASK'; taskId: string; changes: Partial<Task> }
   | { type: 'CHANGE_STATUS'; taskId: string; novoStatus: TaskStatus; usuario: string; observacao?: string }
-  | { type: 'REASSIGN'; taskId: string; responsavelId: string; usuario: string; observacao: string };
+  | { type: 'REASSIGN'; taskId: string; responsavelId: string; usuario: string; observacao: string }
+  | { type: 'DUPLICATE_TASK'; taskId: string; usuario: string }
+  | { type: 'DELETE_TASK'; taskId: string };
 
 const initialState: AppState = {
   tasks: TAREFAS,
@@ -133,8 +136,57 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ),
       };
     }
+    case 'DUPLICATE_TASK': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      if (!task) return state;
+      const maxNum = state.tasks.reduce((max, t) => {
+        const n = Number(t.id.replace(/\D/g, ''));
+        return Number.isFinite(n) ? Math.max(max, n) : max;
+      }, 0);
+      const copy: Task = {
+        ...task,
+        id: `TA-${String(maxNum + 1).padStart(3, '0')}`,
+        status: 'NOVA',
+        criadaEm: new Date().toISOString(),
+        criadorId: state.currentUserId,
+        historico: [newHistoryEntry(action.usuario, null, 'NOVA', 'status', `Tarefa duplicada de ${task.id}.`)],
+      };
+      return { ...state, tasks: [...state.tasks, copy] };
+    }
+    case 'DELETE_TASK': {
+      if (!state.tasks.some((t) => t.id === action.taskId)) return state;
+      return { ...state, tasks: state.tasks.filter((t) => t.id !== action.taskId) };
+    }
     default:
       return state;
+  }
+}
+
+const STATUS_TOAST: Record<TaskStatus, string> = {
+  NOVA: 'Tarefa criada',
+  RECEBIDA: 'Tarefa recebida',
+  EM_EXECUCAO: 'Tarefa em execução',
+  CONCLUIDA: 'Tarefa concluída — aguardando análise',
+  DEVOLVIDA: 'Tarefa devolvida',
+  FINALIZADA: 'Tarefa finalizada',
+};
+
+function toastMessage(action: AppAction): string | null {
+  switch (action.type) {
+    case 'CREATE_TASK':
+      return 'Tarefa criada';
+    case 'UPDATE_TASK':
+      return 'Tarefa atualizada';
+    case 'DUPLICATE_TASK':
+      return 'Tarefa duplicada';
+    case 'DELETE_TASK':
+      return 'Tarefa excluída';
+    case 'REASSIGN':
+      return 'Responsável alterado';
+    case 'CHANGE_STATUS':
+      return STATUS_TOAST[action.novoStatus] ?? null;
+    default:
+      return null;
   }
 }
 
@@ -147,7 +199,17 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+  const toast = useToast();
+
+  const dispatchWithToast = (action: AppAction) => {
+    const next = appReducer(state, action);
+    dispatch(action);
+    if (next.tasks === state.tasks) return; // ação sem efeito (ex.: transição inválida)
+    const message = toastMessage(action);
+    if (message) toast.success(message);
+  };
+
+  const value = useMemo(() => ({ state, dispatch: dispatchWithToast }), [state]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

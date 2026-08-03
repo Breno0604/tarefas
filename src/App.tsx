@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 import { COLABORADORES, NOME_POR_ID } from './data/mockData';
 import { filterTasks, computeIndicators } from './utils/tasks';
 import { formatDate } from './utils/date';
@@ -28,6 +29,7 @@ interface ConfirmState {
 function SectionTarefas() {
   const { state, dispatch } = useApp();
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ConfirmState | null>(null);
 
   const visibleTasks = useMemo(
     () => filterTasks(state.tasks, state.filters, NOME_POR_ID),
@@ -63,7 +65,11 @@ function SectionTarefas() {
     <>
       {header}
       {state.view === 'lista' ? (
-        <TasksTable tasks={visibleTasks} onConfirmComplete={confirmComplete} />
+        <TasksTable
+          tasks={visibleTasks}
+          onConfirmComplete={confirmComplete}
+          onDeleteRequest={(task) => setConfirmDelete({ task })}
+        />
       ) : (
         <TaskKanban tasks={visibleTasks} onConfirmComplete={confirmComplete} />
       )}
@@ -83,6 +89,19 @@ function SectionTarefas() {
           }
         }}
         onClose={() => setConfirm(null)}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        danger
+        title="Excluir tarefa"
+        message={`Excluir permanentemente a tarefa "${confirmDelete?.task.titulo ?? ''}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        onConfirm={() => {
+          if (confirmDelete) {
+            dispatch({ type: 'DELETE_TASK', taskId: confirmDelete.task.id });
+          }
+        }}
+        onClose={() => setConfirmDelete(null)}
       />
     </>
   );
@@ -230,8 +249,10 @@ function Shell() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <Shell />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    </ToastProvider>
   );
 }

@@ -30,6 +30,7 @@ export const TRANSITIONS: { from: TaskStatus; to: TaskStatus; role: Role }[] = [
   { from: 'EM_EXECUCAO', to: 'CONCLUIDA', role: 'colaborador' },
   { from: 'CONCLUIDA', to: 'FINALIZADA', role: 'gestor' },
   { from: 'CONCLUIDA', to: 'DEVOLVIDA', role: 'gestor' },
+  { from: 'CONCLUIDA', to: 'EM_EXECUCAO', role: 'colaborador' },
   { from: 'DEVOLVIDA', to: 'EM_EXECUCAO', role: 'colaborador' },
 ];
 

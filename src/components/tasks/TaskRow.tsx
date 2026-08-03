@@ -1,10 +1,12 @@
 import {
   ArrowDownToLine,
   CheckCircle2,
+  Copy,
   Eye,
   Pencil,
   Play,
   RotateCcw,
+  Trash2,
   UserCog,
 } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
@@ -20,9 +22,10 @@ import DueDateCell from './DueDateCell';
 interface TaskRowProps {
   task: Task;
   onConfirmComplete: (task: Task) => void;
+  onDeleteRequest: (task: Task) => void;
 }
 
-export default function TaskRow({ task, onConfirmComplete }: TaskRowProps) {
+export default function TaskRow({ task, onConfirmComplete, onDeleteRequest }: TaskRowProps) {
   const { state, dispatch } = useApp();
   const role = roleOf(state.currentUserId);
   const responsavel = findUser(task.responsavelId);
@@ -48,8 +51,13 @@ export default function TaskRow({ task, onConfirmComplete }: TaskRowProps) {
   const actionFor = (target: TaskStatus) => {
     if (target === 'RECEBIDA')
       return { icon: ArrowDownToLine, label: 'Receber', className: 'text-cyan-600 hover:bg-cyan-50' };
-    if (target === 'EM_EXECUCAO')
+    if (target === 'EM_EXECUCAO') {
+      if (task.status === 'DEVOLVIDA')
+        return { icon: RotateCcw, label: 'Retomar', className: 'text-rose-600 hover:bg-rose-50' };
+      if (task.status === 'CONCLUIDA')
+        return { icon: RotateCcw, label: 'Reabrir', className: 'text-rose-600 hover:bg-rose-50' };
       return { icon: Play, label: 'Iniciar', className: 'text-amber-600 hover:bg-amber-50' };
+    }
     if (target === 'CONCLUIDA')
       return { icon: CheckCircle2, label: 'Concluir', className: 'text-violet-600 hover:bg-violet-50' };
     return null;
@@ -113,6 +121,26 @@ export default function TaskRow({ task, onConfirmComplete }: TaskRowProps) {
               >
                 <UserCog className="h-4 w-4" />
               </button>
+              <button
+                onClick={() =>
+                  dispatch({
+                    type: 'DUPLICATE_TASK',
+                    taskId: task.id,
+                    usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
+                  })
+                }
+                title="Duplicar"
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onDeleteRequest(task)}
+                title="Excluir"
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </>
           )}
           {can.map((target) => {
@@ -130,15 +158,6 @@ export default function TaskRow({ task, onConfirmComplete }: TaskRowProps) {
               </button>
             );
           })}
-          {task.status === 'DEVOLVIDA' && role === 'colaborador' && (
-            <button
-              onClick={() => changeStatus('EM_EXECUCAO')}
-              title="Retomar"
-              className="rounded-lg p-1.5 text-rose-600 transition-colors hover:bg-rose-50"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </td>
     </tr>

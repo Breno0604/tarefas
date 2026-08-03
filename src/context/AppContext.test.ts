@@ -84,6 +84,31 @@ describe('appReducer — CHANGE_STATUS', () => {
     });
     expect(next.tasks.find((t) => t.id === 'TA-002')!.status).toBe('DEVOLVIDA');
   });
+
+  it('colaborador reabre CONCLUIDA → EM_EXECUCAO e grava histórico', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' }
+    );
+    const task = next.tasks.find((t) => t.id === 'TA-002')!;
+    expect(task.status).toBe('EM_EXECUCAO');
+    expect(task.historico[0]).toMatchObject({
+      tipo: 'status',
+      statusAnterior: 'CONCLUIDA',
+      novoStatus: 'EM_EXECUCAO',
+      usuario: 'João Silva',
+    });
+  });
+
+  it('gestor não consegue reabrir CONCLUIDA', () => {
+    const next = appReducer(baseState, {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-002',
+      novoStatus: 'EM_EXECUCAO',
+      usuario: 'Carlos Mendes',
+    });
+    expect(next.tasks.find((t) => t.id === 'TA-002')!.status).toBe('CONCLUIDA');
+  });
 });
 
 describe('appReducer — CREATE_TASK / REASSIGN', () => {
@@ -115,5 +140,32 @@ describe('appReducer — CREATE_TASK / REASSIGN', () => {
     const task = next.tasks.find((t) => t.id === 'TA-001')!;
     expect(task.responsavelId).toBe('ana');
     expect(task.historico[0].tipo).toBe('info');
+  });
+
+  it('duplica tarefa como NOVA com novo id, mantendo título e responsável', () => {
+    const next = appReducer(baseState, {
+      type: 'DUPLICATE_TASK',
+      taskId: 'TA-001',
+      usuario: 'Carlos Mendes',
+    });
+    expect(next.tasks).toHaveLength(baseState.tasks.length + 1);
+    const original = next.tasks.find((t) => t.id === 'TA-001')!;
+    const copy = next.tasks.find((t) => t.id !== 'TA-001' && t.id !== 'TA-002')!;
+    expect(original.status).toBe('NOVA');
+    expect(copy.titulo).toBe('Login');
+    expect(copy.responsavelId).toBe('joao');
+    expect(copy.status).toBe('NOVA');
+    expect(copy.historico[0]).toMatchObject({ tipo: 'status', novoStatus: 'NOVA' });
+  });
+
+  it('exclui tarefa pelo id', () => {
+    const next = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-001' });
+    expect(next.tasks.some((t) => t.id === 'TA-001')).toBe(false);
+    expect(next.tasks).toHaveLength(baseState.tasks.length - 1);
+  });
+
+  it('excluir tarefa inexistente não altera o estado', () => {
+    const next = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-999' });
+    expect(next).toBe(baseState);
   });
 });

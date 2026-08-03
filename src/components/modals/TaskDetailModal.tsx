@@ -1,10 +1,12 @@
-import { History, Pencil, UserCog } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, History, Pencil, Trash2, UserCog } from 'lucide-react';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
 import { formatDate } from '../../utils/date';
 import { colaboradorResumo } from '../../utils/tasks';
 import Modal from '../modal/Modal';
+import ConfirmDialog from '../modal/ConfirmDialog';
 import StatusBadge from '../tasks/StatusBadge';
 import PriorityBadge from '../tasks/PriorityBadge';
 import CycleStepper from '../tasks/CycleStepper';
@@ -17,6 +19,7 @@ interface TaskDetailModalProps {
 
 export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProps) {
   const { state, dispatch } = useApp();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const task = state.tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -36,12 +39,13 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
   };
 
   return (
-    <Modal
-      open
-      title="Detalhes da tarefa"
-      onClose={onClose}
-      size="lg"
-      footer={
+    <>
+      <Modal
+        open
+        title="Detalhes da tarefa"
+        onClose={onClose}
+        size="lg"
+        footer={
         <>
           <button
             onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'history', taskId: task.id } })}
@@ -66,6 +70,26 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 <UserCog className="h-4 w-4" />
                 Responsável
               </button>
+              <button
+                onClick={() =>
+                  dispatch({
+                    type: 'DUPLICATE_TASK',
+                    taskId: task.id,
+                    usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                <Copy className="h-4 w-4" />
+                Duplicar
+              </button>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-rose-300 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir
+              </button>
             </>
           )}
           {can.includes('RECEBIDA') && (
@@ -73,7 +97,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               Receber tarefa
             </button>
           )}
-          {can.includes('EM_EXECUCAO') && task.status !== 'DEVOLVIDA' && (
+          {can.includes('EM_EXECUCAO') && task.status === 'RECEBIDA' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
               Iniciar execução
             </button>
@@ -81,6 +105,11 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           {task.status === 'DEVOLVIDA' && role === 'colaborador' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
               Retomar após correção
+            </button>
+          )}
+          {task.status === 'CONCLUIDA' && role === 'colaborador' && (
+            <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
+              Reabrir tarefa
             </button>
           )}
           {can.includes('CONCLUIDA') && (
@@ -150,6 +179,21 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           </div>
         </div>
       </div>
-    </Modal>
+      </Modal>
+      {confirmDelete && (
+        <ConfirmDialog
+          open
+          danger
+          title="Excluir tarefa"
+          message={`Excluir permanentemente a tarefa "${task.titulo}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Excluir"
+          onConfirm={() => {
+            dispatch({ type: 'DELETE_TASK', taskId: task.id });
+            onClose();
+          }}
+          onClose={() => setConfirmDelete(false)}
+        />
+      )}
+    </>
   );
 }

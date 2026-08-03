@@ -35,13 +35,14 @@ export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
       return { icon: ArrowDownToLine, label: 'Receber', target: 'RECEBIDA' as TaskStatus, cls: 'text-cyan-600 hover:bg-cyan-50' };
     }
     if (can.includes('EM_EXECUCAO')) {
+      if (task.status === 'DEVOLVIDA')
+        return { icon: RotateCcw, label: 'Retomar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
+      if (task.status === 'CONCLUIDA')
+        return { icon: RotateCcw, label: 'Reabrir', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
       return { icon: Play, label: 'Iniciar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-amber-600 hover:bg-amber-50' };
     }
     if (can.includes('CONCLUIDA')) {
       return { icon: CheckCircle2, label: 'Concluir', target: 'CONCLUIDA' as TaskStatus, cls: 'text-violet-600 hover:bg-violet-50' };
-    }
-    if (can.includes('EM_EXECUCAO') && task.status === 'DEVOLVIDA') {
-      return { icon: RotateCcw, label: 'Retomar', target: 'EM_EXECUCAO' as TaskStatus, cls: 'text-rose-600 hover:bg-rose-50' };
     }
     return null;
   };
