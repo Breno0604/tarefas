@@ -4,7 +4,7 @@
 **Escopo da análise:** apenas o **ciclo de vida das tarefas** e o **comportamento do usuário** da versão do repositório https://github.com/Breno0604/lista_de_tarefas.git.
 **Fora de escopo:** layout/visual (nada foi copiado da outra versão).
 
-> **Status de implementação (2026-08-03):** Leva 1 (D2–D5), Leva 2 (D6–D9), **D1 parcial (persistência)** e **D10–D13 (timestamps, empty states, categorias/tags, drag-and-drop)** implementadas. Ver seção 6.
+> **Status de implementação (2026-08-03):** Leva 1 (D2–D5), Leva 2 (D6–D9), **D1 completa (persistência + provider trocável)** e **D10–D13 (timestamps, empty states, categorias/tags, drag-and-drop)** implementadas. Ver seção 6.
 
 ---
 
@@ -123,7 +123,20 @@ Implementado e verificado (54 testes passando, `tsc` + build verdes):
 - **Persistência:** `useEffect` grava `tasks` + `currentUserId` a cada mutação.
 - **Testes:** `src/services/storage.test.ts` com `localStorage` mockado (round-trip, sem dados, JSON corrompido, versão incompatível, shape inválido, clear).
 
-Pendente da D1 (tier **crítica**): arquitetura de **provider trocável** (`LocalStorageProvider`/`FutureApiProvider`) com troca por env var — preparação para backend real.
+Pendente da D1 (tier **crítica**) — passo 2: carregamento **assíncrono** com estado de "carregando" e tratamento de erro de rede, necessário quando o `FutureApiProvider` for implementado de verdade.
+
+## 6.7 Status de implementação — D1 crítica: provider trocável (2026-08-03)
+
+Implementado e verificado (98 testes passando, `tsc` + build verdes):
+
+- **Contrato:** `src/services/StorageProvider.ts` — interface `StorageProvider` (`load`/`save`/`clear`) + `LoadedState`.
+- **LocalStorageProvider:** lógica anterior movida para `providers/LocalStorageProvider.ts` (validação por tarefa, chave versionada `tarefas.app.v1`, filtro de inválidas) sem mudança de comportamento.
+- **FutureApiProvider (stub):** `providers/FutureApiProvider.ts` — ainda não faz chamadas de rede; `load()` retorna `null` (cai no seed) e avisa no console.
+- **Ponto único de troca:** `services/index.ts` seleciona o provider por `VITE_STORAGE_PROVIDER` (`local` padrão / `api`). Documentado em `.env.example`.
+- **Facade:** `services/storage.ts` continua exportando `loadState`/`saveState`/`clearState`/`STORAGE_KEY` — **`AppContext` e testes não mudaram**.
+- **Trocar o destino = mudar 1 env var; nada mais muda.**
+
+Pendente (passo 2, quando houver backend real): tornar `StorageProvider` assíncrono + estado de loading + tratamento de erro de rede.
 
 ## 6.3 Status de implementação — D10 a D13 (2026-08-03)
 
