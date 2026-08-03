@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, FilterX } from 'lucide-react';
+import { Check, ChevronDown, FilterX, Star } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { COLABORADORES } from '../../data/mockData';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
-import type { Filters, PrazoFilter, Priority, TaskStatus } from '../../types';
+import type { Filters, PrazoFilter, Priority, TaskSort, TaskStatus } from '../../types';
 
 function MultiSelect<T extends string>({
   label,
@@ -90,16 +90,27 @@ export default function FilterBar() {
 
   const prazoOptions: { value: PrazoFilter; label: string }[] = [
     { value: 'todas', label: 'Todas as datas' },
+    { value: 'hoje', label: 'Vencem hoje' },
     { value: 'vencidas', label: 'Vencidas' },
     { value: 'proximos7', label: 'Próximos 7 dias' },
     { value: 'semPrazo', label: 'Sem prazo' },
+  ];
+
+  const sortOptions: { value: TaskSort | null; label: string }[] = [
+    { value: null, label: 'Ordem original' },
+    { value: 'criadaEm', label: 'Data de criação' },
+    { value: 'titulo', label: 'Título' },
+    { value: 'prazo', label: 'Prazo' },
+    { value: 'prioridade', label: 'Prioridade' },
   ];
 
   const hasFilters =
     filters.status.length > 0 ||
     filters.prioridade.length > 0 ||
     filters.responsavel.length > 0 ||
-    filters.prazo !== 'todas';
+    filters.prazo !== 'todas' ||
+    filters.favoritas ||
+    filters.sortBy !== null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -114,6 +125,30 @@ export default function FilterBar() {
         {prazoOptions.map((p) => (
           <option key={p.value} value={p.value}>
             {p.label}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={() => update({ favoritas: !filters.favoritas })}
+        title="Apenas favoritas"
+        className={`inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition-colors ${
+          filters.favoritas
+            ? 'border-amber-400 text-amber-600 ring-2 ring-amber-100'
+            : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+        }`}
+      >
+        <Star className={`h-4 w-4 ${filters.favoritas ? 'fill-amber-400 text-amber-400' : ''}`} />
+        Favoritas
+      </button>
+      <select
+        value={filters.sortBy ?? ''}
+        onChange={(e) => update({ sortBy: (e.target.value || null) as TaskSort | null })}
+        title="Ordenar por"
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+      >
+        {sortOptions.map((s) => (
+          <option key={s.value ?? 'null'} value={s.value ?? ''}>
+            {s.label}
           </option>
         ))}
       </select>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatDateTime, isOverdue, isWithinDays } from './date';
+import { formatDate, formatDateTime, isDueToday, isOverdue, isWithinDays } from './date';
 
 const NOW = new Date('2026-08-03T12:00:00');
 
@@ -38,5 +38,20 @@ describe('isWithinDays', () => {
 
   it('prazo de ontem não está dentro de 7 dias', () => {
     expect(isWithinDays('2026-08-02T00:00:00', 7, NOW)).toBe(false);
+  });
+});
+
+describe('isDueToday', () => {
+  it('prazo de hoje é verdadeiro', () => {
+    expect(isDueToday('2026-08-03T00:00:00', NOW)).toBe(true);
+  });
+
+  it('prazo de ontem ou amanhã é falso', () => {
+    expect(isDueToday('2026-08-02T00:00:00', NOW)).toBe(false);
+    expect(isDueToday('2026-08-04T00:00:00', NOW)).toBe(false);
+  });
+
+  it('sem prazo nunca é hoje', () => {
+    expect(isDueToday(null, NOW)).toBe(false);
   });
 });

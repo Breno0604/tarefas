@@ -10,7 +10,8 @@ export type Priority = 'baixa' | 'media' | 'alta' | 'critica';
 export type Role = 'gestor' | 'colaborador';
 export type Section = 'visaoGeral' | 'tarefas' | 'colaboradores';
 export type TaskView = 'lista' | 'quadro';
-export type PrazoFilter = 'todas' | 'vencidas' | 'proximos7' | 'semPrazo';
+export type PrazoFilter = 'todas' | 'hoje' | 'vencidas' | 'proximos7' | 'semPrazo';
+export type TaskSort = 'criadaEm' | 'titulo' | 'prazo' | 'prioridade';
 
 export interface HistoryEntry {
   id: string;
@@ -31,6 +32,7 @@ export interface Task {
   prioridade: Priority;
   prazo: string | null; // ISO date (yyyy-mm-dd)
   status: TaskStatus;
+  favorita?: boolean; // padrão: false
   criadaEm: string; // ISO datetime
   historico: HistoryEntry[];
 }
@@ -49,6 +51,8 @@ export interface Filters {
   prioridade: Priority[];
   responsavel: string[]; // ids de colaboradores
   prazo: PrazoFilter;
+  favoritas: boolean;
+  sortBy: TaskSort | null; // null = ordem original (do seed)
 }
 
 export type ModalState =

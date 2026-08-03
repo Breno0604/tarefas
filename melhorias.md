@@ -4,7 +4,7 @@
 **Escopo da análise:** apenas o **ciclo de vida das tarefas** e o **comportamento do usuário** da versão do repositório https://github.com/Breno0604/lista_de_tarefas.git.
 **Fora de escopo:** layout/visual (nada foi copiado da outra versão).
 
-> **Status de implementação (2026-08-03):** a Leva 1 foi implementada — D2 (toasts), D3 (excluir), D4 (duplicar) e D5 (reabrir). Ver seção 6.
+> **Status de implementação (2026-08-03):** Leva 1 (D2–D5) e Leva 2 (D6–D9) implementadas. Ver seção 6.
 
 ---
 
@@ -104,4 +104,14 @@ Implementado e verificado (38 testes passando, `tsc` + build verdes):
 - **D5 — Reabrir conclusão:** transição `CONCLUIDA → EM_EXECUCAO` (colaborador) na máquina de estados; botão Reabrir na tabela, no kanban e no modal de detalhes.
 - **Bônus:** correção de bug latente em `TaskRow`/`TaskCard` (botão "Iniciar" duplicado ao lado de "Retomar" para tarefas DEVOLVIDA).
 
-Pendente para levas futuras: D1 (persistência), D6–D13 (fáceis), D11–D12 (moderadas).
+## 6.1 Status de implementação — Leva 2 (2026-08-03)
+
+Implementado e verificado (48 testes passando, `tsc` + build verdes):
+
+- **D6 — Favoritos:** campo `favorita` em `Task`, ação `TOGGLE_FAVORITE` no reducer, estrela na tabela/kanban/modal e filtro "Favoritas" na `FilterBar`.
+- **D7 — Ordenação:** `sortBy` em `Filters` (criadaEm, título, prazo, prioridade) aplicado no `filterTasks` + seletor na `FilterBar`; padrão mantém a ordem original.
+- **D8 — Filtro "Vencem hoje":** novo valor `hoje` em `PrazoFilter` + `isDueToday`.
+- **D9 — % de conclusão:** `percentConclusao` em `Indicators` + barra de progresso "Conclusão geral" no `KPICards` (visível nas seções Tarefas e Visão Geral).
+- **Bônus — correção de fuso:** `parsePrazo` em `date.ts` — datas `YYYY-MM-DD` agora são interpretadas como meia-noite **local** (o parse padrão usava UTC e deslocava o dia em fusos negativos, quebrando o filtro "hoje").
+
+Pendente para levas futuras: D1 (persistência), D10–D13 (fáceis) e D11–D12 (moderadas).

@@ -1,4 +1,4 @@
-import { ArrowDownToLine, CheckCircle2, Play, RotateCcw } from 'lucide-react';
+import { ArrowDownToLine, CheckCircle2, Play, RotateCcw, Star } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
@@ -63,18 +63,34 @@ export default function TaskCard({ task, onConfirmComplete }: TaskCardProps) {
       </p>
       <div className="mt-3 flex items-center justify-between">
         <DueDateCell task={task} />
-        {action && (
+        <div className="flex items-center">
           <span
             onClick={(e) => {
               e.stopPropagation();
-              changeStatus(action.target);
+              dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id });
             }}
-            title={action.label}
-            className={`rounded-lg p-1.5 ${action.cls}`}
+            title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
+            className={`rounded-lg p-1.5 transition-colors ${
+              task.favorita
+                ? 'text-amber-500'
+                : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500'
+            }`}
           >
-            <action.icon className="h-4 w-4" />
+            <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </span>
-        )}
+          {action && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                changeStatus(action.target);
+              }}
+              title={action.label}
+              className={`rounded-lg p-1.5 ${action.cls}`}
+            >
+              <action.icon className="h-4 w-4" />
+            </span>
+          )}
+        </div>
       </div>
     </button>
   );

@@ -6,6 +6,7 @@ import {
   Pencil,
   Play,
   RotateCcw,
+  Star,
   Trash2,
   UserCog,
 } from 'lucide-react';
@@ -104,6 +105,17 @@ export default function TaskRow({ task, onConfirmComplete, onDeleteRequest }: Ta
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <Eye className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
+            title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
+            className={`rounded-lg p-1.5 transition-colors ${
+              task.favorita
+                ? 'text-amber-500'
+                : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500'
+            }`}
+          >
+            <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
           {role === 'gestor' && (
             <>

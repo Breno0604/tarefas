@@ -35,6 +35,37 @@ describe('filterTasks', () => {
       result.every((t) => t.prazo !== null && new Date(t.prazo) < new Date('2026-08-03T00:00:00'))
     ).toBe(true);
   });
+
+  it('filtra apenas favoritas', () => {
+    const favorita = { ...TAREFAS[0], id: 'TA-FAV', favorita: true };
+    const result = filterTasks([TAREFAS[1], favorita], { ...EMPTY_FILTERS, favoritas: true }, nomes, NOW);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-FAV');
+  });
+
+  it('filtra por prazo vencendo hoje', () => {
+    const hoje = { ...TAREFAS[0], id: 'TA-HOJE', prazo: '2026-08-03' };
+    const result = filterTasks([TAREFAS[1], hoje], { ...EMPTY_FILTERS, prazo: 'hoje' }, nomes, NOW);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-HOJE');
+  });
+
+  it('ordena por título', () => {
+    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'titulo' }, nomes, NOW);
+    const titulos = result.map((t) => t.titulo);
+    expect([...titulos].sort((a, b) => a.localeCompare(b))).toEqual(titulos);
+  });
+
+  it('ordena por prazo (sem prazo por último)', () => {
+    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'prazo' }, nomes, NOW);
+    const prazos = result.map((t) => t.prazo ?? '');
+    expect([...prazos].sort()).toEqual(prazos);
+  });
+
+  it('ordena por prioridade (crítica primeiro)', () => {
+    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, nomes, NOW);
+    expect(result[0].prioridade).toBe('critica');
+  });
 });
 
 describe('computeIndicators', () => {
@@ -48,6 +79,12 @@ describe('computeIndicators', () => {
 
   it('existe pelo menos uma atrasada no seed', () => {
     expect(computeIndicators(TAREFAS, NOW).atrasadas).toBeGreaterThan(0);
+  });
+
+  it('percentual de conclusão é arredondado e 0 para lista vazia', () => {
+    const ind = computeIndicators(TAREFAS, NOW);
+    expect(ind.percentConclusao).toBe(Math.round((ind.finalizadas / ind.total) * 100));
+    expect(computeIndicators([], NOW).percentConclusao).toBe(0);
   });
 });
 

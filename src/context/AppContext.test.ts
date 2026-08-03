@@ -33,7 +33,7 @@ const baseState: AppState = {
   section: 'tarefas',
   view: 'lista',
   sidebarCollapsed: false,
-  filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas' },
+  filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, sortBy: null },
   modal: { type: 'none' },
 };
 
@@ -167,5 +167,12 @@ describe('appReducer — CREATE_TASK / REASSIGN', () => {
   it('excluir tarefa inexistente não altera o estado', () => {
     const next = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-999' });
     expect(next).toBe(baseState);
+  });
+
+  it('alterna o favorito da tarefa', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_FAVORITE', taskId: 'TA-001' });
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.favorita).toBe(true);
+    const back = appReducer(next, { type: 'TOGGLE_FAVORITE', taskId: 'TA-001' });
+    expect(back.tasks.find((t) => t.id === 'TA-001')!.favorita).toBe(false);
   });
 });

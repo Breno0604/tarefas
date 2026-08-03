@@ -36,7 +36,8 @@ export type AppAction =
   | { type: 'CHANGE_STATUS'; taskId: string; novoStatus: TaskStatus; usuario: string; observacao?: string }
   | { type: 'REASSIGN'; taskId: string; responsavelId: string; usuario: string; observacao: string }
   | { type: 'DUPLICATE_TASK'; taskId: string; usuario: string }
-  | { type: 'DELETE_TASK'; taskId: string };
+  | { type: 'DELETE_TASK'; taskId: string }
+  | { type: 'TOGGLE_FAVORITE'; taskId: string };
 
 const initialState: AppState = {
   tasks: TAREFAS,
@@ -157,6 +158,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (!state.tasks.some((t) => t.id === action.taskId)) return state;
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.taskId) };
     }
+    case 'TOGGLE_FAVORITE':
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId ? { ...t, favorita: !t.favorita } : t
+        ),
+      };
     default:
       return state;
   }

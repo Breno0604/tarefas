@@ -52,27 +52,41 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon;
-        return (
-          <button
-            key={kpi.key}
-            onClick={kpi.onClick}
-            className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md ${
-              kpi.active ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'
-            }`}
-          >
-            <div className={`rounded-lg p-2 ${kpi.color}`}>
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold text-slate-800">{kpi.value}</p>
-              <p className="truncate text-xs text-slate-500">{kpi.label}</p>
-            </div>
-          </button>
-        );
-      })}
+    <div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <button
+              key={kpi.key}
+              onClick={kpi.onClick}
+              className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md ${
+                kpi.active ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'
+              }`}
+            >
+              <div className={`rounded-lg p-2 ${kpi.color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-slate-800">{kpi.value}</p>
+                <p className="truncate text-xs text-slate-500">{kpi.label}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="mb-1.5 flex items-center justify-between text-xs">
+          <span className="font-medium text-slate-500">Conclusão geral</span>
+          <span className="font-semibold text-slate-700">{indicators.percentConclusao}%</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{ width: `${indicators.percentConclusao}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

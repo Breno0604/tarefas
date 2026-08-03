@@ -1,5 +1,14 @@
 import type { TaskStatus } from '../types';
 
+/** Interpreta 'YYYY-MM-DD' como meia-noite LOCAL (o parse padrão de date-only usa UTC e desloca o dia em fusos negativos). */
+function parsePrazo(prazo: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(prazo);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(prazo);
+}
+
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR');
 }
@@ -23,7 +32,7 @@ export function isOverdue(
   now: Date = new Date()
 ): boolean {
   if (!prazo || status === 'FINALIZADA') return false;
-  return new Date(prazo) < startOfToday(now);
+  return parsePrazo(prazo) < startOfToday(now);
 }
 
 export function isWithinDays(
@@ -32,8 +41,17 @@ export function isWithinDays(
   now: Date = new Date()
 ): boolean {
   if (!prazo) return false;
-  const prazoDate = new Date(prazo);
+  const prazoDate = parsePrazo(prazo);
   const limit = new Date(startOfToday(now));
   limit.setDate(limit.getDate() + days);
   return prazoDate >= startOfToday(now) && prazoDate <= limit;
+}
+
+export function isDueToday(prazo: string | null, now: Date = new Date()): boolean {
+  if (!prazo) return false;
+  const prazoDate = parsePrazo(prazo);
+  const hoje = startOfToday(now);
+  const amanha = new Date(hoje);
+  amanha.setDate(amanha.getDate() + 1);
+  return prazoDate >= hoje && prazoDate < amanha;
 }

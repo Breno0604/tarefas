@@ -1,5 +1,6 @@
-import type { Colaborador, Filters, Task, TaskStatus } from '../types';
-import { isOverdue, isWithinDays } from './date';
+import type { Colaborador, Filters, Task, TaskSort, TaskStatus } from '../types';
+import { isDueToday, isOverdue, isWithinDays } from './date';
+import { PRIORITY_RANK } from './status';
 
 export const EMPTY_FILTERS: Filters = {
   search: '',
@@ -7,6 +8,15 @@ export const EMPTY_FILTERS: Filters = {
   prioridade: [],
   responsavel: [],
   prazo: 'todas',
+  favoritas: false,
+  sortBy: null,
+};
+
+const SORTERS: Record<TaskSort, (a: Task, b: Task) => number> = {
+  criadaEm: (a, b) => a.criadaEm.localeCompare(b.criadaEm),
+  titulo: (a, b) => a.titulo.localeCompare(b.titulo),
+  prazo: (a, b) => (a.prazo ?? '').localeCompare(b.prazo ?? ''),
+  prioridade: (a, b) => PRIORITY_RANK[a.prioridade] - PRIORITY_RANK[b.prioridade],
 };
 
 export function filterTasks(
@@ -16,7 +26,7 @@ export function filterTasks(
   now: Date = new Date()
 ): Task[] {
   const q = filters.search.trim().toLowerCase();
-  return tasks.filter((t) => {
+  const out = tasks.filter((t) => {
     if (q) {
       const responsavel = nomePorId[t.responsavelId] ?? '';
       const hay = `${t.id} ${t.titulo} ${t.descricao} ${responsavel}`.toLowerCase();
@@ -25,11 +35,15 @@ export function filterTasks(
     if (filters.status.length > 0 && !filters.status.includes(t.status)) return false;
     if (filters.prioridade.length > 0 && !filters.prioridade.includes(t.prioridade)) return false;
     if (filters.responsavel.length > 0 && !filters.responsavel.includes(t.responsavelId)) return false;
+    if (filters.favoritas && !t.favorita) return false;
+    if (filters.prazo === 'hoje' && !isDueToday(t.prazo, now)) return false;
     if (filters.prazo === 'vencidas' && !isOverdue(t.prazo, t.status, now)) return false;
     if (filters.prazo === 'proximos7' && !isWithinDays(t.prazo, 7, now)) return false;
     if (filters.prazo === 'semPrazo' && t.prazo !== null) return false;
     return true;
   });
+  if (filters.sortBy) return [...out].sort(SORTERS[filters.sortBy]);
+  return out;
 }
 
 export interface Indicators {
@@ -41,10 +55,12 @@ export interface Indicators {
   devolvidas: number;
   finalizadas: number;
   atrasadas: number;
+  percentConclusao: number; // 0–100
 }
 
 export function computeIndicators(tasks: Task[], now: Date = new Date()): Indicators {
   const count = (s: TaskStatus) => tasks.filter((t) => t.status === s).length;
+  const finalizadas = count('FINALIZADA');
   return {
     total: tasks.length,
     novas: count('NOVA'),
@@ -52,8 +68,9 @@ export function computeIndicators(tasks: Task[], now: Date = new Date()): Indica
     emExecucao: count('EM_EXECUCAO'),
     concluidas: count('CONCLUIDA'),
     devolvidas: count('DEVOLVIDA'),
-    finalizadas: count('FINALIZADA'),
+    finalizadas,
     atrasadas: tasks.filter((t) => isOverdue(t.prazo, t.status, now)).length,
+    percentConclusao: tasks.length === 0 ? 0 : Math.round((finalizadas / tasks.length) * 100),
   };
 }
 

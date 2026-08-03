@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, History, Pencil, Trash2, UserCog } from 'lucide-react';
+import { Copy, History, Pencil, Star, Trash2, UserCog } from 'lucide-react';
 import { useApp, roleOf } from '../../context/AppContext';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
@@ -142,6 +142,17 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
             <span className="text-xs font-semibold text-slate-400">{task.id}</span>
             <StatusBadge status={task.status} />
             <PriorityBadge prioridade={task.prioridade} />
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
+              title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
+              className={`ml-auto rounded-lg p-1.5 transition-colors ${
+                task.favorita
+                  ? 'text-amber-500'
+                  : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500'
+              }`}
+            >
+              <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
+            </button>
           </div>
           <h3 className="mt-2 text-lg font-semibold text-slate-800">{task.titulo}</h3>
           <p className="mt-1 text-sm leading-relaxed text-slate-600">{task.descricao || 'Sem descrição.'}</p>
