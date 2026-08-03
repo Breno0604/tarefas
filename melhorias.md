@@ -138,6 +138,21 @@ Implementado e verificado (98 testes passando, `tsc` + build verdes):
 
 Pendente (passo 2, quando houver backend real): tornar `StorageProvider` assíncrono + estado de loading + tratamento de erro de rede.
 
+## 6.8 Correções pós-revisão completa (2026-08-03)
+
+Revisão em 5 frentes (objetivo, QA hands-on, qualidade, segurança, contexto) — 4/5 PASS sem bloqueios; implementadas as recomendações:
+
+1. **Validação de dados persistidos:** `isTask` agora valida enums (`status`/`prioridade`), formato de `prazo`, tipos dos campos opcionais e o shape de cada entrada de `historico` (5 testes novos).
+2. **"Atrasadas" na Visão Geral:** usa `EMPTY_FILTERS` + `prazo: 'vencidas'` (não herda mais filtros ativos da seção Tarefas); `proximas` memoizado.
+3. **`nextTaskId` extraído** para `utils/tasks.ts` e usado em `TaskFormModal`, `TaskQuickAdd` e `DUPLICATE_TASK` (fim da duplicação em 3 locais).
+4. **Confirmação de conclusão no modal de detalhes** (alinhado com tabela/kanban) e **texto de exclusão honesto** ("Você poderá desfazer pelo aviso exibido em seguida" — antes dizia "não pode ser desfeita").
+5. **Pilha de undo limpa:** `TOGGLE_FAVORITE` e `REORDER_TASKS` não empilham mais `past` (sem toast → undo ficaria confuso).
+6. **`concluidaEm` exibido** no modal de detalhes (nova célula "Concluída em").
+7. **Acessibilidade:** `Modal` com `role="dialog"`, `aria-modal`, `aria-label` e **trap de foco** (sem conflito com modais empilhados); `htmlFor`/`id` em `ReassignModal`, `ApproveModal` e `ReturnModal`.
+8. **Responsividade + repo:** sidebar colapsa automaticamente < 1024px; `.gitignore` inclui `.omo/`, `coverage/`, `.env.local`, `*.log`, `.playwright-mcp/` (`.omo` untracked).
+
+Bônus: `colaboradorResumo` corrigido para nomes de uma palavra. **Total: 109 testes.**
+
 ## 6.3 Status de implementação — D10 a D13 (2026-08-03)
 
 Implementado e verificado (66 testes passando, `tsc` + build verdes):

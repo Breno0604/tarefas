@@ -1,2 +1,12 @@
 node_modules/
 dist/
+coverage/
+
+# Ambiente
+.env.local
+.env.*.local
+*.log
+
+# Ferramentas/agentes (estado de sessão local)
+.omo/
+.playwright-mcp/
