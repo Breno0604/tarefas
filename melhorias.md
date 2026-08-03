@@ -177,6 +177,16 @@ Refatoração pura (sem mudança de comportamento) cobrindo os achados da audito
 
 **Total: 118 testes** (eram 115; +3 `createTask`), build limpo, grafo de imports acíclico.
 
+## 6.11 Cobertura de testes de componente completa (2026-08-03)
+
+Fechada a lacuna de testabilidade da auditoria (regra 16) — os 3 componentes sem teste agora têm cobertura:
+
+- **`Sidebar.test.tsx`** (6 testes): itens de navegação, atalhos (Atrasadas/Finalizadas/Devolvidas), clique em "Atrasadas" navega + aplica filtro `vencidas`, troca de usuário via select, colapso w-64↔w-16 e abertura do modal de colaborador. Com mock de `window.matchMedia` (jsdom não implementa).
+- **`TaskKanban.test.tsx`** (8 testes): 6 colunas com `StatusBadge`, cards com títulos, empty states distintos e **drag-and-drop** (validação de transição por papel — gestor CONCLUIDA→FINALIZADA ok; NOVA→CONCLUIDA bloqueado; colaborador NOVA→RECEBIDA ok; CONCLUIDA→FINALIZADA bloqueado), via `fireEvent` com `dataTransfer` mock (padrão do `TasksTable.test`).
+- **`KPICards.test.tsx`** (5 testes): valores dos 8 KPIs derivados do seed (16/2/2/3/3/2/4/3), barra de conclusão 25%, e cliques que navegam + filtram (Novas→status NOVA, Atrasadas→vencidas, Total→reset).
+
+**Total: 137 testes** (eram 118; +19), build limpo.
+
 ## 6.3 Status de implementação — D10 a D13 (2026-08-03)
 
 Implementado e verificado (66 testes passando, `tsc` + build verdes):
