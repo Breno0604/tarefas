@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useApp, roleOf } from '../../context/AppContext';
 import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
-import { nextTaskId } from '../../utils/tasks';
+import { createTask } from '../../utils/tasks';
 
 export default function TaskQuickAdd() {
   const { state, dispatch } = useApp();
@@ -11,32 +11,21 @@ export default function TaskQuickAdd() {
   const submit = () => {
     const v = titulo.trim();
     if (!v) return;
-    const now = new Date().toISOString();
     dispatch({
       type: 'CREATE_TASK',
-      task: {
-        id: nextTaskId(state.tasks),
-        titulo: v,
-        descricao: '',
-        responsavelId:
-          roleOf(state.currentUserId) === 'gestor' ? COLABORADORES[0].id : state.currentUserId,
-        criadorId: state.currentUserId,
-        prioridade: 'media',
-        prazo: null,
-        status: 'NOVA',
-        criadaEm: now,
-        historico: [
-          {
-            id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            dataHora: now,
-            usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-            statusAnterior: null,
-            novoStatus: 'NOVA',
-            tipo: 'status',
-            observacao: 'Tarefa criada.',
-          },
-        ],
-      },
+      task: createTask(
+        state.tasks,
+        {
+          titulo: v,
+          descricao: '',
+          responsavelId:
+            roleOf(state.currentUserId) === 'gestor' ? COLABORADORES[0].id : state.currentUserId,
+          criadorId: state.currentUserId,
+          prioridade: 'media',
+          prazo: null,
+        },
+        NOME_POR_ID[state.currentUserId] ?? state.currentUserId
+      ),
     });
     setTitulo('');
   };

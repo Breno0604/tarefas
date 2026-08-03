@@ -4,6 +4,7 @@ import {
   colaboradorMetrics,
   colaboradorResumo,
   computeIndicators,
+  createTask,
   EMPTY_FILTERS,
   filterTasks,
   hasActiveFilters,
@@ -157,7 +158,72 @@ describe('nextTaskId / colaboradorResumo', () => {
   });
 
   it('iniciais de nome de uma palavra usam uma letra só', () => {
-    const resumo = colaboradorResumo({ id: 'x', nome: 'Pedro', cargo: '', email: '', cor: '#000' });
+    const resumo = colaboradorResumo('Pedro');
     expect(resumo.iniciais).toBe('P');
+  });
+});
+
+describe('createTask', () => {
+  it('gera id sequencial, status NOVA e entrada de histórico de criação', () => {
+    const task = createTask(
+      TAREFAS,
+      {
+        titulo: 'Nova tarefa',
+        descricao: 'desc',
+        responsavelId: 'ana',
+        criadorId: 'carlos',
+        prioridade: 'alta',
+        prazo: '2026-08-10',
+      },
+      'Carlos Mendes'
+    );
+    expect(task.id).toBe('TA-017');
+    expect(task.status).toBe('NOVA');
+    expect(task.criadaEm).toBeDefined();
+    expect(task.historico).toHaveLength(1);
+    expect(task.historico[0]).toMatchObject({
+      tipo: 'status',
+      statusAnterior: null,
+      novoStatus: 'NOVA',
+      usuario: 'Carlos Mendes',
+    });
+  });
+
+  it('omite categoria vazia e tags vazias', () => {
+    const task = createTask(
+      TAREFAS,
+      {
+        titulo: 'X',
+        descricao: '',
+        responsavelId: 'ana',
+        criadorId: 'carlos',
+        prioridade: 'media',
+        prazo: null,
+        categoria: '',
+        tags: [],
+      },
+      'Carlos Mendes'
+    );
+    expect(task.categoria).toBeUndefined();
+    expect(task.tags).toBeUndefined();
+  });
+
+  it('preserva categoria e tags quando preenchidos', () => {
+    const task = createTask(
+      TAREFAS,
+      {
+        titulo: 'X',
+        descricao: '',
+        responsavelId: 'ana',
+        criadorId: 'carlos',
+        prioridade: 'media',
+        prazo: null,
+        categoria: 'Marketing',
+        tags: ['email', 'urgente'],
+      },
+      'Carlos Mendes'
+    );
+    expect(task.categoria).toBe('Marketing');
+    expect(task.tags).toEqual(['email', 'urgente']);
   });
 });

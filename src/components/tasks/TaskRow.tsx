@@ -104,7 +104,7 @@ export default function TaskRow({
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
             style={{ backgroundColor: responsavel?.cor ?? '#64748b' }}
           >
-            {colaboradorResumo(responsavel ?? { nome: '?', cargo: '', email: '', cor: '#64748b', id: '' }).iniciais}
+            {colaboradorResumo(responsavel?.nome ?? '?').iniciais}
           </span>
           <span className="text-sm text-slate-600">{responsavel?.nome.split(' ')[0]}</span>
         </div>

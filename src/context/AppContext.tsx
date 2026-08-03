@@ -8,8 +8,9 @@ import {
   type ReactNode,
 } from 'react';
 import { GESTOR_ID, TAREFAS } from '../data/mockData';
-import type { Filters, HistoryEntry, ModalState, Section, Task, TaskStatus, TaskView } from '../types';
+import type { Filters, ModalState, Section, Task, TaskStatus, TaskView } from '../types';
 import { canTransition } from '../utils/status';
+import { newHistoryEntry } from '../utils/history';
 import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
 import { loadState, saveState } from '../services/storage';
 import { useToast } from './ToastContext';
@@ -54,24 +55,6 @@ const initialState: AppState = {
   modal: { type: 'none' },
   past: [],
 };
-
-function newHistoryEntry(
-  usuario: string,
-  statusAnterior: TaskStatus | null,
-  novoStatus: TaskStatus | null,
-  tipo: HistoryEntry['tipo'],
-  observacao?: string
-): HistoryEntry {
-  return {
-    id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    dataHora: new Date().toISOString(),
-    usuario,
-    statusAnterior,
-    novoStatus,
-    tipo,
-    observacao,
-  };
-}
 
 export function roleOf(userId: string): 'gestor' | 'colaborador' {
   return userId === GESTOR_ID ? 'gestor' : 'colaborador';
@@ -241,8 +224,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   return { ...next, past: [...state.past, state.tasks].slice(-UNDO_LIMIT) };
 }
 
-const STATUS_TOAST: Record<TaskStatus, string> = {
-  NOVA: 'Tarefa criada',
+// Sem 'NOVA': CREATE_TASK tem toast próprio no switch de toastMessage.
+const STATUS_TOAST: Partial<Record<TaskStatus, string>> = {
   RECEBIDA: 'Tarefa recebida',
   EM_EXECUCAO: 'Tarefa em execução',
   CONCLUIDA: 'Tarefa concluída — aguardando análise',

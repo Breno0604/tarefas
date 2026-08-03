@@ -3,7 +3,7 @@ import type { Priority } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
 import { PRIORITY_LABELS } from '../../utils/status';
-import { nextTaskId } from '../../utils/tasks';
+import { createTask } from '../../utils/tasks';
 import Modal from '../modal/Modal';
 
 interface TaskFormModalProps {
@@ -47,33 +47,25 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
         },
       });
     } else {
-      const now = new Date().toISOString();
       dispatch({
         type: 'CREATE_TASK',
-        task: {
-          id: nextTaskId(state.tasks),
-          titulo: titulo.trim(),
-          descricao: descricao.trim(),
-          responsavelId,
-          criadorId: state.currentUserId,
-          prioridade,
-          prazo: prazo || null,
-          status: 'NOVA',
-          categoria: categoria.trim() || undefined,
-          tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-          criadaEm: now,
-          historico: [
-            {
-              id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              dataHora: now,
-              usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-              statusAnterior: null,
-              novoStatus: 'NOVA',
-              tipo: 'status',
-              observacao: 'Tarefa criada.',
-            },
-          ],
-        },
+        task: createTask(
+          state.tasks,
+          {
+            titulo: titulo.trim(),
+            descricao: descricao.trim(),
+            responsavelId,
+            criadorId: state.currentUserId,
+            prioridade,
+            prazo: prazo || null,
+            categoria: categoria.trim() || undefined,
+            tags: tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean),
+          },
+          NOME_POR_ID[state.currentUserId] ?? state.currentUserId
+        ),
       });
     }
     onClose();

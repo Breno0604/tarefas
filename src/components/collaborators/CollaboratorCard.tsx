@@ -6,7 +6,7 @@ import { colaboradorMetrics, colaboradorResumo } from '../../utils/tasks';
 export default function CollaboratorCard({ colaborador }: { colaborador: Colaborador }) {
   const { state, dispatch } = useApp();
   const m = colaboradorMetrics(colaborador.id, state.tasks);
-  const iniciais = colaboradorResumo(colaborador).iniciais;
+  const iniciais = colaboradorResumo(colaborador.nome).iniciais;
 
   const open = () =>
     dispatch({ type: 'OPEN_MODAL', modal: { type: 'colaborador', colaboradorId: colaborador.id } });

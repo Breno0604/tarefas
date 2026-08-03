@@ -138,7 +138,7 @@ export default function Sidebar() {
         )}
         {COLABORADORES.map((c) => {
           const metrics = colaboradorMetrics(c.id, state.tasks);
-          const iniciais = colaboradorResumo(c).iniciais;
+          const iniciais = colaboradorResumo(c.nome).iniciais;
           return (
             <button
               key={c.id}
@@ -180,7 +180,7 @@ export default function Sidebar() {
               className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
               style={{ backgroundColor: findUser(state.currentUserId)?.cor ?? '#64748b' }}
             >
-              {colaboradorResumo(findUser(state.currentUserId) ?? GESTOR).iniciais}
+              {colaboradorResumo((findUser(state.currentUserId) ?? GESTOR).nome).iniciais}
             </span>
             <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
           </div>

@@ -18,7 +18,7 @@ export default function CollaboratorDetailModal({ colaboradorId, onClose }: Coll
 
   const m = colaboradorMetrics(colaborador.id, state.tasks);
   const tarefas = state.tasks.filter((t) => t.responsavelId === colaborador.id);
-  const iniciais = colaboradorResumo(colaborador).iniciais;
+  const iniciais = colaboradorResumo(colaborador.nome).iniciais;
 
   return (
     <Modal open title="Colaborador" onClose={onClose} size="lg">

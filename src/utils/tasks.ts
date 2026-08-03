@@ -1,6 +1,7 @@
-import type { Colaborador, Filters, Task, TaskSort, TaskStatus } from '../types';
+import type { Filters, Priority, Task, TaskSort, TaskStatus } from '../types';
 import { isDueToday, isOverdue, isWithinDays } from './date';
 import { PRIORITY_RANK } from './status';
+import { newHistoryEntry } from './history';
 
 export const EMPTY_FILTERS: Filters = {
   search: '',
@@ -123,8 +124,8 @@ export function colaboradorMetrics(
   };
 }
 
-export function colaboradorResumo(colaborador: Colaborador): { iniciais: string } {
-  const partes = colaborador.nome.trim().split(/\s+/);
+export function colaboradorResumo(nome: string): { iniciais: string } {
+  const partes = nome.trim().split(/\s+/);
   const primeiro = partes[0]?.[0] ?? '';
   const ultimo = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? '') : '';
   return { iniciais: (primeiro + ultimo).toUpperCase() };
@@ -137,4 +138,37 @@ export function nextTaskId(tasks: Task[]): string {
     return Number.isFinite(n) ? Math.max(max, n) : max;
   }, 0);
   return `TA-${String(maxNum + 1).padStart(3, '0')}`;
+}
+
+export interface NewTaskInput {
+  titulo: string;
+  descricao: string;
+  responsavelId: string;
+  criadorId: string;
+  prioridade: Priority;
+  prazo: string | null;
+  categoria?: string;
+  tags?: string[];
+}
+
+/**
+ * Monta uma tarefa NOVA pronta para CREATE_TASK: id sequencial, timestamps
+ * e entrada de histórico de criação. Unifica TaskFormModal e TaskQuickAdd.
+ */
+export function createTask(tasks: Task[], input: NewTaskInput, usuario: string): Task {
+  const agora = new Date().toISOString();
+  return {
+    id: nextTaskId(tasks),
+    titulo: input.titulo,
+    descricao: input.descricao,
+    responsavelId: input.responsavelId,
+    criadorId: input.criadorId,
+    prioridade: input.prioridade,
+    prazo: input.prazo,
+    status: 'NOVA',
+    ...(input.categoria ? { categoria: input.categoria } : {}),
+    ...(input.tags && input.tags.length > 0 ? { tags: input.tags } : {}),
+    criadaEm: agora,
+    historico: [newHistoryEntry(usuario, null, 'NOVA', 'status', 'Tarefa criada.')],
+  };
 }

@@ -177,7 +177,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold text-white"
               style={{ backgroundColor: responsavel?.cor ?? '#64748b' }}
             >
-              {colaboradorResumo(responsavel ?? { nome: '?', cargo: '', email: '', cor: '#64748b', id: '' }).iniciais}
+              {colaboradorResumo(responsavel?.nome ?? '?').iniciais}
             </span>
             <div>
               <p className="text-[11px] text-slate-400">Responsável</p>
