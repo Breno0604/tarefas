@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   type Dispatch,
@@ -10,6 +11,7 @@ import { GESTOR_ID, TAREFAS } from '../data/mockData';
 import type { Filters, HistoryEntry, ModalState, Section, Task, TaskStatus, TaskView } from '../types';
 import { canTransition } from '../utils/status';
 import { EMPTY_FILTERS } from '../utils/tasks';
+import { loadState, saveState } from '../services/storage';
 import { useToast } from './ToastContext';
 
 export interface AppState {
@@ -205,9 +207,25 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+function initState(): AppState {
+  const saved = loadState();
+  if (saved) {
+    return {
+      ...initialState,
+      tasks: saved.tasks,
+      currentUserId: saved.currentUserId,
+    };
+  }
+  return initialState;
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, initialState, initState);
   const toast = useToast();
+
+  useEffect(() => {
+    saveState({ tasks: state.tasks, currentUserId: state.currentUserId });
+  }, [state.tasks, state.currentUserId]);
 
   const dispatchWithToast = (action: AppAction) => {
     const next = appReducer(state, action);

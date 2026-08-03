@@ -4,7 +4,7 @@
 **Escopo da análise:** apenas o **ciclo de vida das tarefas** e o **comportamento do usuário** da versão do repositório https://github.com/Breno0604/lista_de_tarefas.git.
 **Fora de escopo:** layout/visual (nada foi copiado da outra versão).
 
-> **Status de implementação (2026-08-03):** Leva 1 (D2–D5) e Leva 2 (D6–D9) implementadas. Ver seção 6.
+> **Status de implementação (2026-08-03):** Leva 1 (D2–D5), Leva 2 (D6–D9) e **D1 parcial (persistência em localStorage)** implementadas. Ver seção 6.
 
 ---
 
@@ -114,4 +114,14 @@ Implementado e verificado (48 testes passando, `tsc` + build verdes):
 - **D9 — % de conclusão:** `percentConclusao` em `Indicators` + barra de progresso "Conclusão geral" no `KPICards` (visível nas seções Tarefas e Visão Geral).
 - **Bônus — correção de fuso:** `parsePrazo` em `date.ts` — datas `YYYY-MM-DD` agora são interpretadas como meia-noite **local** (o parse padrão usava UTC e deslocava o dia em fusos negativos, quebrando o filtro "hoje").
 
-Pendente para levas futuras: D1 (persistência), D10–D13 (fáceis) e D11–D12 (moderadas).
+## 6.2 Status de implementação — D1 parcial: persistência em localStorage (2026-08-03)
+
+Implementado e verificado (54 testes passando, `tsc` + build verdes):
+
+- **Camada de storage:** novo `src/services/storage.ts` — `loadState`/`saveState`/`clearState` com **chave de versão** (`tarefas.app.v1`); JSON corrompido, shape inválido ou versão incompatível caem no seed (retorno `null`).
+- **Hidratação:** `AppProvider` usa lazy init (`useReducer(appReducer, initialState, initState)`) — se há estado salvo, restaura **tarefas + histórico + usuário atual**; senão, usa o seed (equivale ao "seed se vazio").
+- **Persistência:** `useEffect` grava `tasks` + `currentUserId` a cada mutação.
+- **Testes:** `src/services/storage.test.ts` com `localStorage` mockado (round-trip, sem dados, JSON corrompido, versão incompatível, shape inválido, clear).
+
+Pendente da D1 (tier **crítica**): arquitetura de **provider trocável** (`LocalStorageProvider`/`FutureApiProvider`) com troca por env var — preparação para backend real.
+Pendente para levas futuras: D10–D13 (fáceis) e D11–D12 (moderadas).
