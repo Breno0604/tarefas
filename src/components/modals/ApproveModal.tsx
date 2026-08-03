@@ -48,8 +48,9 @@ export default function ApproveModal({ taskId, onClose }: ApproveModalProps) {
           marcada como <span className="font-semibold text-emerald-600">Finalizada</span>.
         </p>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Observação (opcional)</label>
+          <label htmlFor="approve-observacao" className="mb-1 block text-sm font-medium text-slate-700">Observação (opcional)</label>
           <textarea
+            id="approve-observacao"
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             rows={3}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -19,9 +20,21 @@ const NAV: { section: Section; label: string; icon: typeof LayoutDashboard }[] =
   { section: 'colaboradores', label: 'Colaboradores', icon: Users },
 ];
 
+function useNarrowSidebar(): boolean {
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 1023px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const onChange = () => setNarrow(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
+
 export default function Sidebar() {
   const { state, dispatch } = useApp();
-  const collapsed = state.sidebarCollapsed;
+  // Abaixo de 1024px a sidebar fica sempre recolhida (ícones); o botão continua para telas largas.
+  const collapsed = state.sidebarCollapsed || useNarrowSidebar();
 
   const goTo = (section: Section) => dispatch({ type: 'SET_SECTION', section });
 

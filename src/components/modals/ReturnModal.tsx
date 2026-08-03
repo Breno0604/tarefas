@@ -55,10 +55,11 @@ export default function ReturnModal({ taskId, onClose }: ReturnModalProps) {
           para o colaborador em <span className="font-semibold text-rose-600">Devolvida</span>.
         </p>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="return-observacao" className="mb-1 block text-sm font-medium text-slate-700">
             Motivo da devolução *
           </label>
           <textarea
+            id="return-observacao"
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             rows={3}
