@@ -10,7 +10,7 @@ import {
 import { GESTOR_ID, TAREFAS } from '../data/mockData';
 import type { Filters, HistoryEntry, ModalState, Section, Task, TaskStatus, TaskView } from '../types';
 import { canTransition } from '../utils/status';
-import { EMPTY_FILTERS } from '../utils/tasks';
+import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
 import { loadState, saveState } from '../services/storage';
 import { useToast } from './ToastContext';
 
@@ -175,14 +175,10 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'DUPLICATE_TASK': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
-      const maxNum = state.tasks.reduce((max, t) => {
-        const n = Number(t.id.replace(/\D/g, ''));
-        return Number.isFinite(n) ? Math.max(max, n) : max;
-      }, 0);
       const agora = new Date().toISOString();
       const copy: Task = {
         ...task,
-        id: `TA-${String(maxNum + 1).padStart(3, '0')}`,
+        id: nextTaskId(state.tasks),
         status: 'NOVA',
         favorita: false,
         criadaEm: agora,
@@ -226,6 +222,9 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
 
 const UNDO_LIMIT = 50;
 
+/** Ações que mudam tarefas mas NÃO entram na pilha de undo (sem toast; undo seria confuso). */
+const NO_UNDO: ReadonlySet<AppAction['type']> = new Set(['TOGGLE_FAVORITE', 'REORDER_TASKS']);
+
 /**
  * Reducer público: aplica a ação e empilha o estado anterior em `past` sempre que
  * as tarefas mudam (base para o Desfazer). UNDO é tratado aqui, fora da pilha.
@@ -238,6 +237,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   }
   const next = appReducerCore(state, action);
   if (next.tasks === state.tasks) return next;
+  if (NO_UNDO.has(action.type)) return next;
   return { ...next, past: [...state.past, state.tasks].slice(-UNDO_LIMIT) };
 }
 

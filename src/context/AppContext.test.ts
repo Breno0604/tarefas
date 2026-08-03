@@ -294,4 +294,22 @@ describe('appReducer — guards (sem mutação fantasma)', () => {
     expect(next.filters.favoritas).toBe(false);
     expect(next.filters.search).toBe('');
   });
+
+  it('TOGGLE_FAVORITE não empilha undo', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_FAVORITE', taskId: 'TA-001' });
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.favorita).toBe(true);
+    expect(next.past).toHaveLength(0);
+  });
+
+  it('REORDER_TASKS não empilha undo', () => {
+    const next = appReducer(baseState, { type: 'REORDER_TASKS', taskId: 'TA-002', toTaskId: 'TA-001' });
+    expect(next.tasks.map((t) => t.id)).toEqual(['TA-002', 'TA-001']);
+    expect(next.past).toHaveLength(0);
+  });
+
+  it('DELETE_TASK empilha undo', () => {
+    const next = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-001' });
+    expect(next.tasks).toHaveLength(1);
+    expect(next.past).toHaveLength(1);
+  });
 });

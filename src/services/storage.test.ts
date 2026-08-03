@@ -73,6 +73,65 @@ describe('storage', () => {
     expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
   });
 
+  it('descarta tarefa com status fora do enum', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), status: 'XPTO' };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+    );
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta tarefa com prioridade fora do enum', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), prioridade: 'ultra' };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+    );
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta tarefa com prazo fora do formato de data', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), prazo: 'amanhã' };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+    );
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta tarefa com entrada de histórico malformada', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), historico: [{ id: 1 }] };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+    );
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('mantém tarefa completa com campos opcionais válidos', () => {
+    const completa = {
+      ...fakeTask('TA-OK'),
+      favorita: true,
+      categoria: 'Dev',
+      tags: ['a', 'b'],
+      atualizadaEm: '2026-08-03T10:00:00',
+      concluidaEm: '2026-08-03T11:00:00',
+      historico: [
+        {
+          id: 'h1',
+          dataHora: '2026-08-03T10:00:00',
+          usuario: 'Carlos Mendes',
+          statusAnterior: null,
+          novoStatus: 'NOVA',
+          tipo: 'status',
+        },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, tasks: [completa] }));
+    expect(loadState()).toEqual({ tasks: [completa] });
+  });
+
   it('clearState remove os dados', () => {
     saveState({ tasks: [fakeTask('TA-001')] });
     clearState();

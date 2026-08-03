@@ -113,6 +113,16 @@ export function colaboradorMetrics(
 
 export function colaboradorResumo(colaborador: Colaborador): { iniciais: string } {
   const partes = colaborador.nome.trim().split(/\s+/);
-  const iniciais = (partes[0]?.[0] ?? '') + (partes[partes.length - 1]?.[0] ?? '');
-  return { iniciais: iniciais.toUpperCase() };
+  const primeiro = partes[0]?.[0] ?? '';
+  const ultimo = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? '') : '';
+  return { iniciais: (primeiro + ultimo).toUpperCase() };
+}
+
+/** Gera o próximo id sequencial (TA-NNN) a partir das tarefas existentes. */
+export function nextTaskId(tasks: Task[]): string {
+  const maxNum = tasks.reduce((max, t) => {
+    const n = Number(t.id.replace(/\D/g, ''));
+    return Number.isFinite(n) ? Math.max(max, n) : max;
+  }, 0);
+  return `TA-${String(maxNum + 1).padStart(3, '0')}`;
 }

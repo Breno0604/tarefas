@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useApp, roleOf } from '../../context/AppContext';
 import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
+import { nextTaskId } from '../../utils/tasks';
 
 export default function TaskQuickAdd() {
   const { state, dispatch } = useApp();
@@ -10,15 +11,11 @@ export default function TaskQuickAdd() {
   const submit = () => {
     const v = titulo.trim();
     if (!v) return;
-    const maxNum = state.tasks.reduce((max, t) => {
-      const n = Number(t.id.replace(/\D/g, ''));
-      return Number.isFinite(n) ? Math.max(max, n) : max;
-    }, 0);
     const now = new Date().toISOString();
     dispatch({
       type: 'CREATE_TASK',
       task: {
-        id: `TA-${String(maxNum + 1).padStart(3, '0')}`,
+        id: nextTaskId(state.tasks),
         titulo: v,
         descricao: '',
         responsavelId:

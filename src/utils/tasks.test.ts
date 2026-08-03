@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { COLABORADORES, TAREFAS } from '../data/mockData';
 import {
   colaboradorMetrics,
+  colaboradorResumo,
   computeIndicators,
   EMPTY_FILTERS,
   filterTasks,
   hasActiveFilters,
+  nextTaskId,
 } from './tasks';
 
 const NOW = new Date('2026-08-03T12:00:00');
@@ -141,5 +143,21 @@ describe('colaboradorMetrics', () => {
     const doJoao = TAREFAS.filter((t) => t.responsavelId === 'joao');
     expect(m.ativas + m.concluidas).toBe(doJoao.length);
     expect(m.taxaConclusao).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('nextTaskId / colaboradorResumo', () => {
+  it('gera o próximo id sequencial a partir do seed', () => {
+    expect(nextTaskId(TAREFAS)).toBe('TA-017');
+  });
+
+  it('considera ids não numéricos sem quebrar', () => {
+    const lista = [{ ...TAREFAS[0], id: 'X' }, { ...TAREFAS[1], id: 'TA-099' }];
+    expect(nextTaskId(lista)).toBe('TA-100');
+  });
+
+  it('iniciais de nome de uma palavra usam uma letra só', () => {
+    const resumo = colaboradorResumo({ id: 'x', nome: 'Pedro', cargo: '', email: '', cor: '#000' });
+    expect(resumo.iniciais).toBe('P');
   });
 });

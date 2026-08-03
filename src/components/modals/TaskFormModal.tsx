@@ -3,6 +3,7 @@ import type { Priority } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
 import { PRIORITY_LABELS } from '../../utils/status';
+import { nextTaskId } from '../../utils/tasks';
 import Modal from '../modal/Modal';
 
 interface TaskFormModalProps {
@@ -46,15 +47,11 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
         },
       });
     } else {
-      const maxNum = state.tasks.reduce((max, t) => {
-        const n = Number(t.id.replace(/\D/g, ''));
-        return Number.isFinite(n) ? Math.max(max, n) : max;
-      }, 0);
       const now = new Date().toISOString();
       dispatch({
         type: 'CREATE_TASK',
         task: {
-          id: `TA-${String(maxNum + 1).padStart(3, '0')}`,
+          id: nextTaskId(state.tasks),
           titulo: titulo.trim(),
           descricao: descricao.trim(),
           responsavelId,
