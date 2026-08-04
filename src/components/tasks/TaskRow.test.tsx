@@ -126,3 +126,48 @@ describe('TaskRow — ações por papel', () => {
     expect(onDelete).toHaveBeenCalledWith(NOVA);
   });
 });
+
+describe('TaskRow — permissões', () => {
+  it('colaborador não vê ações do ciclo de tarefa de outro usuário', () => {
+    const Harness = switchUser('maria');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow task={NOVA} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.queryByTitle('Receber')).not.toBeInTheDocument();
+  });
+
+  it('colaborador vê ações do ciclo da própria tarefa', () => {
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow task={NOVA} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.getByTitle('Receber')).toBeInTheDocument();
+  });
+
+  it('colaborador sem gerenciar_tarefas não vê ações de gestão', () => {
+    const Harness = switchUser('maria');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow task={NOVA} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.queryByTitle('Editar')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Excluir')).not.toBeInTheDocument();
+  });
+});

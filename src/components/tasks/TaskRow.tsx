@@ -10,9 +10,9 @@ import {
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf } from '../../utils/status';
+import { roleOf, availableTransitions } from '../../utils/status';
+import { pode, podeAlterarStatus } from '../../utils/permissions';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
-import { availableTransitions } from '../../utils/status';
 import Avatar from '../ui/Avatar';
 import StatusBadge from './StatusBadge';
 import PriorityBadge from './PriorityBadge';
@@ -49,6 +49,8 @@ export default function TaskRow({
   const role = roleOf(state.currentUserId);
   const responsavel = findUser(task.responsavelId);
   const can = availableTransitions(task.status, role);
+  const podeGerenciar = pode(state.currentUserId, 'gerenciar_tarefas');
+  const podeAlterar = podeAlterarStatus(state.currentUserId, task);
 
   const openDetail = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } });
   const openEdit = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'edit', taskId: task.id } });
@@ -137,7 +139,7 @@ export default function TaskRow({
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
-          {role === 'gestor' && (
+          {podeGerenciar && (
             <>
               <button
                 onClick={openEdit}
@@ -175,7 +177,7 @@ export default function TaskRow({
               </button>
             </>
           )}
-          {can.map((target) => {
+          {podeAlterar && can.map((target) => {
             const act = cycleActionFor(task, target);
             if (!act) return null;
             const Icon = act.icon;
