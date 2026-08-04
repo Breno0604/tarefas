@@ -71,7 +71,6 @@ export interface Indicators {
   devolvidas: number;
   finalizadas: number;
   atrasadas: number;
-  percentConclusao: number; // 0–100
 }
 
 export function computeIndicators(tasks: Task[], now: Date = new Date()): Indicators {
@@ -98,7 +97,6 @@ export function computeIndicators(tasks: Task[], now: Date = new Date()): Indica
     devolvidas: counts.DEVOLVIDA,
     finalizadas,
     atrasadas,
-    percentConclusao: tasks.length === 0 ? 0 : Math.round((finalizadas / tasks.length) * 100),
   };
 }
 
@@ -153,7 +151,7 @@ export interface NewTaskInput {
 
 /**
  * Monta uma tarefa NOVA pronta para CREATE_TASK: id sequencial, timestamps
- * e entrada de histórico de criação. Unifica TaskFormModal e TaskQuickAdd.
+ * e entrada de histórico de criação. Usado pelo TaskFormModal.
  */
 export function createTask(tasks: Task[], input: NewTaskInput, usuario: string): Task {
   const agora = new Date().toISOString();

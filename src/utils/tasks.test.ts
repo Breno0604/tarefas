@@ -130,12 +130,6 @@ describe('computeIndicators', () => {
   it('existe pelo menos uma atrasada no seed', () => {
     expect(computeIndicators(TAREFAS, NOW).atrasadas).toBeGreaterThan(0);
   });
-
-  it('percentual de conclusão é arredondado e 0 para lista vazia', () => {
-    const ind = computeIndicators(TAREFAS, NOW);
-    expect(ind.percentConclusao).toBe(Math.round((ind.finalizadas / ind.total) * 100));
-    expect(computeIndicators([], NOW).percentConclusao).toBe(0);
-  });
 });
 
 describe('colaboradorMetrics', () => {
