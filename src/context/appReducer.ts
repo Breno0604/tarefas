@@ -9,7 +9,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'SET_CURRENT_USER':
       return { ...state, currentUserId: action.userId };
     case 'TOGGLE_SIDEBAR':
-      return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
+      return { ...state, sidebarOpen: !state.sidebarOpen };
     case 'SET_SECTION':
       return { ...state, section: action.section };
     case 'SET_VIEW':

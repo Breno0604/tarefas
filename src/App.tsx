@@ -24,16 +24,16 @@ function Shell() {
   const { modal, section } = state;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100">
+    <div className="h-screen overflow-hidden bg-slate-100">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex h-full flex-col">
         <Topbar
           title={TITLES[section]}
           search={state.filters.search}
           onSearch={(value) => dispatch({ type: 'SET_FILTERS', filters: { search: value } })}
           onNewTask={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'create' } })}
         />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {section === 'visaoGeral' && <SectionVisaoGeral />}
           {section === 'tarefas' && <SectionTarefas />}
           {section === 'colaboradores' && <SectionColaboradores />}

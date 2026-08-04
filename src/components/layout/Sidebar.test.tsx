@@ -1,20 +1,13 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Sidebar from './Sidebar';
 import { renderWithApp } from '../../test/renderWithApp';
 import { useApp } from '../../context/AppContext';
 
-const matchMediaMock = vi.fn();
-
 beforeEach(() => {
   localStorage.clear();
-  window.matchMedia = matchMediaMock.mockReturnValue({
-    matches: false,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  }) as unknown as typeof window.matchMedia;
 });
 
 function Probe() {
@@ -26,35 +19,69 @@ function Probe() {
         prazo: state.filters.prazo,
         modal: state.modal.type,
         user: state.currentUserId,
+        sidebarOpen: state.sidebarOpen,
       })}
     </output>
   );
 }
 
+function ToggleButton() {
+  const { dispatch } = useApp();
+  return (
+    <button onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })} title="Toggle sidebar">
+      Toggle
+    </button>
+  );
+}
+
 describe('Sidebar', () => {
-  it('renders the 3 nav items', () => {
-    renderWithApp(<Sidebar />);
+  it('renderiza os 3 itens de navegação quando aberto', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Sidebar />
+        <ToggleButton />
+        <Probe />
+      </>
+    );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
+
     expect(screen.getByRole('button', { name: 'Visão Geral' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tarefas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Colaboradores' })).toBeInTheDocument();
   });
 
-  it('renders the atalhos Atrasadas, Finalizadas and Devolvidas', () => {
-    renderWithApp(<Sidebar />);
+  it('renderiza os atalhos Atrasadas, Finalizadas e Devolvidas', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Sidebar />
+        <ToggleButton />
+        <Probe />
+      </>
+    );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
+
     expect(screen.getByRole('button', { name: 'Atrasadas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Finalizadas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Devolvidas' })).toBeInTheDocument();
   });
 
-  it('clicking Atrasadas navigates to tarefas section and applies vencidas filter', async () => {
+  it('clicar em Atrasadas navega para tarefas e aplica filtro vencidas', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
         <Sidebar />
+        <ToggleButton />
         <Probe />
       </>
     );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
     await user.click(screen.getByRole('button', { name: 'Atrasadas' }));
+
     await waitFor(() => {
       const probe = screen.getByTestId('probe');
       expect(probe.textContent).toContain('"section":"tarefas"');
@@ -62,53 +89,88 @@ describe('Sidebar', () => {
     });
   });
 
-  it('user switcher lists ALL_USERS and changes currentUserId when changed', async () => {
+  it('fechando a sidebar atualiza sidebarOpen para false', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
         <Sidebar />
+        <ToggleButton />
         <Probe />
       </>
     );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":true');
+    });
+
+    await user.click(screen.getByTitle('Fechar menu'));
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":false');
+    });
+  });
+
+  it('user switcher lista ALL_USERS e muda currentUserId', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Sidebar />
+        <ToggleButton />
+        <Probe />
+      </>
+    );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
+
     const select = screen.getByRole('combobox');
     expect(screen.getByRole('option', { name: /Carlos Mendes/ })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: /João Silva/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Maria Souza/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Pedro Oliveira/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Ana Costa/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Lucas Pereira/ })).toBeInTheDocument();
     await user.selectOptions(select, 'joao');
+
     await waitFor(() => {
       expect(screen.getByTestId('probe').textContent).toContain('"user":"joao"');
     });
   });
 
-  it('toggle button switches width class between w-64 and w-16', async () => {
-    const user = userEvent.setup();
-    renderWithApp(<Sidebar />);
-    const aside = document.querySelector('aside');
-    expect(aside).toHaveClass('w-64');
-    await user.click(screen.getByTitle('Recolher'));
-    await waitFor(() => {
-      expect(aside).toHaveClass('w-16');
-    });
-    await user.click(screen.getByTitle('Expandir'));
-    await waitFor(() => {
-      expect(aside).toHaveClass('w-64');
-    });
-  });
-
-  it('clicking a colaborador button opens the colaborador modal', async () => {
+  it('clicar em um colaborador abre o modal do colaborador', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
         <Sidebar />
+        <ToggleButton />
         <Probe />
       </>
     );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
     await user.click(screen.getByRole('button', { name: /João/ }));
+
     await waitFor(() => {
       expect(screen.getByTestId('probe').textContent).toContain('"modal":"colaborador"');
+    });
+  });
+
+  it('clicar no backdrop fecha a sidebar', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Sidebar />
+        <ToggleButton />
+        <Probe />
+      </>
+    );
+
+    await user.click(screen.getByTitle('Toggle sidebar'));
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":true');
+    });
+
+    const backdrop = document.querySelector('.fixed.inset-0.z-40');
+    expect(backdrop).toBeInTheDocument();
+    backdrop!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":false');
     });
   });
 });

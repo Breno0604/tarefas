@@ -22,7 +22,7 @@ const initialState: AppState = {
   currentUserId: GESTOR_ID,
   section: 'tarefas',
   view: 'lista',
-  sidebarCollapsed: false,
+  sidebarOpen: false,
   filters: EMPTY_FILTERS,
   modal: { type: 'none' },
   past: [],

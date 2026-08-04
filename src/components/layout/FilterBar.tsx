@@ -51,7 +51,7 @@ function MultiSelect<T extends string>({
         <ChevronDown className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-30 mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute top-full left-0 z-[60] mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
           {options.map((opt) => {
             const isSelected = selected.includes(opt.value);
             return (
@@ -112,10 +112,24 @@ export default function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {/* Favoritas: primeiro elemento, apenas ícone */}
+      <button
+        onClick={() => update({ favoritas: !filters.favoritas })}
+        title={filters.favoritas ? 'Remover favoritas' : 'Apenas favoritas'}
+        className={`inline-flex items-center justify-center rounded-lg border bg-white p-2 transition-colors ${
+          filters.favoritas
+            ? 'border-amber-400 text-amber-500 ring-2 ring-amber-100'
+            : 'border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-amber-500'
+        }`}
+      >
+        <Star className={`h-4 w-4 ${filters.favoritas ? 'fill-amber-400' : ''}`} />
+      </button>
+
       <MultiSelect label="Status" options={statusOptions} selected={filters.status} onChange={(v) => update({ status: v })} />
       <MultiSelect label="Prioridade" options={prioridadeOptions} selected={filters.prioridade} onChange={(v) => update({ prioridade: v })} />
       <MultiSelect label="Responsável" options={responsavelOptions} selected={filters.responsavel} onChange={(v) => update({ responsavel: v })} />
       <MultiSelect label="Categoria" options={categoriaOptions} selected={filters.categorias} onChange={(v) => update({ categorias: v })} />
+
       <select
         value={filters.prazo}
         onChange={(e) => update({ prazo: e.target.value as PrazoFilter })}
@@ -127,18 +141,7 @@ export default function FilterBar() {
           </option>
         ))}
       </select>
-      <button
-        onClick={() => update({ favoritas: !filters.favoritas })}
-        title="Apenas favoritas"
-        className={`inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition-colors ${
-          filters.favoritas
-            ? 'border-amber-400 text-amber-600 ring-2 ring-amber-100'
-            : 'border-slate-300 text-slate-600 hover:bg-slate-50'
-        }`}
-      >
-        <Star className={`h-4 w-4 ${filters.favoritas ? 'fill-amber-400 text-amber-400' : ''}`} />
-        Favoritas
-      </button>
+
       <select
         value={filters.sortBy ?? ''}
         onChange={(e) => update({ sortBy: (e.target.value || null) as TaskSort | null })}
@@ -151,6 +154,7 @@ export default function FilterBar() {
           </option>
         ))}
       </select>
+
       {hasFilters && (
         <button
           onClick={() => dispatch({ type: 'RESET_FILTERS' })}

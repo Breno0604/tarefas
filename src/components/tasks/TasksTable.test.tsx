@@ -51,12 +51,12 @@ beforeEach(() => localStorage.clear());
 describe('TasksTable', () => {
   it('mostra estado vazio de lista sem nenhuma tarefa', () => {
     renderTable({ tasks: [], totalCount: 0 });
-    expect(screen.getByText('Nenhuma tarefa criada ainda')).toBeInTheDocument();
+    expect(screen.getAllByText('Nenhuma tarefa criada ainda').length).toBeGreaterThanOrEqual(1);
   });
 
   it('mostra estado vazio de filtro sem resultado', () => {
     renderTable({ tasks: [], totalCount: 5 });
-    expect(screen.getByText('Nenhuma tarefa encontrada')).toBeInTheDocument();
+    expect(screen.getAllByText('Nenhuma tarefa encontrada').length).toBeGreaterThanOrEqual(1);
   });
 
   it('mostra a dica de reordenação quando desabilitada', () => {

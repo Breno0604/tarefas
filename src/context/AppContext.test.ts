@@ -33,7 +33,7 @@ const baseState: AppState = {
   currentUserId: 'carlos',
   section: 'tarefas',
   view: 'lista',
-  sidebarCollapsed: false,
+  sidebarOpen: false,
   filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, categorias: [], sortBy: null },
   modal: { type: 'none' },
   past: [],
@@ -312,5 +312,20 @@ describe('appReducer — guards (sem mutação fantasma)', () => {
     const next = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-001' });
     expect(next.tasks).toHaveLength(1);
     expect(next.past).toHaveLength(1);
+  });
+});
+
+describe('appReducer — TOGGLE_SIDEBAR', () => {
+  it('alterna sidebarOpen entre true e false', () => {
+    expect(baseState.sidebarOpen).toBe(false);
+    const opened = appReducer(baseState, { type: 'TOGGLE_SIDEBAR' });
+    expect(opened.sidebarOpen).toBe(true);
+    const closed = appReducer(opened, { type: 'TOGGLE_SIDEBAR' });
+    expect(closed.sidebarOpen).toBe(false);
+  });
+
+  it('não empilha undo', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_SIDEBAR' });
+    expect(next.past).toHaveLength(0);
   });
 });

@@ -5,7 +5,7 @@ export interface AppState {
   currentUserId: string;
   section: Section;
   view: TaskView;
-  sidebarCollapsed: boolean;
+  sidebarOpen: boolean;
   filters: Filters;
   modal: ModalState;
   past: Task[][]; // pilha de estados anteriores (undo), não persistida

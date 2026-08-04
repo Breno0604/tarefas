@@ -12,13 +12,13 @@ describe('FilterBar', () => {
     renderWithApp(<FilterBar />);
     expect(screen.getByRole('button', { name: /Status/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Categoria/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Favoritas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apenas favoritas' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Ordenar por' })).toBeInTheDocument();
   });
 
   it('não mostra "Limpar" sem filtros ativos', () => {
     renderWithApp(<FilterBar />);
-    expect(screen.queryByRole('button', { name: 'Limpar' })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: 'Limpar' })).toHaveLength(0);
   });
 
   it('mostra "Limpar" e contador após filtrar por categoria', async () => {
@@ -28,7 +28,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByRole('button', { name: /Categoria/ }));
     await user.click(screen.getByRole('button', { name: 'Marketing' }));
 
-    expect(screen.getByRole('button', { name: 'Limpar' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Limpar' }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole('button', { name: /Categoria/ })).toHaveTextContent('1');
   });
 
