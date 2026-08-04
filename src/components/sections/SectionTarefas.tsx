@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { NOME_POR_ID } from '../../data/mockData';
 import { computeIndicators, filterTasks, hasActiveFilters } from '../../utils/tasks';
+import { tasksVisiveis } from '../../utils/permissions';
 import type { Task } from '../../types';
 import KPICards from '../layout/KPICards';
 import FilterBar from '../layout/FilterBar';
@@ -18,11 +19,15 @@ export default function SectionTarefas() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmState | null>(null);
 
-  const visibleTasks = useMemo(
-    () => filterTasks(state.tasks, state.filters, NOME_POR_ID),
-    [state.tasks, state.filters]
+  const visiveis = useMemo(
+    () => tasksVisiveis(state.tasks, state.currentUserId),
+    [state.tasks, state.currentUserId]
   );
-  const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
+  const visibleTasks = useMemo(
+    () => filterTasks(visiveis, state.filters, NOME_POR_ID),
+    [visiveis, state.filters]
+  );
+  const indicators = useMemo(() => computeIndicators(visiveis), [visiveis]);
   const reorderEnabled = state.filters.sortBy === null && !hasActiveFilters(state.filters);
 
   const confirmComplete = (task: Task) => setConfirm({ task });

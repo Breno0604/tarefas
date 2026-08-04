@@ -2,11 +2,12 @@ import { AlertTriangle, CheckCircle2, ListChecks, TrendingUp } from 'lucide-reac
 import type { Colaborador } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { colaboradorMetrics } from '../../utils/tasks';
+import { tasksVisiveis } from '../../utils/permissions';
 import Avatar from '../ui/Avatar';
 
 export default function CollaboratorCard({ colaborador }: { colaborador: Colaborador }) {
   const { state, dispatch } = useApp();
-  const m = colaboradorMetrics(colaborador.id, state.tasks);
+  const m = colaboradorMetrics(colaborador.id, tasksVisiveis(state.tasks, state.currentUserId));
 
   const open = () =>
     dispatch({ type: 'OPEN_MODAL', modal: { type: 'colaborador', colaboradorId: colaborador.id } });

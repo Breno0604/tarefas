@@ -3,23 +3,28 @@ import { AlertTriangle, Clock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { NOME_POR_ID } from '../../data/mockData';
 import { EMPTY_FILTERS, computeIndicators, filterTasks } from '../../utils/tasks';
+import { tasksVisiveis } from '../../utils/permissions';
 import { formatDate } from '../../utils/date';
 import KPICards from '../layout/KPICards';
 
 export default function SectionVisaoGeral() {
   const { state } = useApp();
-  const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
+  const visiveis = useMemo(
+    () => tasksVisiveis(state.tasks, state.currentUserId),
+    [state.tasks, state.currentUserId]
+  );
+  const indicators = useMemo(() => computeIndicators(visiveis), [visiveis]);
   const atrasadas = useMemo(
-    () => filterTasks(state.tasks, { ...EMPTY_FILTERS, prazo: 'vencidas' }, NOME_POR_ID).slice(0, 5),
-    [state.tasks]
+    () => filterTasks(visiveis, { ...EMPTY_FILTERS, prazo: 'vencidas' }, NOME_POR_ID).slice(0, 5),
+    [visiveis]
   );
   const proximas = useMemo(
     () =>
-      state.tasks
+      visiveis
         .filter((t) => t.prazo !== null && t.status !== 'FINALIZADA' && t.status !== 'CONCLUIDA')
         .sort((a, b) => (a.prazo ?? '').localeCompare(b.prazo ?? ''))
         .slice(0, 5),
-    [state.tasks]
+    [visiveis]
   );
 
   return (

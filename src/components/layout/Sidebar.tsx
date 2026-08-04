@@ -11,6 +11,7 @@ import { ALL_USERS, COLABORADORES, findUser, GESTOR } from '../../data/mockData'
 import { useApp } from '../../context/AppContext';
 import { openTarefas } from '../../context/navigation';
 import { colaboradorMetrics } from '../../utils/tasks';
+import { tasksVisiveis } from '../../utils/permissions';
 import Avatar from '../ui/Avatar';
 import type { Section } from '../../types';
 
@@ -133,7 +134,7 @@ export default function Sidebar() {
             Colaboradores
           </div>
           {COLABORADORES.map((c) => {
-            const metrics = colaboradorMetrics(c.id, state.tasks);
+            const metrics = colaboradorMetrics(c.id, tasksVisiveis(state.tasks, state.currentUserId));
             return (
               <button
                 key={c.id}
