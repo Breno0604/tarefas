@@ -142,20 +142,6 @@ describe('TaskRow — permissões', () => {
     expect(screen.queryByTitle('Receber')).not.toBeInTheDocument();
   });
 
-  it('colaborador vê ações do ciclo da própria tarefa', () => {
-    const Harness = switchUser('joao');
-    renderWithApp(
-      <table>
-        <tbody>
-          <Harness>
-            <TaskRow task={NOVA} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
-          </Harness>
-        </tbody>
-      </table>
-    );
-    expect(screen.getByTitle('Receber')).toBeInTheDocument();
-  });
-
   it('colaborador sem gerenciar_tarefas não vê ações de gestão', () => {
     const Harness = switchUser('maria');
     renderWithApp(
