@@ -5,11 +5,6 @@ import { newHistoryEntry } from '../utils/history';
 import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
 import type { AppAction, AppState } from './types';
 
-/** Ações de gestão exigem a permissão gerenciar_tarefas (gestor sempre tem). */
-function podeGerenciar(userId: string): boolean {
-  return pode(userId, 'gerenciar_tarefas');
-}
-
 function appReducerCore(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_CURRENT_USER':
@@ -40,7 +35,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'UPDATE_TASK': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
-      if (!podeGerenciar(state.currentUserId)) return state;
+      if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
       if (Object.keys(action.changes).length === 0) return state;
       return {
         ...state,
@@ -87,7 +82,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'REASSIGN': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
-      if (!podeGerenciar(state.currentUserId)) return state;
+      if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
       const entry = newHistoryEntry(
         action.usuario,
         task.status,
@@ -112,7 +107,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'DUPLICATE_TASK': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
-      if (!podeGerenciar(state.currentUserId)) return state;
+      if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
       const agora = new Date().toISOString();
       const copy: Task = {
         ...task,
@@ -128,8 +123,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       return { ...state, tasks: [...state.tasks, copy] };
     }
     case 'DELETE_TASK': {
-      if (!podeGerenciar(state.currentUserId)) return state;
       if (!state.tasks.some((t) => t.id === action.taskId)) return state;
+      if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.taskId) };
     }
     case 'TOGGLE_FAVORITE': {
