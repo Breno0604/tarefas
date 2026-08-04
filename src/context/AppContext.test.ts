@@ -358,3 +358,52 @@ describe('appReducer — permissão de alteração de status', () => {
     expect(next.tasks.find((t) => t.id === 'TA-002')!.status).toBe('FINALIZADA');
   });
 });
+
+describe('appReducer — permissão de gestão (gerenciar_tarefas)', () => {
+  it('colaborador sem gerenciar_tarefas não edita tarefa', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'UPDATE_TASK', taskId: 'TA-001', changes: { titulo: 'Hackeado' } }
+    );
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.titulo).toBe('Login');
+    expect(next.past).toHaveLength(0);
+  });
+
+  it('colaborador sem gerenciar_tarefas não exclui tarefa', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'DELETE_TASK', taskId: 'TA-001' }
+    );
+    expect(next.tasks.some((t) => t.id === 'TA-001')).toBe(true);
+  });
+
+  it('colaborador sem gerenciar_tarefas não duplica tarefa', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'DUPLICATE_TASK', taskId: 'TA-001', usuario: 'João Silva' }
+    );
+    expect(next.tasks).toHaveLength(baseState.tasks.length);
+  });
+
+  it('colaborador sem gerenciar_tarefas não reatribui tarefa', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'REASSIGN', taskId: 'TA-001', responsavelId: 'ana', usuario: 'João Silva', observacao: 'x' }
+    );
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.responsavelId).toBe('joao');
+  });
+
+  it('gestor continua podendo editar, excluir, duplicar e reatribuir', () => {
+    const editado = appReducer(baseState, { type: 'UPDATE_TASK', taskId: 'TA-001', changes: { titulo: 'Novo' } });
+    expect(editado.tasks.find((t) => t.id === 'TA-001')!.titulo).toBe('Novo');
+
+    const excluido = appReducer(baseState, { type: 'DELETE_TASK', taskId: 'TA-001' });
+    expect(excluido.tasks.some((t) => t.id === 'TA-001')).toBe(false);
+
+    const duplicado = appReducer(baseState, { type: 'DUPLICATE_TASK', taskId: 'TA-001', usuario: 'Carlos Mendes' });
+    expect(duplicado.tasks).toHaveLength(baseState.tasks.length + 1);
+
+    const reatribuido = appReducer(baseState, { type: 'REASSIGN', taskId: 'TA-001', responsavelId: 'ana', usuario: 'Carlos Mendes', observacao: 'x' });
+    expect(reatribuido.tasks.find((t) => t.id === 'TA-001')!.responsavelId).toBe('ana');
+  });
+});
