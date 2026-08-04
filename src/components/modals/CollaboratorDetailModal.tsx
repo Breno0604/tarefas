@@ -1,6 +1,7 @@
 import { Mail } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { findUser } from '../../data/mockData';
+import { tasksVisiveis } from '../../utils/permissions';
 import { colaboradorMetrics } from '../../utils/tasks';
 import Modal from '../modal/Modal';
 import Avatar from '../ui/Avatar';
@@ -17,8 +18,9 @@ export default function CollaboratorDetailModal({ colaboradorId, onClose }: Coll
   const colaborador = findUser(colaboradorId);
   if (!colaborador) return null;
 
-  const m = colaboradorMetrics(colaborador.id, state.tasks);
-  const tarefas = state.tasks.filter((t) => t.responsavelId === colaborador.id);
+  const visiveis = tasksVisiveis(state.tasks, state.currentUserId);
+  const m = colaboradorMetrics(colaborador.id, visiveis);
+  const tarefas = visiveis.filter((t) => t.responsavelId === colaborador.id);
 
   return (
     <Modal open title="Colaborador" onClose={onClose} size="lg">
