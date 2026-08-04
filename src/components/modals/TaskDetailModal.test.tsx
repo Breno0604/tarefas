@@ -31,7 +31,7 @@ describe('TaskDetailModal', () => {
   });
 
   it('colaborador em CONCLUIDA vê Reabrir, não Aprovar', () => {
-    const Harness = switchUser('joao');
+    const Harness = switchUser('maria');
     renderWithApp(
       <Harness>
         <TaskDetailModal taskId="TA-003" onClose={() => {}} />
@@ -53,5 +53,39 @@ describe('TaskDetailModal', () => {
     // TA-003 criada em 2026-07-29
     expect(screen.getByText('Criada em')).toBeInTheDocument();
     expect(screen.getByText('29/07/2026')).toBeInTheDocument();
+  });
+});
+
+describe('TaskDetailModal — permissões', () => {
+  it('colaborador não vê ações de ciclo de tarefa de outro usuário', () => {
+    // TA-003 (CONCLUIDA) é de maria; joao não é responsável nem tem permissão
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <Harness>
+        <TaskDetailModal taskId="TA-003" onClose={() => {}} />
+      </Harness>
+    );
+    expect(screen.queryByRole('button', { name: 'Reabrir tarefa' })).not.toBeInTheDocument();
+  });
+
+  it('colaborador responsável vê as ações de ciclo da própria tarefa', () => {
+    const Harness = switchUser('maria');
+    renderWithApp(
+      <Harness>
+        <TaskDetailModal taskId="TA-003" onClose={() => {}} />
+      </Harness>
+    );
+    expect(screen.getByRole('button', { name: 'Reabrir tarefa' })).toBeInTheDocument();
+  });
+
+  it('colaborador não vê ações de gestão (editar, excluir, etc.)', () => {
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <Harness>
+        <TaskDetailModal taskId="TA-003" onClose={() => {}} />
+      </Harness>
+    );
+    expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument();
   });
 });

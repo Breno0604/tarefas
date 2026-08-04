@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { roleOf } from '../../utils/status';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import { availableTransitions } from '../../utils/status';
+import { pode, podeAlterarStatus } from '../../utils/permissions';
 import { formatDate, formatDateTime } from '../../utils/date';
 import Modal from '../modal/Modal';
 import ConfirmDialog from '../modal/ConfirmDialog';
@@ -30,6 +31,8 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
   const responsavel = findUser(task.responsavelId);
   const criador = findUser(task.criadorId);
   const can = availableTransitions(task.status, role);
+  const podeGerenciar = pode(state.currentUserId, 'gerenciar_tarefas');
+  const podeAlterar = podeAlterarStatus(state.currentUserId, task);
 
   const changeStatus = (novoStatus: typeof task.status) => {
     dispatch({
@@ -57,7 +60,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
             <History className="h-4 w-4" />
             Histórico
           </button>
-          {role === 'gestor' && (
+          {podeGerenciar && (
             <>
               <button
                 onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'edit', taskId: task.id } })}
@@ -95,27 +98,27 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               </button>
             </>
           )}
-          {can.includes('RECEBIDA') && (
+          {podeAlterar && can.includes('RECEBIDA') && (
             <button onClick={() => changeStatus('RECEBIDA')} className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">
               Receber tarefa
             </button>
           )}
-          {can.includes('EM_EXECUCAO') && task.status === 'RECEBIDA' && (
+          {podeAlterar && can.includes('EM_EXECUCAO') && task.status === 'RECEBIDA' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
               Iniciar execução
             </button>
           )}
-          {task.status === 'DEVOLVIDA' && role === 'colaborador' && (
+          {podeAlterar && task.status === 'DEVOLVIDA' && role === 'colaborador' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
               Retomar após correção
             </button>
           )}
-          {task.status === 'CONCLUIDA' && role === 'colaborador' && (
+          {podeAlterar && task.status === 'CONCLUIDA' && role === 'colaborador' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
               Reabrir tarefa
             </button>
           )}
-          {can.includes('CONCLUIDA') && (
+          {podeAlterar && can.includes('CONCLUIDA') && (
             <button onClick={() => setConfirmConcluir(true)} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">
               Marcar como concluída
             </button>
