@@ -89,8 +89,8 @@ describe('appReducer — CHANGE_STATUS', () => {
 
   it('colaborador reabre CONCLUIDA → EM_EXECUCAO e grava histórico', () => {
     const next = appReducer(
-      { ...baseState, currentUserId: 'joao' },
-      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' }
+      { ...baseState, currentUserId: 'maria' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'Maria Souza' }
     );
     const task = next.tasks.find((t) => t.id === 'TA-002')!;
     expect(task.status).toBe('EM_EXECUCAO');
@@ -98,7 +98,7 @@ describe('appReducer — CHANGE_STATUS', () => {
       tipo: 'status',
       statusAnterior: 'CONCLUIDA',
       novoStatus: 'EM_EXECUCAO',
-      usuario: 'João Silva',
+      usuario: 'Maria Souza',
     });
   });
 
@@ -220,8 +220,8 @@ describe('appReducer — REORDER_TASKS / timestamps', () => {
 
   it('limpa concluidaEm ao reabrir', () => {
     const next = appReducer(
-      { ...baseState, currentUserId: 'joao' },
-      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' }
+      { ...baseState, currentUserId: 'maria' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'Maria Souza' }
     );
     expect(next.tasks.find((t) => t.id === 'TA-002')!.concluidaEm).toBeUndefined();
   });
@@ -327,5 +327,34 @@ describe('appReducer — TOGGLE_SIDEBAR', () => {
   it('não empilha undo', () => {
     const next = appReducer(baseState, { type: 'TOGGLE_SIDEBAR' });
     expect(next.past).toHaveLength(0);
+  });
+});
+
+describe('appReducer — permissão de alteração de status', () => {
+  it('colaborador não altera status de tarefa de outro usuário', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-002', novoStatus: 'EM_EXECUCAO', usuario: 'João Silva' }
+    );
+    expect(next.tasks.find((t) => t.id === 'TA-002')!.status).toBe('CONCLUIDA');
+    expect(next.past).toHaveLength(0);
+  });
+
+  it('responsável pode alterar o status da própria tarefa', () => {
+    const next = appReducer(
+      { ...baseState, currentUserId: 'joao' },
+      { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'RECEBIDA', usuario: 'João Silva' }
+    );
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('RECEBIDA');
+  });
+
+  it('gestor continua podendo aprovar tarefa de qualquer usuário', () => {
+    const next = appReducer(baseState, {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-002',
+      novoStatus: 'FINALIZADA',
+      usuario: 'Carlos Mendes',
+    });
+    expect(next.tasks.find((t) => t.id === 'TA-002')!.status).toBe('FINALIZADA');
   });
 });

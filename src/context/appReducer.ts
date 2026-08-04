@@ -1,5 +1,6 @@
 import type { Task } from '../types';
 import { canTransition, roleOf } from '../utils/status';
+import { podeAlterarStatus } from '../utils/permissions';
 import { newHistoryEntry } from '../utils/history';
 import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
 import type { AppAction, AppState } from './types';
@@ -46,6 +47,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'CHANGE_STATUS': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
+      if (!podeAlterarStatus(state.currentUserId, task)) return state;
       if (!canTransition(task.status, action.novoStatus, roleOf(state.currentUserId))) return state;
       const entry = newHistoryEntry(
         action.usuario,
