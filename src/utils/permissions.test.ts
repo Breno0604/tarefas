@@ -43,6 +43,12 @@ describe('permissoesDe / pode', () => {
     expect(pode('lucas', 'gerenciar_tarefas')).toBe(true);
     expect(pode('lucas', 'criar_tarefas')).toBe(false);
   });
+
+  it('usuário inexistente não tem permissões', () => {
+    expect(permissoesDe('zzz')).toEqual([]);
+    expect(pode('zzz', 'criar_tarefas')).toBe(false);
+    expect(podeAlterarStatus('zzz', tarefaJoao)).toBe(false);
+  });
 });
 
 describe('podeAlterarStatus', () => {
