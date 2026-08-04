@@ -2,9 +2,9 @@ import { Star } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf } from '../../utils/status';
+import { roleOf, availableTransitions } from '../../utils/status';
+import { podeAlterarStatus } from '../../utils/permissions';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
-import { availableTransitions } from '../../utils/status';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
 import CategoryTag from './CategoryTag';
@@ -27,6 +27,7 @@ export default function TaskCard({
   const role = roleOf(state.currentUserId);
   const responsavel = findUser(task.responsavelId);
   const can = availableTransitions(task.status, role);
+  const podeAlterar = podeAlterarStatus(state.currentUserId, task);
 
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
@@ -47,10 +48,12 @@ export default function TaskCard({
 
   return (
     <div
-      draggable
+      {...(podeAlterar ? { draggable: true as const } : {})}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
+      className={`w-full rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
+        podeAlterar ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+      }`}
     >
       <button
         onClick={openDetail}
@@ -87,7 +90,7 @@ export default function TaskCard({
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
-          {action && (
+          {podeAlterar && action && (
             <button
               onClick={() => changeStatus(action.target)}
               title={action.label}

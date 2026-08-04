@@ -126,7 +126,7 @@ describe('TaskKanban', () => {
   })
 
   it('drop inválido como colaborador para FINALIZADA não altera o status', async () => {
-    const taskId = 'TA-003'
+    const taskId = 'TA-005'
     const Harness = switchUser('joao')
     renderWithApp(
       <Harness>
@@ -135,13 +135,42 @@ describe('TaskKanban', () => {
       </Harness>
     )
 
-    const card = screen.getByText('Criar campanha de e-mail').closest('div[draggable]')!
+    const card = screen.getByText('Corrigir bug de checkout').closest('div[draggable]')!
     const column = screen.getAllByText('Finalizada')[0].closest('div[class*="min-w-"]')!
 
     fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: 'move' } })
     fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
     fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
 
-    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CONCLUIDA'))
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('NOVA'))
   })
 })
+
+describe('TaskKanban — permissões', () => {
+  it('colaborador não arrasta nem vê ação de ciclo de tarefa de outro', () => {
+    // TA-003 (Criar campanha de e-mail) é de maria; joao não tem permissão
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <Harness>
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+      </Harness>
+    );
+
+    const card = screen.getByText('Criar campanha de e-mail').closest('div[draggable]');
+    expect(card).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reabrir/ })).not.toBeInTheDocument();
+  });
+
+  it('colaborador arrasta a própria tarefa', () => {
+    // TA-005 (Corrigir bug de checkout) é de joao
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <Harness>
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+      </Harness>
+    );
+
+    const card = screen.getByText('Corrigir bug de checkout').closest('div[draggable]');
+    expect(card).not.toBeNull();
+  });
+});

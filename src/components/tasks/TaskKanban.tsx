@@ -3,6 +3,7 @@ import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { roleOf } from '../../utils/status';
+import { podeAlterarStatus } from '../../utils/permissions';
 import { NOME_POR_ID } from '../../data/mockData';
 import { canTransition, STATUS_LABELS } from '../../utils/status';
 import StatusBadge from './StatusBadge';
@@ -51,8 +52,12 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     if (dragged) setDragInfo({ id: dragged.id, status: dragged.status });
   };
 
-  const canDropOn = (status: TaskStatus): boolean =>
-    dragInfo ? canTransition(dragInfo.status, status, role) : true;
+  const canDropOn = (status: TaskStatus): boolean => {
+    if (!dragInfo) return true;
+    const dragged = state.tasks.find((t) => t.id === dragInfo.id);
+    if (!dragged) return false;
+    return podeAlterarStatus(state.currentUserId, dragged) && canTransition(dragInfo.status, status, role);
+  };
 
   const handleDragOver = (status: TaskStatus) => (e: DragEvent) => {
     e.preventDefault();
@@ -68,6 +73,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);
     if (!dragged || dragged.status === status) return;
+    if (!podeAlterarStatus(state.currentUserId, dragged)) return;
     if (!canTransition(dragged.status, status, role)) return;
     dispatch({
       type: 'CHANGE_STATUS',
