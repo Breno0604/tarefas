@@ -48,7 +48,7 @@ export default function TaskCard({
 
   return (
     <div
-      {...(podeAlterar ? { draggable: true as const } : {})}
+      draggable={podeAlterar || undefined}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`w-full rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
