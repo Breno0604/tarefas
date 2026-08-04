@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleDashed,
   CircleDot,
   ClipboardList,
@@ -24,9 +27,16 @@ interface KpiDef {
   onClick: () => void;
 }
 
+const COLLAPSED_KEY = 'kpiCollapsed';
+
 export default function KPICards({ indicators }: { indicators: Indicators }) {
   const { state, dispatch } = useApp();
   const { filters } = state;
+  const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_KEY) === '1');
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
 
   const openWithStatus = (statuses: TaskStatus[]) => openTarefas(dispatch, { status: statuses });
   const openVencidas = () => openTarefas(dispatch, { prazo: 'vencidas' });
@@ -45,40 +55,42 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <button
-              key={kpi.key}
-              onClick={kpi.onClick}
-              className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md ${
-                kpi.active ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'
-              }`}
-            >
-              <div className={`rounded-lg p-2 ${kpi.color}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xl font-bold text-slate-800">{kpi.value}</p>
-                <p className="truncate text-xs text-slate-500">{kpi.label}</p>
-              </div>
-            </button>
-          );
-        })}
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-700">Indicadores</h2>
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expandir indicadores' : 'Recolher indicadores'}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700"
+        >
+          {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
       </div>
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="mb-1.5 flex items-center justify-between text-xs">
-          <span className="font-medium text-slate-500">Conclusão geral</span>
-          <span className="font-semibold text-slate-700">{indicators.percentConclusao}%</span>
+      {!collapsed && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+          {kpis.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <button
+                key={kpi.key}
+                onClick={kpi.onClick}
+                className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md ${
+                  kpi.active ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'
+                }`}
+              >
+                <div className={`rounded-lg p-2 ${kpi.color}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl font-bold text-slate-800">{kpi.value}</p>
+                  <p className="truncate text-xs text-slate-500">{kpi.label}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-emerald-500 transition-all"
-            style={{ width: `${indicators.percentConclusao}%` }}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

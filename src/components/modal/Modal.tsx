@@ -13,14 +13,19 @@ interface ModalProps {
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/** Profundidade global de modais abertos: só o topo da pilha responde ao Escape. */
+let openModals = 0;
+
 export default function Modal({ open, title, onClose, children, footer, size = 'md' }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    openModals += 1;
+    const index = openModals;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (index === openModals) onClose();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -44,6 +49,7 @@ export default function Modal({ open, title, onClose, children, footer, size = '
       dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
     }, 0);
     return () => {
+      openModals -= 1;
       window.removeEventListener('keydown', onKey);
       window.clearTimeout(timer);
     };

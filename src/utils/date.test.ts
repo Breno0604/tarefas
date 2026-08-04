@@ -8,6 +8,11 @@ describe('formatDate / formatDateTime', () => {
     expect(formatDate('2026-08-03T00:00:00')).toBe('03/08/2026');
   });
 
+  it('formata prazo date-only sem deslocar um dia em fusos negativos', () => {
+    // 'YYYY-MM-DD' é parseado como UTC pelo new Date; parsePrazo interpreta como meia-noite local.
+    expect(formatDate('2026-08-03')).toBe('03/08/2026');
+  });
+
   it('formata data e hora no padrão pt-BR', () => {
     expect(formatDateTime('2026-08-03T08:30:00')).toContain('03/08/2026');
   });

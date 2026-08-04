@@ -57,7 +57,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const push = useCallback(
     (type: ToastType, message: string, action?: ToastAction) => {
       const id = nextId.current++;
-      setToasts((prev) => [...prev, { id, type, message, action }]);
+      setToasts((prev) => [
+        // Ação de desfazer vale apenas para a última mutação: toasts anteriores perdem a ação.
+        ...(action ? prev.map((t) => (t.action ? { ...t, action: undefined } : t)) : prev),
+        { id, type, message, action },
+      ]);
       window.setTimeout(() => remove(id), action ? ACTION_DISMISS_MS : AUTO_DISMISS_MS);
     },
     [remove]

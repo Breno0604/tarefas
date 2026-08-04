@@ -10,7 +10,7 @@ function parsePrazo(prazo: string): Date {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR');
+  return parsePrazo(iso).toLocaleDateString('pt-BR');
 }
 
 export function formatDateTime(iso: string): string {

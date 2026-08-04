@@ -5,7 +5,6 @@ import { computeIndicators, filterTasks, hasActiveFilters } from '../../utils/ta
 import type { Task } from '../../types';
 import KPICards from '../layout/KPICards';
 import FilterBar from '../layout/FilterBar';
-import TaskQuickAdd from '../tasks/TaskQuickAdd';
 import TasksTable from '../tasks/TasksTable';
 import TaskKanban from '../tasks/TaskKanban';
 import ConfirmDialog from '../modal/ConfirmDialog';
@@ -32,7 +31,6 @@ export default function SectionTarefas() {
     <>
       <div className="mb-5 space-y-4">
         <KPICards indicators={indicators} />
-        <TaskQuickAdd />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <FilterBar />
           <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">

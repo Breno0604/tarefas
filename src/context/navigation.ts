@@ -11,9 +11,8 @@ export function openTarefas(
   filters?: Partial<Filters>
 ): void {
   dispatch({ type: 'SET_SECTION', section: 'tarefas' });
+  dispatch({ type: 'RESET_FILTERS' });
   if (filters) {
     dispatch({ type: 'SET_FILTERS', filters });
-  } else {
-    dispatch({ type: 'RESET_FILTERS' });
   }
 }
