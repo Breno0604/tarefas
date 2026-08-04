@@ -47,6 +47,7 @@ export interface Colaborador {
   cargo: string;
   email: string;
   cor: string; // hex para avatar
+  permissoes?: Permission[]; // ausente = sem permissões (exceto gestor, que tem todas)
 }
 
 export interface Filters {
@@ -70,3 +71,10 @@ export type ModalState =
   | { type: 'return'; taskId: string }
   | { type: 'history'; taskId: string }
   | { type: 'colaborador'; colaboradorId: string };
+
+export type Permission =
+  | 'alterar_status_outros'
+  | 'visualizar_todas_tarefas'
+  | 'criar_tarefas'
+  | 'gerenciar_tarefas';
+

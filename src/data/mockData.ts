@@ -11,11 +11,11 @@ export const GESTOR: Colaborador = {
 };
 
 export const COLABORADORES: Colaborador[] = [
-  { id: 'joao', nome: 'João Silva', cargo: 'Desenvolvedor', email: 'joao@empresa.com', cor: '#0ea5e9' },
-  { id: 'maria', nome: 'Maria Souza', cargo: 'Analista de Marketing', email: 'maria@empresa.com', cor: '#f59e0b' },
-  { id: 'pedro', nome: 'Pedro Oliveira', cargo: 'Designer', email: 'pedro@empresa.com', cor: '#8b5cf6' },
-  { id: 'ana', nome: 'Ana Costa', cargo: 'Suporte', email: 'ana@empresa.com', cor: '#10b981' },
-  { id: 'lucas', nome: 'Lucas Pereira', cargo: 'Desenvolvedor', email: 'lucas@empresa.com', cor: '#f43f5e' },
+  { id: 'joao', nome: 'João Silva', cargo: 'Desenvolvedor', email: 'joao@empresa.com', cor: '#0ea5e9', permissoes: ['visualizar_todas_tarefas'] },
+  { id: 'maria', nome: 'Maria Souza', cargo: 'Analista de Marketing', email: 'maria@empresa.com', cor: '#f59e0b', permissoes: ['visualizar_todas_tarefas'] },
+  { id: 'pedro', nome: 'Pedro Oliveira', cargo: 'Designer', email: 'pedro@empresa.com', cor: '#8b5cf6', permissoes: ['visualizar_todas_tarefas'] },
+  { id: 'ana', nome: 'Ana Costa', cargo: 'Suporte', email: 'ana@empresa.com', cor: '#10b981', permissoes: ['visualizar_todas_tarefas'] },
+  { id: 'lucas', nome: 'Lucas Pereira', cargo: 'Desenvolvedor', email: 'lucas@empresa.com', cor: '#f43f5e', permissoes: ['visualizar_todas_tarefas'] },
 ];
 
 export const ALL_USERS: Colaborador[] = [GESTOR, ...COLABORADORES];
