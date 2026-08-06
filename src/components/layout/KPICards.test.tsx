@@ -37,18 +37,18 @@ describe('KPICards', () => {
   it('renders the 12 KPI cards with correct seed-derived values', () => {
     renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
 
-    expect(screen.getByRole('button', { name: /Total de tarefas/ })).toHaveTextContent('16');
-    expect(screen.getByRole('button', { name: /Novas/ })).toHaveTextContent('2');
-    expect(screen.getByRole('button', { name: /Recebidas/ })).toHaveTextContent('2');
-    expect(screen.getByRole('button', { name: /Em execução/ })).toHaveTextContent('3');
-    expect(screen.getByRole('button', { name: /Aguardando aprovação/ })).toHaveTextContent('3');
-    expect(screen.getByRole('button', { name: /Concluídas/ })).toHaveTextContent('7');
-    expect(screen.getByRole('button', { name: /Devolvidas/ })).toHaveTextContent('2');
-    expect(screen.getByRole('button', { name: /Devoluções/ })).toHaveTextContent('3');
-    expect(screen.getByRole('button', { name: /Finalizadas/ })).toHaveTextContent('4');
-    expect(screen.getByRole('button', { name: /Canceladas/ })).toHaveTextContent('0');
-    expect(screen.getByRole('button', { name: /Atrasadas/ })).toHaveTextContent('2');
-    expect(screen.getByRole('button', { name: /Paradas/ })).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: /Total de tarefas/ })).toHaveTextContent('70');
+    expect(screen.getByRole('button', { name: /Novas/ })).toHaveTextContent('8');
+    expect(screen.getByRole('button', { name: /Recebidas/ })).toHaveTextContent('8');
+    expect(screen.getByRole('button', { name: /Em execução/ })).toHaveTextContent('13');
+    expect(screen.getByRole('button', { name: /Aguardando aprovação/ })).toHaveTextContent('11');
+    expect(screen.getByRole('button', { name: /Concluídas/ })).toHaveTextContent('29');
+    expect(screen.getByRole('button', { name: /Devolvidas/ })).toHaveTextContent('7');
+    expect(screen.getByRole('button', { name: /Devoluções/ })).toHaveTextContent('14');
+    expect(screen.getByRole('button', { name: /Finalizadas/ })).toHaveTextContent('18');
+    expect(screen.getByRole('button', { name: /Canceladas/ })).toHaveTextContent('5');
+    expect(screen.getByRole('button', { name: /Atrasadas/ })).toHaveTextContent('5');
+    expect(screen.getByRole('button', { name: /Paradas/ })).toHaveTextContent('8');
   });
 
   it('renderiza barra de cabeçalho com botão de recolher', () => {

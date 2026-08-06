@@ -1,4 +1,5 @@
 import type { Colaborador, HistoryEntry, Task } from '../types';
+import { generateSeedTasks } from '../utils/seedGenerator';
 
 export const GESTOR_ID = 'carlos';
 
@@ -307,4 +308,7 @@ export const TAREFAS: Task[] = [
     criadaEm: '2026-08-03T09:00:00',
     historico: [],
   },
+
+  // ── GERADAS (últimos 30 dias, determinístico) ───────────────
+  ...generateSeedTasks(ALL_USERS),
 ];
