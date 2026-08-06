@@ -24,9 +24,13 @@ const initialState: AppState = {
   view: 'lista',
   sidebarOpen: false,
   filters: EMPTY_FILTERS,
+  kpiCollapsed: false,
+  filtersOpen: true,
   modal: { type: 'none' },
   past: [],
 };
+
+const KPI_COLLAPSED_KEY = 'kpiCollapsed';
 
 interface AppContextValue {
   state: AppState;
@@ -37,14 +41,16 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 function initState(): AppState {
   const saved = loadState();
+  const kpiCollapsed = localStorage.getItem(KPI_COLLAPSED_KEY) === '1';
   if (saved) {
     // Persiste apenas as tarefas; o app sempre abre como gestor (usuário atual é estado de sessão).
     return {
       ...initialState,
+      kpiCollapsed,
       tasks: saved.tasks,
     };
   }
-  return initialState;
+  return { ...initialState, kpiCollapsed };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -54,6 +60,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveState({ tasks: state.tasks });
   }, [state.tasks]);
+
+  useEffect(() => {
+    localStorage.setItem(KPI_COLLAPSED_KEY, state.kpiCollapsed ? '1' : '0');
+  }, [state.kpiCollapsed]);
 
   const dispatchWithToast = (action: AppAction) => {
     const next = appReducer(state, action);

@@ -7,6 +7,8 @@ export interface AppState {
   view: TaskView;
   sidebarOpen: boolean;
   filters: Filters;
+  kpiCollapsed: boolean; // indicadores recolhidos (persistido em localStorage)
+  filtersOpen: boolean; // barra de filtros visível
   modal: ModalState;
   past: Task[][]; // pilha de estados anteriores (undo), não persistida
 }
@@ -16,6 +18,8 @@ export type AppAction =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_SECTION'; section: Section }
   | { type: 'SET_VIEW'; view: TaskView }
+  | { type: 'TOGGLE_KPI_COLLAPSED' }
+  | { type: 'TOGGLE_FILTERS' }
   | { type: 'SET_FILTERS'; filters: Partial<Filters> }
   | { type: 'RESET_FILTERS' }
   | { type: 'OPEN_MODAL'; modal: ModalState }

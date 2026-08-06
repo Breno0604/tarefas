@@ -18,6 +18,12 @@ import ProximoPassoBadge from '../tasks/ProximoPassoBadge';
 import ReworkBadge from '../tasks/ReworkBadge';
 import { contarDevolucoes } from '../../utils/tasks';
 
+const iconButton =
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-700';
+
+const dangerIconButton =
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700';
+
 interface TaskDetailModalProps {
   taskId: string;
   onClose: () => void;
@@ -58,27 +64,30 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
         <>
           <button
             onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'history', taskId: task.id } })}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            aria-label="Histórico"
+            title="Histórico"
+            className={iconButton}
           >
             <History className="h-4 w-4" />
-            Histórico
           </button>
           {podeGerenciar && (
             <>
               <button
                 onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'edit', taskId: task.id } })}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                aria-label="Editar"
+                title="Editar"
+                className={iconButton}
               >
                 <Pencil className="h-4 w-4" />
-                Editar
               </button>
               {podeGerenciar && podeReatribuir(task.status) && (
                 <button
                   onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'reassign', taskId: task.id } })}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  aria-label="Responsável"
+                  title="Responsável"
+                  className={iconButton}
                 >
                   <UserCog className="h-4 w-4" />
-                  Responsável
                 </button>
               )}
               <button
@@ -89,17 +98,17 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
                   })
                 }
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                aria-label="Duplicar"
+                title="Duplicar"
+                className={iconButton}
               >
                 <Copy className="h-4 w-4" />
-                Duplicar
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-rose-300 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                className={dangerIconButton}
               >
                 <Trash2 className="h-4 w-4" />
-                Excluir
               </button>
             </>
           )}
@@ -176,7 +185,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
               className={`ml-auto rounded-lg p-1.5 transition-colors ${
                 task.favorita
-                  ? 'text-amber-500'
+                  ? 'text-amber-500 hover:bg-amber-100 hover:text-amber-600'
                   : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500'
               }`}
             >

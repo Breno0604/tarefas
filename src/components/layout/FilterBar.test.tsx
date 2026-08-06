@@ -22,7 +22,6 @@ describe('FilterBar', () => {
     renderWithApp(<FilterBar />);
     expect(screen.getByRole('button', { name: /Status/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Categoria/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Apenas favoritas' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Ordenar por' })).toBeInTheDocument();
   });
 

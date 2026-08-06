@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, FilterX, Star } from 'lucide-react';
+import { Check, ChevronDown, FilterX } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { COLABORADORES } from '../../data/mockData';
 import { tasksVisiveis } from '../../utils/permissions';
@@ -114,19 +114,6 @@ export default function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Favoritas: primeiro elemento, apenas ícone */}
-      <button
-        onClick={() => update({ favoritas: !filters.favoritas })}
-        title={filters.favoritas ? 'Remover favoritas' : 'Apenas favoritas'}
-        className={`inline-flex items-center justify-center rounded-lg border bg-white p-2 transition-colors ${
-          filters.favoritas
-            ? 'border-amber-400 text-amber-500 ring-2 ring-amber-100'
-            : 'border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-amber-500'
-        }`}
-      >
-        <Star className={`h-4 w-4 ${filters.favoritas ? 'fill-amber-400' : ''}`} />
-      </button>
-
       <MultiSelect label="Status" options={statusOptions} selected={filters.status} onChange={(v) => update({ status: v })} />
       <MultiSelect label="Prioridade" options={prioridadeOptions} selected={filters.prioridade} onChange={(v) => update({ prioridade: v })} />
       <MultiSelect label="Responsável" options={responsavelOptions} selected={filters.responsavel} onChange={(v) => update({ responsavel: v })} />

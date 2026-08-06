@@ -70,6 +70,10 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       return { ...state, section: action.section };
     case 'SET_VIEW':
       return { ...state, view: action.view };
+    case 'TOGGLE_KPI_COLLAPSED':
+      return { ...state, kpiCollapsed: !state.kpiCollapsed };
+    case 'TOGGLE_FILTERS':
+      return { ...state, filtersOpen: !state.filtersOpen };
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.filters } };
     case 'RESET_FILTERS':

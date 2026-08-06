@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   CircleDashed,
   CircleDot,
   ClipboardList,
@@ -31,16 +28,9 @@ interface KpiDef {
   onClick: () => void;
 }
 
-const COLLAPSED_KEY = 'kpiCollapsed';
-
 export default function KPICards({ indicators }: { indicators: Indicators }) {
   const { state, dispatch } = useApp();
-  const { filters } = state;
-  const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem(COLLAPSED_KEY) === '1');
-
-  useEffect(() => {
-    localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
-  }, [collapsed]);
+  const { filters, kpiCollapsed } = state;
 
   const openWithStatus = (statuses: TaskStatus[]) => openTarefas(dispatch, { status: statuses });
   const openVencidas = () => openTarefas(dispatch, { prazo: 'vencidas' });
@@ -65,19 +55,8 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700">Indicadores</h2>
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Expandir indicadores' : 'Recolher indicadores'}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700"
-        >
-          {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-      </div>
-      {!collapsed && (
+      <div className="mb-2" aria-hidden="true" />
+      {!kpiCollapsed && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;

@@ -48,6 +48,8 @@ const baseState: AppState = {
   view: 'lista',
   sidebarOpen: false,
   filters: { search: '', status: [], prioridade: [], responsavel: [], prazo: 'todas', favoritas: false, categorias: [], sortBy: null, paradas: null, comRetrabalho: false },
+  kpiCollapsed: false,
+  filtersOpen: true,
   modal: { type: 'none' },
   past: [],
 };
@@ -414,6 +416,33 @@ describe('appReducer — TOGGLE_SIDEBAR', () => {
 
   it('não empilha undo', () => {
     const next = appReducer(baseState, { type: 'TOGGLE_SIDEBAR' });
+    expect(next.past).toHaveLength(0);
+  });
+});
+
+describe('appReducer — controles de interface (topo)', () => {
+  it('TOGGLE_KPI_COLLAPSED alterna kpiCollapsed', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_KPI_COLLAPSED' });
+    expect(next.kpiCollapsed).toBe(true);
+    const back = appReducer(next, { type: 'TOGGLE_KPI_COLLAPSED' });
+    expect(back.kpiCollapsed).toBe(false);
+  });
+
+  it('TOGGLE_KPI_COLLAPSED não empilha undo', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_KPI_COLLAPSED' });
+    expect(next.past).toHaveLength(0);
+  });
+
+  it('TOGGLE_FILTERS alterna filtersOpen', () => {
+    expect(baseState.filtersOpen).toBe(true);
+    const next = appReducer(baseState, { type: 'TOGGLE_FILTERS' });
+    expect(next.filtersOpen).toBe(false);
+    const back = appReducer(next, { type: 'TOGGLE_FILTERS' });
+    expect(back.filtersOpen).toBe(true);
+  });
+
+  it('TOGGLE_FILTERS não empilha undo', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_FILTERS' });
     expect(next.past).toHaveLength(0);
   });
 });

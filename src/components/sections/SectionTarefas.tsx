@@ -36,22 +36,7 @@ export default function SectionTarefas() {
     <>
       <div className="mb-5 space-y-4">
         <KPICards indicators={indicators} />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <FilterBar />
-          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-            {(['lista', 'quadro'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => dispatch({ type: 'SET_VIEW', view: v })}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  state.view === v ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                {v === 'lista' ? 'Lista' : 'Quadro'}
-              </button>
-            ))}
-          </div>
-        </div>
+        {state.filtersOpen && <FilterBar />}
       </div>
       {state.view === 'lista' ? (
         <TasksTable
