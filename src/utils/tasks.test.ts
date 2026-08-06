@@ -125,7 +125,11 @@ describe('filterTasks', () => {
 
   it('filtra apenas tarefas devolvidas pelo menos uma vez', () => {
     const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, comRetrabalho: true }, nomes, NOW);
-    expect(result.map((t) => t.id).sort()).toEqual(['TA-001', 'TA-007', 'TA-014']);
+    expect(result.length).toBeGreaterThanOrEqual(3);
+    expect(result.every((t) => contarDevolucoes(t) > 0)).toBe(true);
+    expect(result.map((t) => t.id).sort()).toEqual(
+      expect.arrayContaining(['TA-001', 'TA-007', 'TA-014'])
+    );
   });
 
   it('sem filtro de movimentação/retrabalho retorna todas', () => {
@@ -136,7 +140,10 @@ describe('filterTasks', () => {
   it('ordena a fila de CONCLUIDA por tempo de espera e prioridade', () => {
     const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, status: ['CONCLUIDA'] }, nomes, NOW);
     // TA-003: 1 dia de espera (alta) primeiro; depois TA-009 (0 dias, média) e TA-015 (0 dias, baixa).
-    expect(result.map((t) => t.id)).toEqual(['TA-003', 'TA-009', 'TA-015']);
+    // A ordem relativa entre os três se mantém mesmo com tarefas geradas na fila.
+    const seed = result.filter((t) => ['TA-003', 'TA-009', 'TA-015'].includes(t.id)).map((t) => t.id);
+    expect(seed).toEqual(['TA-003', 'TA-009', 'TA-015']);
+    expect(result.length).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -180,20 +187,20 @@ describe('computeIndicators', () => {
 
   it('aguardandoAprovacao = count de CONCLUIDA', () => {
     const ind = computeIndicators(TAREFAS, NOW);
-    expect(ind.aguardandoAprovacao).toBe(3);
+    expect(ind.aguardandoAprovacao).toBe(11);
   });
 
   it('concluidas = CONCLUIDA + FINALIZADA (entregues, distintas de aguardandoAprovacao)', () => {
     const ind = computeIndicators(TAREFAS, NOW);
-    expect(ind.aguardandoAprovacao).toBe(3);
-    expect(ind.finalizadas).toBe(4);
-    expect(ind.concluidas).toBe(7);
+    expect(ind.aguardandoAprovacao).toBe(11);
+    expect(ind.finalizadas).toBe(18);
+    expect(ind.concluidas).toBe(29);
   });
 
   it('devolucoes (eventos) e comRetrabalho (tarefas) derivados do histórico do seed', () => {
     const ind = computeIndicators(TAREFAS, NOW);
-    expect(ind.devolucoes).toBe(3);
-    expect(ind.comRetrabalho).toBe(3);
+    expect(ind.devolucoes).toBe(14);
+    expect(ind.comRetrabalho).toBe(14);
   });
 
   it('existe pelo menos uma atrasada no seed', () => {
@@ -213,13 +220,13 @@ describe('computeIndicators', () => {
     const base = computeIndicators(TAREFAS, NOW);
     const ind = computeIndicators([...TAREFAS, cancelada], NOW);
     expect(ind.total).toBe(TAREFAS.length + 1);
-    expect(ind.canceladas).toBe(1);
+    expect(ind.canceladas).toBe(base.canceladas + 1);
     expect(ind.atrasadas).toBe(base.atrasadas);
   });
 
-  it('conta tarefas paradas há 7+ dias (TA-008 no seed)', () => {
+  it('conta tarefas paradas há 7+ dias (TA-008 e geradas no seed)', () => {
     const ind = computeIndicators(TAREFAS, NOW);
-    expect(ind.paradas).toBe(1);
+    expect(ind.paradas).toBe(8);
   });
 
   it('não conta FINALIZADA/CANCELADA como paradas, mesmo sem movimentação', () => {
@@ -301,7 +308,7 @@ describe('diasAguardandoAprovacao / diasSemMovimentacao', () => {
 
 describe('nextTaskId / colaboradorResumo', () => {
   it('gera o próximo id sequencial a partir do seed', () => {
-    expect(nextTaskId(TAREFAS)).toBe('TA-017');
+    expect(nextTaskId(TAREFAS)).toBe('TA-071');
   });
 
   it('considera ids não numéricos sem quebrar', () => {
@@ -329,7 +336,7 @@ describe('createTask', () => {
       },
       'Carlos Mendes'
     );
-    expect(task.id).toBe('TA-017');
+    expect(task.id).toBe('TA-071');
     expect(task.status).toBe('NOVA');
     expect(task.criadaEm).toBeDefined();
     expect(task.historico).toHaveLength(1);
