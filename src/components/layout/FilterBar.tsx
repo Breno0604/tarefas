@@ -145,6 +145,19 @@ export default function FilterBar() {
       </select>
 
       <select
+        value={filters.paradas ?? ''}
+        onChange={(e) => update({ paradas: e.target.value === '' ? null : Number(e.target.value) })}
+        title="Movimentação"
+        aria-label="Movimentação"
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+      >
+        <option value="">Sem movimentação há: qualquer</option>
+        <option value="7">7 dias ou mais</option>
+        <option value="14">14 dias ou mais</option>
+        <option value="30">30 dias ou mais</option>
+      </select>
+
+      <select
         value={filters.sortBy ?? ''}
         onChange={(e) => update({ sortBy: (e.target.value || null) as TaskSort | null })}
         title="Ordenar por"

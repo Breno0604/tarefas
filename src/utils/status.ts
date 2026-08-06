@@ -11,6 +11,7 @@ export const STATUS_ORDER: TaskStatus[] = [
   'EM_EXECUCAO',
   'CONCLUIDA',
   'FINALIZADA',
+  'CANCELADA',
 ];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
@@ -20,6 +21,7 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   CONCLUIDA: 'Concluída',
   DEVOLVIDA: 'Devolvida',
   FINALIZADA: 'Finalizada',
+  CANCELADA: 'Cancelada',
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
@@ -43,7 +45,13 @@ export const TRANSITIONS: { from: TaskStatus; to: TaskStatus; role: Role }[] = [
   { from: 'CONCLUIDA', to: 'FINALIZADA', role: 'gestor' },
   { from: 'CONCLUIDA', to: 'DEVOLVIDA', role: 'gestor' },
   { from: 'CONCLUIDA', to: 'EM_EXECUCAO', role: 'colaborador' },
+  { from: 'CONCLUIDA', to: 'EM_EXECUCAO', role: 'gestor' },
   { from: 'DEVOLVIDA', to: 'EM_EXECUCAO', role: 'colaborador' },
+  { from: 'FINALIZADA', to: 'EM_EXECUCAO', role: 'gestor' },
+  { from: 'NOVA', to: 'CANCELADA', role: 'gestor' },
+  { from: 'RECEBIDA', to: 'CANCELADA', role: 'gestor' },
+  { from: 'EM_EXECUCAO', to: 'CANCELADA', role: 'gestor' },
+  { from: 'DEVOLVIDA', to: 'CANCELADA', role: 'gestor' },
 ];
 
 export function canTransition(from: TaskStatus, to: TaskStatus, role: Role): boolean {
@@ -52,4 +60,25 @@ export function canTransition(from: TaskStatus, to: TaskStatus, role: Role): boo
 
 export function availableTransitions(status: TaskStatus, role: Role): TaskStatus[] {
   return TRANSITIONS.filter((t) => t.from === status && t.role === role).map((t) => t.to);
+}
+
+/** Reatribuição de responsável é bloqueada para tarefas encerradas (FINALIZADA/CANCELADA). */
+export function podeReatribuir(status: TaskStatus): boolean {
+  return status !== 'FINALIZADA' && status !== 'CANCELADA';
+}
+
+/** De quem é o próximo passo no fluxo, dado o status atual. */
+export function proximoPasso(status: TaskStatus): 'gestor' | 'colaborador' | 'nenhum' {
+  switch (status) {
+    case 'NOVA':
+    case 'RECEBIDA':
+    case 'EM_EXECUCAO':
+    case 'DEVOLVIDA':
+      return 'colaborador';
+    case 'CONCLUIDA':
+      return 'gestor';
+    case 'FINALIZADA':
+    case 'CANCELADA':
+      return 'nenhum';
+  }
 }

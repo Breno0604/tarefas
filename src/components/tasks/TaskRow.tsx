@@ -10,14 +10,17 @@ import {
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf, availableTransitions } from '../../utils/status';
-import { pode, podeAlterarStatus } from '../../utils/permissions';
+import { roleOf, availableTransitions, podeReatribuir } from '../../utils/status';
+import { contarDevolucoes } from '../../utils/tasks';
+import { pode, podeAlterarStatusPara } from '../../utils/permissions';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import Avatar from '../ui/Avatar';
 import StatusBadge from './StatusBadge';
 import PriorityBadge from './PriorityBadge';
 import CycleStepper from './CycleStepper';
 import DueDateCell from './DueDateCell';
+import ProximoPassoBadge from './ProximoPassoBadge';
+import ReworkBadge from './ReworkBadge';
 import { cycleActionFor } from './cycleActions';
 
 interface TaskRowProps {
@@ -50,7 +53,6 @@ export default function TaskRow({
   const responsavel = findUser(task.responsavelId);
   const can = availableTransitions(task.status, role);
   const podeGerenciar = pode(state.currentUserId, 'gerenciar_tarefas');
-  const podeAlterar = podeAlterarStatus(state.currentUserId, task);
 
   const openDetail = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } });
   const openEdit = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'edit', taskId: task.id } });
@@ -59,6 +61,10 @@ export default function TaskRow({
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
       onConfirmComplete(task);
+      return;
+    }
+    if (novoStatus === 'CANCELADA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
       return;
     }
     dispatch({
@@ -114,7 +120,11 @@ export default function TaskRow({
         <DueDateCell task={task} />
       </td>
       <td className="px-4 py-3">
-        <StatusBadge status={task.status} />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge status={task.status} />
+          <ReworkBadge qtd={contarDevolucoes(task)} />
+          <ProximoPassoBadge task={task} />
+        </div>
       </td>
       <td className="px-4 py-3">
         <CycleStepper status={task.status} compact />
@@ -148,13 +158,15 @@ export default function TaskRow({
               >
                 <Pencil className="h-4 w-4" />
               </button>
-              <button
-                onClick={openReassign}
-                title="Alterar responsável"
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              >
-                <UserCog className="h-4 w-4" />
-              </button>
+              {podeGerenciar && podeReatribuir(task.status) && (
+                <button
+                  onClick={openReassign}
+                  title="Alterar responsável"
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <UserCog className="h-4 w-4" />
+                </button>
+              )}
               <button
                 onClick={() =>
                   dispatch({
@@ -177,7 +189,8 @@ export default function TaskRow({
               </button>
             </>
           )}
-          {podeAlterar && can.map((target) => {
+          {can.map((target) => {
+            if (!podeAlterarStatusPara(state.currentUserId, task, target)) return null;
             const act = cycleActionFor(task, target);
             if (!act) return null;
             const Icon = act.icon;

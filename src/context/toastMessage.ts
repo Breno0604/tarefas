@@ -8,6 +8,7 @@ const STATUS_TOAST: Partial<Record<TaskStatus, string>> = {
   CONCLUIDA: 'Tarefa concluída — aguardando análise',
   DEVOLVIDA: 'Tarefa devolvida',
   FINALIZADA: 'Tarefa finalizada',
+  CANCELADA: 'Tarefa cancelada',
 };
 
 /** Mensagem de toast por ação, ou null quando a ação não deve exibir toast. */

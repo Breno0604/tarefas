@@ -65,4 +65,22 @@ describe('TaskRow — alterar_status_outros', () => {
     expect(screen.getByTitle('Receber')).toBeInTheDocument();
     expect(screen.queryByTitle('Editar')).not.toBeInTheDocument();
   });
+
+  it('colaborador com alterar_status_outros não reabre CONCLUIDA de outro', () => {
+    const Harness = switchUser('lucas');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow
+              task={{ ...NOVA, id: 'TA-002', status: 'CONCLUIDA' }}
+              onConfirmComplete={() => {}}
+              onDeleteRequest={() => {}}
+            />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.queryByTitle('Reabrir')).not.toBeInTheDocument();
+  });
 });

@@ -94,7 +94,7 @@ describe('TaskRow — ações por papel', () => {
     expect(screen.getByTitle('Receber')).toBeInTheDocument();
   });
 
-  it('colaborador em CONCLUIDA pode reabrir (e gestor não)', () => {
+  it('colaborador responsável em CONCLUIDA pode reabrir', () => {
     const Harness = switchUser('joao');
     renderWithApp(
       <table>
@@ -107,6 +107,64 @@ describe('TaskRow — ações por papel', () => {
     );
     expect(screen.getByTitle('Reabrir')).toBeInTheDocument();
     expect(screen.queryByTitle('Iniciar')).not.toBeInTheDocument();
+  });
+
+  it('gestor em CONCLUIDA também vê Reabrir', () => {
+    renderRow(CONCLUIDA);
+    expect(screen.getByTitle('Reabrir')).toBeInTheDocument();
+  });
+
+  it('gestor em FINALIZADA vê Reabrir aprovação', () => {
+    renderRow({ ...NOVA, id: 'TA-010', status: 'FINALIZADA' });
+    expect(screen.getByTitle('Reabrir aprovação')).toBeInTheDocument();
+  });
+
+  it('gestor não vê Alterar responsável em FINALIZADA', () => {
+    renderRow({ ...NOVA, id: 'TA-010', status: 'FINALIZADA' });
+    expect(screen.queryByTitle('Alterar responsável')).not.toBeInTheDocument();
+  });
+
+  it('gestor não vê Alterar responsável em CANCELADA', () => {
+    renderRow({ ...NOVA, id: 'TA-011', status: 'CANCELADA' });
+    expect(screen.queryByTitle('Alterar responsável')).not.toBeInTheDocument();
+  });
+
+  it('gestor em NOVA vê Cancelar', () => {
+    renderRow(NOVA);
+    expect(screen.getByTitle('Cancelar')).toBeInTheDocument();
+  });
+
+  it('gestor em CONCLUIDA não vê Cancelar', () => {
+    renderRow(CONCLUIDA);
+    expect(screen.queryByTitle('Cancelar')).not.toBeInTheDocument();
+  });
+
+  it('colaborador não vê Cancelar', () => {
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow task={NOVA} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.queryByTitle('Cancelar')).not.toBeInTheDocument();
+  });
+
+  it('colaborador em FINALIZADA não vê Reabrir aprovação', () => {
+    const Harness = switchUser('joao');
+    renderWithApp(
+      <table>
+        <tbody>
+          <Harness>
+            <TaskRow task={{ ...NOVA, id: 'TA-010', status: 'FINALIZADA' }} onConfirmComplete={() => {}} onDeleteRequest={() => {}} />
+          </Harness>
+        </tbody>
+      </table>
+    );
+    expect(screen.queryByTitle('Reabrir aprovação')).not.toBeInTheDocument();
   });
 
   it('favoritar alterna o estado visual da estrela', async () => {
@@ -124,6 +182,49 @@ describe('TaskRow — ações por papel', () => {
     renderRow(NOVA, { onDeleteRequest: onDelete });
     await user.click(screen.getByTitle('Excluir'));
     expect(onDelete).toHaveBeenCalledWith(NOVA);
+  });
+});
+
+describe('TaskRow — indicadores de fluxo', () => {
+  it('mostra badge de retrabalho para tarefa devolvida no histórico', () => {
+    const devolvida: Task = {
+      ...NOVA,
+      id: 'TA-100',
+      status: 'CONCLUIDA',
+      historico: [
+        {
+          id: 'h1',
+          dataHora: '2026-08-01T10:00:00',
+          usuario: 'Carlos Mendes',
+          statusAnterior: 'CONCLUIDA',
+          novoStatus: 'DEVOLVIDA',
+          tipo: 'status',
+        },
+      ],
+    };
+    renderRow(devolvida);
+    expect(screen.getByText('retornou 1 vez')).toBeInTheDocument();
+  });
+
+  it('não mostra badge de retrabalho quando nunca houve devolução', () => {
+    renderRow(NOVA);
+    expect(screen.queryByText(/retornou/)).not.toBeInTheDocument();
+  });
+
+  it('indica "aguardando gestor" para tarefa CONCLUIDA', () => {
+    renderRow({ ...CONCLUIDA, concluidaEm: new Date().toISOString() });
+    expect(screen.getByText('aguardando gestor')).toBeInTheDocument();
+  });
+
+  it('indica "vez do colaborador" em status de execução', () => {
+    renderRow(NOVA);
+    expect(screen.getByText('vez do colaborador')).toBeInTheDocument();
+  });
+
+  it('não indica próximo passo para FINALIZADA', () => {
+    renderRow({ ...NOVA, id: 'TA-010', status: 'FINALIZADA' });
+    expect(screen.queryByText('vez do colaborador')).not.toBeInTheDocument();
+    expect(screen.queryByText(/aguardando gestor/)).not.toBeInTheDocument();
   });
 });
 

@@ -1,9 +1,64 @@
 import type { Task } from '../types';
-import { canTransition, roleOf } from '../utils/status';
-import { pode, podeAlterarStatus } from '../utils/permissions';
+import { canTransition, podeReatribuir, roleOf } from '../utils/status';
+import { pode, podeAlterarStatusPara } from '../utils/permissions';
 import { newHistoryEntry } from '../utils/history';
 import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
 import type { AppAction, AppState } from './types';
+
+const CAMPOS_EDITAVEIS = ['titulo', 'descricao', 'prazo', 'prioridade'] as const;
+
+const CAMPOS_WHITELIST = ['titulo', 'descricao', 'prazo', 'prioridade', 'categoria', 'tags'] as const;
+
+type CampoEdicao = (typeof CAMPOS_WHITELIST)[number];
+
+const LABEL_CAMPO: Record<string, string> = {
+  titulo: 'Título',
+  descricao: 'Descrição',
+  prazo: 'Prazo',
+  prioridade: 'Prioridade',
+};
+
+const PARTICIPIO_CAMPO: Record<string, string> = {
+  titulo: 'alterado',
+  descricao: 'alterada',
+  prazo: 'alterado',
+  prioridade: 'alterada',
+};
+
+function exibirValor(campo: string, valor: unknown): string {
+  if (valor === null || valor === undefined || valor === '') {
+    return campo === 'prazo' ? 'sem prazo' : 'vazio';
+  }
+  return String(valor);
+}
+
+/** Compara valor por valor: tags por conteúdo (ordem preservada), categoria normalizando vazio. */
+function mudou(campo: CampoEdicao, task: Task, mudancas: Partial<Task>): boolean {
+  const novo = mudancas[campo];
+  if (campo === 'tags') {
+    const atual = task.tags ?? [];
+    const prox = novo ?? [];
+    return atual.length !== prox.length || atual.some((t, i) => t !== prox[i]);
+  }
+  if (campo === 'categoria') {
+    return (novo ?? '') !== (task.categoria ?? '');
+  }
+  if (novo === undefined) return false;
+  return novo !== task[campo];
+}
+
+function montarObservacaoEdicao(
+  diffs: readonly (typeof CAMPOS_EDITAVEIS)[number][],
+  task: Task,
+  changes: Partial<Task>
+): string {
+  return diffs
+    .map(
+      (campo) =>
+        `${LABEL_CAMPO[campo]} ${PARTICIPIO_CAMPO[campo]} de ${exibirValor(campo, task[campo])} para ${exibirValor(campo, changes[campo])}`
+    )
+    .join('; ');
+}
 
 function appReducerCore(state: AppState, action: AppAction): AppState {
   switch (action.type) {
@@ -37,11 +92,56 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       if (!task) return state;
       if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
       if (Object.keys(action.changes).length === 0) return state;
+      const camposForaDaWhitelist = Object.keys(action.changes).filter(
+        (campo) => !(CAMPOS_WHITELIST as readonly string[]).includes(campo)
+      );
+      if (camposForaDaWhitelist.includes('responsavelId')) return state;
+      const mudancasEfetivas = CAMPOS_WHITELIST.filter((campo) => mudou(campo, task, action.changes));
+      if (mudancasEfetivas.length === 0) return state;
+      const diffs = mudancasEfetivas.filter(
+        (campo) => (CAMPOS_EDITAVEIS as readonly string[]).includes(campo)
+      ) as typeof CAMPOS_EDITAVEIS[number][];
+      const historico =
+        diffs.length > 0
+          ? [
+              ...task.historico,
+              newHistoryEntry(
+                action.usuario,
+                task.status,
+                task.status,
+                'info',
+                montarObservacaoEdicao(diffs, task, action.changes)
+              ),
+            ]
+          : task.historico;
+      const mudancasAplicadas: Partial<Task> = {};
+      for (const campo of mudancasEfetivas) {
+        switch (campo) {
+          case 'titulo':
+            mudancasAplicadas.titulo = action.changes.titulo;
+            break;
+          case 'descricao':
+            mudancasAplicadas.descricao = action.changes.descricao;
+            break;
+          case 'prazo':
+            mudancasAplicadas.prazo = action.changes.prazo;
+            break;
+          case 'prioridade':
+            mudancasAplicadas.prioridade = action.changes.prioridade;
+            break;
+          case 'categoria':
+            mudancasAplicadas.categoria = action.changes.categoria;
+            break;
+          case 'tags':
+            mudancasAplicadas.tags = action.changes.tags ?? [];
+            break;
+        }
+      }
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.taskId
-            ? { ...t, ...action.changes, atualizadaEm: new Date().toISOString() }
+            ? { ...t, ...mudancasAplicadas, atualizadaEm: new Date().toISOString(), historico }
             : t
         ),
       };
@@ -49,8 +149,9 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
     case 'CHANGE_STATUS': {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
-      if (!podeAlterarStatus(state.currentUserId, task)) return state;
+      if (!podeAlterarStatusPara(state.currentUserId, task, action.novoStatus)) return state;
       if (!canTransition(task.status, action.novoStatus, roleOf(state.currentUserId))) return state;
+      if (action.novoStatus === 'CANCELADA' && !action.observacao?.trim()) return state;
       const entry = newHistoryEntry(
         action.usuario,
         task.status,
@@ -83,6 +184,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       const task = state.tasks.find((t) => t.id === action.taskId);
       if (!task) return state;
       if (!pode(state.currentUserId, 'gerenciar_tarefas')) return state;
+      if (!podeReatribuir(task.status)) return state;
+      if (!action.observacao?.trim()) return state;
       const entry = newHistoryEntry(
         action.usuario,
         task.status,

@@ -16,7 +16,7 @@ vi.mock('../data/mockData', async (importOriginal) => {
 
 import { GESTOR_ID, TAREFAS } from '../data/mockData';
 import type { Task } from '../types';
-import { permissoesDe, pode, podeAlterarStatus, podeVer, tasksVisiveis } from './permissions';
+import { permissoesDe, pode, podeAlterarStatus, podeAlterarStatusPara, podeReabrir, podeVer, tasksVisiveis } from './permissions';
 
 const tarefaJoao: Task = TAREFAS.find((t) => t.id === 'TA-005')!; // responsável joao
 const tarefaMaria: Task = TAREFAS.find((t) => t.id === 'TA-003')!; // responsável maria
@@ -70,6 +70,35 @@ describe('podeAlterarStatus', () => {
   it('não-responsável com alterar_status_outros pode alterar', () => {
     expect(podeAlterarStatus('lucas', tarefaJoao)).toBe(true);
     expect(podeAlterarStatus('lucas', tarefaMaria)).toBe(true);
+  });
+});
+
+describe('podeReabrir', () => {
+  it('gestor e responsável podem reabrir', () => {
+    expect(podeReabrir(GESTOR_ID, tarefaMaria)).toBe(true);
+    expect(podeReabrir('maria', tarefaMaria)).toBe(true);
+    expect(podeReabrir('joao', tarefaJoao)).toBe(true);
+  });
+
+  it('não-responsável sem permissão não pode reabrir', () => {
+    expect(podeReabrir('maria', tarefaJoao)).toBe(false);
+  });
+
+  it('alterar_status_outros não habilita reabrir entrega de terceiro', () => {
+    expect(podeReabrir('lucas', tarefaMaria)).toBe(false);
+  });
+});
+
+describe('podeAlterarStatusPara', () => {
+  it('reabrir (CONCLUIDA → EM_EXECUCAO) exige responsável ou gestor', () => {
+    expect(podeAlterarStatusPara(GESTOR_ID, tarefaMaria, 'EM_EXECUCAO')).toBe(true);
+    expect(podeAlterarStatusPara('maria', tarefaMaria, 'EM_EXECUCAO')).toBe(true);
+    expect(podeAlterarStatusPara('lucas', tarefaMaria, 'EM_EXECUCAO')).toBe(false);
+    expect(podeAlterarStatusPara('maria', tarefaJoao, 'EM_EXECUCAO')).toBe(false);
+  });
+
+  it('alterar_status_outros continua valendo para transições fora do reabrir', () => {
+    expect(podeAlterarStatusPara('lucas', tarefaJoao, 'RECEBIDA')).toBe(true);
   });
 });
 

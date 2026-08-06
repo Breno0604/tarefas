@@ -4,7 +4,8 @@ export type TaskStatus =
   | 'EM_EXECUCAO'
   | 'CONCLUIDA'
   | 'DEVOLVIDA'
-  | 'FINALIZADA';
+  | 'FINALIZADA'
+  | 'CANCELADA';
 
 export type Priority = 'baixa' | 'media' | 'alta' | 'critica';
 export type Role = 'gestor' | 'colaborador';
@@ -65,6 +66,8 @@ export interface Filters {
   favoritas: boolean;
   categorias: string[];
   sortBy: TaskSort | null; // null = ordem original (do seed)
+  paradas: number | null; // null = todas; N = sem movimentação há N+ dias
+  comRetrabalho: boolean; // apenas tarefas devolvidas ao menos uma vez
 }
 
 export type ModalState =
@@ -75,6 +78,7 @@ export type ModalState =
   | { type: 'reassign'; taskId: string }
   | { type: 'approve'; taskId: string }
   | { type: 'return'; taskId: string }
+  | { type: 'cancel'; taskId: string }
   | { type: 'history'; taskId: string }
   | { type: 'colaborador'; colaboradorId: string };
 

@@ -1,4 +1,4 @@
-import type { Permission, Task } from '../types';
+import type { Permission, Task, TaskStatus } from '../types';
 import { findUser, GESTOR_ID } from '../data/mockData';
 
 const TODAS_AS_PERMISSOES: Permission[] = [
@@ -22,6 +22,17 @@ export function pode(userId: string, perm: Permission): boolean {
 /** Pode avançar/retroceder o status desta tarefa? (gestor, responsável ou com permissão específica) */
 export function podeAlterarStatus(userId: string, task: Task): boolean {
   return userId === GESTOR_ID || task.responsavelId === userId || pode(userId, 'alterar_status_outros');
+}
+
+/** Pode reabrir a entrega (CONCLUIDA → EM_EXECUCAO)? Só o responsável (ou gestor) — retirar da fila de aprovação é decisão do executor ou do gestor. */
+export function podeReabrir(userId: string, task: Task): boolean {
+  return userId === GESTOR_ID || task.responsavelId === userId;
+}
+
+/** Pode levar a tarefa a este status? Aplica guards específicos por transição (reabrir restrito ao responsável/gestor). */
+export function podeAlterarStatusPara(userId: string, task: Task, novoStatus: TaskStatus): boolean {
+  if (task.status === 'CONCLUIDA' && novoStatus === 'EM_EXECUCAO') return podeReabrir(userId, task);
+  return podeAlterarStatus(userId, task);
 }
 
 /** Pode visualizar esta tarefa? (gestor, responsável ou com permissão de visualizar todas) */

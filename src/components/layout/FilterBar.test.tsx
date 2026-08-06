@@ -4,6 +4,16 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FilterBar from './FilterBar';
 import { renderWithApp } from '../../test/renderWithApp';
+import { useApp } from '../../context/AppContext';
+
+function FilterProbe() {
+  const { state } = useApp();
+  return (
+    <output data-testid="probe">
+      {JSON.stringify({ paradas: state.filters.paradas, comRetrabalho: state.filters.comRetrabalho })}
+    </output>
+  );
+}
 
 beforeEach(() => localStorage.clear());
 
@@ -49,5 +59,30 @@ describe('FilterBar', () => {
     expect(screen.getByRole('option', { name: 'Ordem original' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Título' })).toBeInTheDocument();
     expect(sort).toHaveValue('');
+  });
+
+  it('exibe o seletor de movimentação e aplica o filtro de paradas', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<><FilterBar /><FilterProbe /></>);
+
+    const mov = screen.getByRole('combobox', { name: 'Movimentação' });
+    expect(mov).toBeInTheDocument();
+
+    await user.selectOptions(mov, '7');
+
+    const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+    expect(probe.paradas).toBe(7);
+  });
+
+  it('voltar o seletor de movimentação para "Todas" limpa o filtro de paradas', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<><FilterBar /><FilterProbe /></>);
+
+    const mov = screen.getByRole('combobox', { name: 'Movimentação' });
+    await user.selectOptions(mov, '14');
+    await user.selectOptions(mov, '');
+
+    const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+    expect(probe.paradas).toBeNull();
   });
 });

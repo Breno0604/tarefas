@@ -3,8 +3,8 @@ import { Copy, History, Pencil, Star, Trash2, UserCog } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { roleOf } from '../../utils/status';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
-import { availableTransitions } from '../../utils/status';
-import { pode, podeAlterarStatus } from '../../utils/permissions';
+import { availableTransitions, podeReatribuir } from '../../utils/status';
+import { pode, podeAlterarStatus, podeAlterarStatusPara } from '../../utils/permissions';
 import { formatDate, formatDateTime } from '../../utils/date';
 import Modal from '../modal/Modal';
 import ConfirmDialog from '../modal/ConfirmDialog';
@@ -14,6 +14,9 @@ import PriorityBadge from '../tasks/PriorityBadge';
 import CycleStepper from '../tasks/CycleStepper';
 import DueDateCell from '../tasks/DueDateCell';
 import CategoryTag from '../tasks/CategoryTag';
+import ProximoPassoBadge from '../tasks/ProximoPassoBadge';
+import ReworkBadge from '../tasks/ReworkBadge';
+import { contarDevolucoes } from '../../utils/tasks';
 
 interface TaskDetailModalProps {
   taskId: string;
@@ -69,13 +72,15 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 <Pencil className="h-4 w-4" />
                 Editar
               </button>
-              <button
-                onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'reassign', taskId: task.id } })}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                <UserCog className="h-4 w-4" />
-                Responsável
-              </button>
+              {podeGerenciar && podeReatribuir(task.status) && (
+                <button
+                  onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'reassign', taskId: task.id } })}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <UserCog className="h-4 w-4" />
+                  Responsável
+                </button>
+              )}
               <button
                 onClick={() =>
                   dispatch({
@@ -113,7 +118,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               Retomar após correção
             </button>
           )}
-          {podeAlterar && task.status === 'CONCLUIDA' && role === 'colaborador' && (
+          {podeAlterarStatusPara(state.currentUserId, task, 'EM_EXECUCAO') && task.status === 'CONCLUIDA' && (
             <button onClick={() => changeStatus('EM_EXECUCAO')} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">
               Reabrir tarefa
             </button>
@@ -139,6 +144,22 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               </button>
             </>
           )}
+          {task.status === 'FINALIZADA' && role === 'gestor' && (
+            <button
+              onClick={() => changeStatus('EM_EXECUCAO')}
+              className="rounded-lg border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+            >
+              Reabrir aprovação
+            </button>
+          )}
+          {role === 'gestor' && can.includes('CANCELADA') && (
+            <button
+              onClick={() => dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } })}
+              className="rounded-lg border border-slate-400 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+            >
+              Cancelar
+            </button>
+          )}
         </>
       }
     >
@@ -147,6 +168,8 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-400">{task.id}</span>
             <StatusBadge status={task.status} />
+            <ReworkBadge qtd={contarDevolucoes(task)} />
+            <ProximoPassoBadge task={task} />
             <PriorityBadge prioridade={task.prioridade} />
             <button
               onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}

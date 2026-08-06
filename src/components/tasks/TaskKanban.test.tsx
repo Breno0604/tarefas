@@ -41,7 +41,7 @@ function renderKanban(props: Partial<Parameters<typeof TaskKanban>[0]> = {}) {
 beforeEach(() => localStorage.clear())
 
 describe('TaskKanban', () => {
-  it('renderiza as seis colunas com seus rótulos de StatusBadge', () => {
+  it('renderiza as sete colunas com seus rótulos de StatusBadge', () => {
     renderKanban()
     expect(screen.getByText('Nova')).toBeInTheDocument()
     expect(screen.getByText('Recebida')).toBeInTheDocument()
@@ -49,6 +49,7 @@ describe('TaskKanban', () => {
     expect(screen.getByText('Concluída')).toBeInTheDocument()
     expect(screen.getByText('Devolvida')).toBeInTheDocument()
     expect(screen.getByText('Finalizada')).toBeInTheDocument()
+    expect(screen.getByText('Cancelada')).toBeInTheDocument()
   })
 
   it('renderiza cards de tarefa com títulos', () => {
@@ -143,6 +144,44 @@ describe('TaskKanban', () => {
     fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
 
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('NOVA'))
+  })
+
+  it('drop para CANCELADA não altera o status (cancelamento exige observação)', async () => {
+    const taskId = 'TA-005'
+    renderWithApp(
+      <>
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+        <Probe id={taskId} />
+      </>
+    )
+
+    const card = screen.getByText('Corrigir bug de checkout').closest('div[draggable]')!
+    const column = screen.getAllByText('Cancelada')[0].closest('div[class*="min-w-"]')!
+
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: 'move' } })
+    fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
+    fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
+
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('NOVA'))
+  })
+
+  it('drop para DEVOLVIDA não altera o status (devolução exige observação via ReturnModal)', async () => {
+    const taskId = 'TA-003'
+    renderWithApp(
+      <>
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+        <Probe id={taskId} />
+      </>
+    )
+
+    const card = screen.getByText('Criar campanha de e-mail').closest('div[draggable]')!
+    const column = screen.getAllByText('Devolvida')[0].closest('div[class*="min-w-"]')!
+
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: 'move' } })
+    fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
+    fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
+
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CONCLUIDA'))
   })
 })
 

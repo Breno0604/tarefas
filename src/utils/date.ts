@@ -31,7 +31,8 @@ export function isOverdue(
   status: TaskStatus,
   now: Date = new Date()
 ): boolean {
-  if (!prazo || status === 'FINALIZADA') return false;
+  if (!prazo || status === 'FINALIZADA' || status === 'CANCELADA' || status === 'CONCLUIDA')
+    return false;
   return parsePrazo(prazo) < startOfToday(now);
 }
 
@@ -55,4 +56,17 @@ export function isDueToday(prazo: string | null, now: Date = new Date()): boolea
   const amanha = new Date(hoje);
   amanha.setDate(amanha.getDate() + 1);
   return prazoDate >= hoje && prazoDate < amanha;
+}
+
+/** Dias inteiros decorridos desde um timestamp ISO (0 se hoje ou no futuro). */
+export function diasDesde(iso: string, now: Date = new Date()): number {
+  const inicio = startOfToday(new Date(iso));
+  const hoje = startOfToday(now);
+  return Math.max(0, Math.round((hoje.getTime() - inicio.getTime()) / 86_400_000));
+}
+
+/** Texto relativo para uma idade em dias ("hoje", "há 1 dia", "há 3 dias"). */
+export function idadeRelativa(dias: number): string {
+  if (dias <= 0) return 'hoje';
+  return `há ${dias} dia${dias === 1 ? '' : 's'}`;
 }

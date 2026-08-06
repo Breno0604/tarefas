@@ -8,6 +8,7 @@ const STYLES: Record<TaskStatus, string> = {
   CONCLUIDA: 'bg-violet-50 text-violet-700 ring-violet-600/20',
   DEVOLVIDA: 'bg-rose-50 text-rose-700 ring-rose-600/20',
   FINALIZADA: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  CANCELADA: 'bg-slate-200 text-slate-600 ring-slate-500/20',
 };
 
 export default function StatusBadge({ status }: { status: TaskStatus }) {

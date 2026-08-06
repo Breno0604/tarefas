@@ -3,13 +3,13 @@ import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { roleOf } from '../../utils/status';
-import { podeAlterarStatus } from '../../utils/permissions';
+import { podeAlterarStatusPara } from '../../utils/permissions';
 import { NOME_POR_ID } from '../../data/mockData';
 import { canTransition, STATUS_LABELS } from '../../utils/status';
 import StatusBadge from './StatusBadge';
 import TaskCard from './TaskCard';
 
-const COLUMNS: TaskStatus[] = ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'CONCLUIDA', 'DEVOLVIDA', 'FINALIZADA'];
+const COLUMNS: TaskStatus[] = ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'CONCLUIDA', 'DEVOLVIDA', 'FINALIZADA', 'CANCELADA'];
 
 interface TaskKanbanProps {
   tasks: Task[];
@@ -53,10 +53,11 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
   };
 
   const canDropOn = (status: TaskStatus): boolean => {
+    if (status === 'CANCELADA' || status === 'DEVOLVIDA') return false;
     if (!dragInfo) return true;
     const dragged = state.tasks.find((t) => t.id === dragInfo.id);
     if (!dragged) return false;
-    return podeAlterarStatus(state.currentUserId, dragged) && canTransition(dragInfo.status, status, role);
+    return podeAlterarStatusPara(state.currentUserId, dragged, status) && canTransition(dragInfo.status, status, role);
   };
 
   const handleDragOver = (status: TaskStatus) => (e: DragEvent) => {
@@ -69,11 +70,12 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     e.preventDefault();
     setOverStatus(null);
     setDragInfo(null);
+    if (status === 'CANCELADA' || status === 'DEVOLVIDA') return;
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);
     if (!dragged || dragged.status === status) return;
-    if (!podeAlterarStatus(state.currentUserId, dragged)) return;
+    if (!podeAlterarStatusPara(state.currentUserId, dragged, status)) return;
     if (!canTransition(dragged.status, status, role)) return;
     dispatch({
       type: 'CHANGE_STATUS',

@@ -31,6 +31,11 @@ describe('cycleActionFor', () => {
     expect(act?.label).toBe('Reabrir');
   });
 
+  it('EM_EXECUCAO em status FINALIZADA → Reabrir aprovação', () => {
+    const act = cycleActionFor({ ...TASK, status: 'FINALIZADA' }, 'EM_EXECUCAO');
+    expect(act?.label).toBe('Reabrir aprovação');
+  });
+
   it('EM_EXECUCAO em status DEVOLVIDA → Retomar', () => {
     const act = cycleActionFor({ ...TASK, status: 'DEVOLVIDA' }, 'EM_EXECUCAO');
     expect(act?.label).toBe('Retomar');

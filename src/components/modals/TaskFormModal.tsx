@@ -36,10 +36,10 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
       dispatch({
         type: 'UPDATE_TASK',
         taskId: editing.id,
+        usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
         changes: {
           titulo: titulo.trim(),
           descricao: descricao.trim(),
-          responsavelId,
           prioridade,
           prazo: prazo || null,
           categoria: categoria.trim() || undefined,
@@ -111,16 +111,18 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="task-responsavel" className="mb-1 block text-sm font-medium text-slate-700">Responsável *</label>
-            <select id="task-responsavel" value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)} className={inputCls}>
-              {COLABORADORES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!isEdit && (
+            <div>
+              <label htmlFor="task-responsavel" className="mb-1 block text-sm font-medium text-slate-700">Responsável *</label>
+              <select id="task-responsavel" value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)} className={inputCls}>
+                {COLABORADORES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="task-prioridade" className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
             <select id="task-prioridade" value={prioridade} onChange={(e) => setPrioridade(e.target.value as Priority)} className={inputCls}>

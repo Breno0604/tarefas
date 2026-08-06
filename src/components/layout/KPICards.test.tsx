@@ -23,6 +23,8 @@ function Probe() {
           status: state.filters.status,
           prazo: state.filters.prazo,
           search: state.filters.search,
+          paradas: state.filters.paradas,
+          comRetrabalho: state.filters.comRetrabalho,
         })}
       </output>
     </>
@@ -32,17 +34,21 @@ function Probe() {
 const indicators = computeIndicators(TAREFAS, new Date(2026, 7, 3));
 
 describe('KPICards', () => {
-  it('renders the 8 KPI cards with correct seed-derived values', () => {
+  it('renders the 12 KPI cards with correct seed-derived values', () => {
     renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
 
     expect(screen.getByRole('button', { name: /Total de tarefas/ })).toHaveTextContent('16');
     expect(screen.getByRole('button', { name: /Novas/ })).toHaveTextContent('2');
     expect(screen.getByRole('button', { name: /Recebidas/ })).toHaveTextContent('2');
     expect(screen.getByRole('button', { name: /Em execução/ })).toHaveTextContent('3');
-    expect(screen.getByRole('button', { name: /Concluídas/ })).toHaveTextContent('3');
+    expect(screen.getByRole('button', { name: /Aguardando aprovação/ })).toHaveTextContent('3');
+    expect(screen.getByRole('button', { name: /Concluídas/ })).toHaveTextContent('7');
     expect(screen.getByRole('button', { name: /Devolvidas/ })).toHaveTextContent('2');
+    expect(screen.getByRole('button', { name: /Devoluções/ })).toHaveTextContent('3');
     expect(screen.getByRole('button', { name: /Finalizadas/ })).toHaveTextContent('4');
-    expect(screen.getByRole('button', { name: /Atrasadas/ })).toHaveTextContent('3');
+    expect(screen.getByRole('button', { name: /Canceladas/ })).toHaveTextContent('0');
+    expect(screen.getByRole('button', { name: /Atrasadas/ })).toHaveTextContent('2');
+    expect(screen.getByRole('button', { name: /Paradas/ })).toHaveTextContent('1');
   });
 
   it('renderiza barra de cabeçalho com botão de recolher', () => {
@@ -109,6 +115,45 @@ describe('KPICards', () => {
       const probe = JSON.parse(screen.getByTestId('probe').textContent!);
       expect(probe.section).toBe('tarefas');
       expect(probe.prazo).toBe('vencidas');
+    });
+  });
+
+  it('clicking Aguardando aprovação filters status CONCLUIDA', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
+
+    await user.click(screen.getByRole('button', { name: /Aguardando aprovação/ }));
+
+    await waitFor(() => {
+      const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+      expect(probe.section).toBe('tarefas');
+      expect(probe.status).toEqual(['CONCLUIDA']);
+    });
+  });
+
+  it('clicking Devoluções applies comRetrabalho', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
+
+    await user.click(screen.getByRole('button', { name: /Devoluções/ }));
+
+    await waitFor(() => {
+      const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+      expect(probe.section).toBe('tarefas');
+      expect(probe.comRetrabalho).toBe(true);
+    });
+  });
+
+  it('clicking Paradas applies paradas 7', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
+
+    await user.click(screen.getByRole('button', { name: /Paradas/ }));
+
+    await waitFor(() => {
+      const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+      expect(probe.section).toBe('tarefas');
+      expect(probe.paradas).toBe(7);
     });
   });
 

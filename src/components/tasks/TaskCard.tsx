@@ -3,11 +3,14 @@ import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { roleOf, availableTransitions } from '../../utils/status';
-import { podeAlterarStatus } from '../../utils/permissions';
+import { podeAlterarStatus, podeAlterarStatusPara } from '../../utils/permissions';
 import { findUser, NOME_POR_ID } from '../../data/mockData';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
 import CategoryTag from './CategoryTag';
+import ProximoPassoBadge from './ProximoPassoBadge';
+import ReworkBadge from './ReworkBadge';
+import { contarDevolucoes } from '../../utils/tasks';
 import { cycleActionFor } from './cycleActions';
 
 interface TaskCardProps {
@@ -32,6 +35,10 @@ export default function TaskCard({
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
       onConfirmComplete(task);
+      return;
+    }
+    if (novoStatus === 'CANCELADA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
       return;
     }
     dispatch({
@@ -73,6 +80,10 @@ export default function TaskCard({
             {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
           </div>
         )}
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          <ReworkBadge qtd={contarDevolucoes(task)} />
+          <ProximoPassoBadge task={task} />
+        </div>
       </button>
 
       <div className="mt-3 flex items-center justify-between">
@@ -90,7 +101,7 @@ export default function TaskCard({
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
-          {podeAlterar && action && (
+          {podeAlterar && action && podeAlterarStatusPara(state.currentUserId, task, action.target) && (
             <button
               onClick={() => changeStatus(action.target)}
               title={action.label}

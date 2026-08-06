@@ -21,7 +21,7 @@ export type AppAction =
   | { type: 'OPEN_MODAL'; modal: ModalState }
   | { type: 'CLOSE_MODAL' }
   | { type: 'CREATE_TASK'; task: Task }
-  | { type: 'UPDATE_TASK'; taskId: string; changes: Partial<Task> }
+  | { type: 'UPDATE_TASK'; taskId: string; changes: Partial<Task>; usuario: string }
   | { type: 'CHANGE_STATUS'; taskId: string; novoStatus: TaskStatus; usuario: string; observacao?: string }
   | { type: 'REASSIGN'; taskId: string; responsavelId: string; usuario: string; observacao: string }
   | { type: 'DUPLICATE_TASK'; taskId: string; usuario: string }

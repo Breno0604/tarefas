@@ -12,21 +12,24 @@ export default function ReassignModal({ taskId, onClose }: ReassignModalProps) {
   const { state, dispatch } = useApp();
   const task = state.tasks.find((t) => t.id === taskId);
   const [novoResponsavelId, setNovoResponsavelId] = useState(task?.responsavelId ?? COLABORADORES[0].id);
+  const [observacao, setObservacao] = useState('');
 
   if (!task) return null;
 
+  const valid = observacao.trim().length > 0;
+
   const submit = () => {
+    if (!valid) return;
     if (novoResponsavelId === task.responsavelId) {
       onClose();
       return;
     }
-    const nome = NOME_POR_ID[novoResponsavelId] ?? novoResponsavelId;
     dispatch({
       type: 'REASSIGN',
       taskId: task.id,
       responsavelId: novoResponsavelId,
       usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-      observacao: `Responsável alterado para ${nome}.`,
+      observacao: observacao.trim(),
     });
     onClose();
   };
@@ -41,7 +44,11 @@ export default function ReassignModal({ taskId, onClose }: ReassignModalProps) {
           <button onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             Cancelar
           </button>
-          <button onClick={submit} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+          <button
+            onClick={submit}
+            disabled={!valid}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             Salvar
           </button>
         </>
@@ -65,6 +72,19 @@ export default function ReassignModal({ taskId, onClose }: ReassignModalProps) {
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label htmlFor="reassign-observacao" className="mb-1 block text-sm font-medium text-slate-700">
+            Motivo da reatribuição *
+          </label>
+          <textarea
+            id="reassign-observacao"
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            placeholder="Descreva por que o responsável está mudando..."
+          />
         </div>
       </div>
     </Modal>

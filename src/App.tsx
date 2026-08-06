@@ -10,6 +10,7 @@ import TaskDetailModal from './components/modals/TaskDetailModal';
 import ReassignModal from './components/modals/ReassignModal';
 import ApproveModal from './components/modals/ApproveModal';
 import ReturnModal from './components/modals/ReturnModal';
+import CancelModal from './components/modals/CancelModal';
 import HistoryModal from './components/modals/HistoryModal';
 import CollaboratorDetailModal from './components/modals/CollaboratorDetailModal';
 
@@ -58,6 +59,9 @@ function Shell() {
       )}
       {modal.type === 'return' && (
         <ReturnModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
+      )}
+      {modal.type === 'cancel' && (
+        <CancelModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
       )}
       {modal.type === 'history' && (
         <HistoryModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
