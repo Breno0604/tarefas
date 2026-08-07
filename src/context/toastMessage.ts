@@ -22,6 +22,14 @@ export function toastMessage(action: AppAction): string | null {
       return 'Tarefa excluída';
     case 'CHANGE_STATUS':
       return STATUS_TOAST[action.novoStatus] ?? null;
+    case 'ADD_SUBTAREFA':
+      return 'Subtarefa adicionada';
+    case 'REMOVE_SUBTAREFA':
+      return 'Subtarefa removida';
+    case 'ADD_ANOTACAO':
+      return 'Anotação adicionada';
+    case 'REMOVE_ANOTACAO':
+      return 'Anotação removida';
     default:
       return null;
   }

@@ -1,8 +1,9 @@
-import { Star } from 'lucide-react';
+import { Bell, Star } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { transicoesDisponiveis } from '../../utils/status';
+import { subtarefasProgresso } from '../../utils/tasks';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
 import CategoryTag from './CategoryTag';
@@ -22,6 +23,7 @@ export default function TaskCard({
   onDragEnd,
 }: TaskCardProps) {
   const { dispatch } = useApp();
+  const progresso = subtarefasProgresso(task);
 
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
@@ -47,7 +49,7 @@ export default function TaskCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
+      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800"
     >
       <button
         onClick={openDetail}
@@ -55,14 +57,35 @@ export default function TaskCard({
         className="block w-full text-left"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</p>
           <PriorityBadge prioridade={task.prioridade} />
         </div>
-        <p className="mt-1 truncate text-xs text-slate-400">{task.id}</p>
-        {(task.categoria || (task.tags && task.tags.length > 0)) && (
+        <p className="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">{task.id}</p>
+        {(task.categoria || task.projeto || (task.tags && task.tags.length > 0)) && (
           <div className="mt-2 flex flex-wrap items-center gap-1">
             {task.categoria && <CategoryTag label={task.categoria} />}
+            {task.projeto && <CategoryTag label={`◇ ${task.projeto}`} />}
             {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
+          </div>
+        )}
+        {(progresso.total > 0 || task.lembrete) && (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {progresso.total > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-600 ring-1 ring-inset ring-indigo-600/20 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-500/30"
+                title={`Progresso das subtarefas: ${progresso.feitas}/${progresso.total}`}
+              >
+                {progresso.feitas}/{progresso.total} ✓
+              </span>
+            )}
+            {task.lembrete && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-500/30"
+                title={`Lembrete: ${task.lembrete}`}
+              >
+                <Bell className="h-3 w-3" />
+              </span>
+            )}
           </div>
         )}
       </button>
@@ -77,7 +100,7 @@ export default function TaskCard({
             className={`rounded-lg p-1.5 transition-colors ${
               task.favorita
                 ? 'text-amber-500'
-                : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500'
+                : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500 dark:text-slate-500 dark:hover:bg-amber-950/30'
             }`}
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />

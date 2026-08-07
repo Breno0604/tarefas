@@ -12,6 +12,23 @@ interface PersistedState {
 
 const TASK_STATUSES = Object.keys(STATUS_LABELS);
 const PRIORITIES = Object.keys(PRIORITY_LABELS);
+const RECORRENCIAS = ['diaria', 'semanal', 'mensal'];
+
+function isSubtarefa(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const s = value as Record<string, unknown>;
+  return (
+    typeof s.id === 'string' &&
+    typeof s.titulo === 'string' &&
+    typeof s.concluida === 'boolean'
+  );
+}
+
+function isAnotacao(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const a = value as Record<string, unknown>;
+  return typeof a.id === 'string' && typeof a.texto === 'string' && typeof a.criadaEm === 'string';
+}
 
 function isHistoryEntry(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
@@ -43,7 +60,17 @@ function isTask(value: unknown): value is Task {
     (t.concluidaEm === undefined || typeof t.concluidaEm === 'string') &&
     typeof t.criadaEm === 'string' &&
     Array.isArray(t.historico) &&
-    t.historico.every(isHistoryEntry)
+    t.historico.every(isHistoryEntry) &&
+    (t.subtarefas === undefined ||
+      (Array.isArray(t.subtarefas) && t.subtarefas.every(isSubtarefa))) &&
+    (t.anotacoes === undefined ||
+      (Array.isArray(t.anotacoes) && t.anotacoes.every(isAnotacao))) &&
+    (t.projeto === undefined || typeof t.projeto === 'string') &&
+    (t.lembrete === undefined || t.lembrete === null || typeof t.lembrete === 'string') &&
+    (t.lembreteNotificado === undefined || typeof t.lembreteNotificado === 'boolean') &&
+    (t.recorrencia === undefined ||
+      t.recorrencia === null ||
+      RECORRENCIAS.includes(String(t.recorrencia)))
   );
 }
 

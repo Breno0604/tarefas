@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, FilterX } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { hasActiveFilters } from '../../utils/tasks';
+import { hasActiveFilters, progressoProjeto, projetosDe, SEM_PROJETO } from '../../utils/tasks';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
 import type { Filters, PrazoFilter, Priority, TaskSort, TaskStatus } from '../../types';
 
@@ -35,29 +35,29 @@ function MultiSelect<T extends string>({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
           selected.length > 0
-            ? 'border-indigo-400 text-indigo-700 ring-2 ring-indigo-100'
-            : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+            ? 'border-indigo-400 text-indigo-700 ring-2 ring-indigo-100 dark:border-indigo-500/60 dark:text-indigo-300 dark:ring-indigo-950/50'
+            : 'border-slate-300 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
         }`}
       >
         {label}
         {selected.length > 0 && (
-          <span className="rounded-full bg-indigo-100 px-1.5 text-xs font-semibold text-indigo-700">
+          <span className="rounded-full bg-indigo-100 px-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
             {selected.length}
           </span>
         )}
         <ChevronDown className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 z-[60] mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute top-full left-0 z-[60] mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
           {options.map((opt) => {
             const isSelected = selected.includes(opt.value);
             return (
               <button
                 key={opt.value}
                 onClick={() => toggle(opt.value)}
-                className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <span>{opt.label}</span>
                 {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
@@ -69,6 +69,9 @@ function MultiSelect<T extends string>({
     </div>
   );
 }
+
+const selectCls =
+  'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
 
 export default function FilterBar() {
   const { state, dispatch } = useApp();
@@ -89,6 +92,7 @@ export default function FilterBar() {
   const categoriaOptions = Array.from(
     new Set(state.tasks.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
   ).map((c) => ({ value: c, label: c }));
+  const projetos = projetosDe(state.tasks);
 
   const prazoOptions: { value: PrazoFilter; label: string }[] = [
     { value: 'todas', label: 'Todas as datas' },
@@ -115,10 +119,28 @@ export default function FilterBar() {
       <MultiSelect label="Categoria" options={categoriaOptions} selected={filters.categorias} onChange={(v) => update({ categorias: v })} />
 
       <select
+        value={filters.projeto ?? ''}
+        onChange={(e) => update({ projeto: e.target.value || null })}
+        title="Projeto"
+        className={selectCls}
+      >
+        <option value="">Todos os projetos</option>
+        <option value={SEM_PROJETO}>Sem projeto</option>
+        {projetos.map((p) => {
+          const prog = progressoProjeto(state.tasks, p);
+          return (
+            <option key={p} value={p}>
+              {p} ({prog.concluidas}/{prog.total})
+            </option>
+          );
+        })}
+      </select>
+
+      <select
         value={filters.prazo}
         onChange={(e) => update({ prazo: e.target.value as PrazoFilter })}
         title="Prazo"
-        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+        className={selectCls}
       >
         {prazoOptions.map((p) => (
           <option key={p.value} value={p.value}>
@@ -131,7 +153,7 @@ export default function FilterBar() {
         value={filters.sortBy ?? ''}
         onChange={(e) => update({ sortBy: (e.target.value || null) as TaskSort | null })}
         title="Ordenar por"
-        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+        className={selectCls}
       >
         {sortOptions.map((s) => (
           <option key={s.value ?? 'null'} value={s.value ?? ''}>
@@ -143,7 +165,7 @@ export default function FilterBar() {
       {hasFilters && (
         <button
           onClick={() => dispatch({ type: 'RESET_FILTERS' })}
-          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
         >
           <FilterX className="h-4 w-4" />
           Limpar

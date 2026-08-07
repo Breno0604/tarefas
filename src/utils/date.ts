@@ -20,6 +20,12 @@ export function formatDateTime(iso: string): string {
   return `${data} ${hora}`;
 }
 
+/** 'YYYY-MM-DDTHH:mm' no fuso local — formato usado pelos lembretes (datetime-local). */
+export function formatLocalMinute(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export function startOfToday(now: Date = new Date()): Date {
   const d = new Date(now);
   d.setHours(0, 0, 0, 0);

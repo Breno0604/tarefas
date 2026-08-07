@@ -1,4 +1,4 @@
-import type { Filters, ModalState, Task, TaskStatus, TaskView } from '../types';
+import type { Filters, ModalState, Task, TaskStatus, TaskView, Tema } from '../types';
 
 export interface AppState {
   tasks: Task[];
@@ -9,6 +9,7 @@ export interface AppState {
   filtersOpen: boolean; // barra de filtros visível
   modal: ModalState;
   past: Task[][]; // pilha de estados anteriores (undo), não persistida
+  tema: Tema; // claro | escuro (persistido em localStorage)
 }
 
 export type AppAction =
@@ -27,4 +28,11 @@ export type AppAction =
   | { type: 'DELETE_TASK'; taskId: string }
   | { type: 'TOGGLE_FAVORITE'; taskId: string }
   | { type: 'REORDER_TASKS'; taskId: string; toTaskId: string }
+  | { type: 'ADD_SUBTAREFA'; taskId: string; titulo: string }
+  | { type: 'TOGGLE_SUBTAREFA'; taskId: string; subtarefaId: string }
+  | { type: 'REMOVE_SUBTAREFA'; taskId: string; subtarefaId: string }
+  | { type: 'ADD_ANOTACAO'; taskId: string; texto: string }
+  | { type: 'REMOVE_ANOTACAO'; taskId: string; anotacaoId: string }
+  | { type: 'MARK_LEMBRETE_NOTIFICADO'; taskId: string }
+  | { type: 'TOGGLE_TEMA' }
   | { type: 'UNDO' };

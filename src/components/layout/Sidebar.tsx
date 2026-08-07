@@ -19,7 +19,7 @@ export default function Sidebar() {
       )}
       {/* Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-slate-300 shadow-xl transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900 text-slate-300 shadow-xl transition-transform duration-300 dark:border-slate-700/60 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

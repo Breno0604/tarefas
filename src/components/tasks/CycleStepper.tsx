@@ -29,7 +29,7 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
             {index > 0 && (
               <div
                 className={`h-0.5 ${compact ? 'w-4' : 'w-8'} ${
-                  state === 'todo' ? 'bg-slate-200' : 'bg-indigo-500'
+                  state === 'todo' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-indigo-500'
                 }`}
               />
             )}
@@ -40,8 +40,8 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
                 state === 'done'
                   ? 'bg-indigo-500 text-white'
                   : state === 'current'
-                    ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
-                    : 'border border-slate-300 bg-white text-slate-400'
+                    ? 'bg-indigo-600 text-white ring-4 ring-indigo-100 dark:ring-indigo-950/60'
+                    : 'border border-slate-300 bg-white text-slate-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400'
               }`}
             >
               {state === 'done' ? <Check className={compact ? 'h-3 w-3' : 'h-4 w-4'} /> : index + 1}
@@ -50,7 +50,7 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
         );
       })}
       {isCancelada && (
-        <div className="ml-2 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+        <div className="ml-2 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-500/40">
           <XCircle className="h-3 w-3" />
           Cancelada
         </div>

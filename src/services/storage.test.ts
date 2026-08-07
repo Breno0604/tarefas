@@ -116,4 +116,39 @@ describe('storage', () => {
     clearState();
     expect(loadState()).toBeNull();
   });
+
+  it('mantém tarefa com os campos novos válidos (subtarefas, anotações, projeto, lembrete, recorrência)', () => {
+    const completa = {
+      ...fakeTask('TA-NOVO'),
+      projeto: 'Lançamento',
+      lembrete: '2026-08-10T09:00',
+      lembreteNotificado: false,
+      recorrencia: 'semanal',
+      subtarefas: [
+        { id: 'st1', titulo: 'Etapa 1', concluida: true },
+        { id: 'st2', titulo: 'Etapa 2', concluida: false },
+      ],
+      anotacoes: [{ id: 'an1', texto: 'nota', criadaEm: '2026-08-01T08:00:00' }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [completa] }));
+    expect(loadState()).toEqual({ tasks: [completa] });
+  });
+
+  it('descarta tarefa com subtarefa fora do shape', () => {
+    const invalida = { ...fakeTask('TA-BAD'), subtarefas: [{ id: 1 }] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta tarefa com recorrência fora do enum', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), recorrencia: 'anual' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta tarefa com lembrete não string', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), lembrete: 123 };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
 });

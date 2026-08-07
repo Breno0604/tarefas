@@ -29,7 +29,7 @@ export default function ConfirmDialog({
         <>
           <button
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
           >
             Cancelar
           </button>
@@ -49,11 +49,15 @@ export default function ConfirmDialog({
     >
       <div className="flex items-start gap-3">
         <div
-          className={`rounded-full p-2 ${danger ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}
+          className={`rounded-full p-2 ${
+            danger
+              ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+              : 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+          }`}
         >
           <AlertTriangle className="h-5 w-5" />
         </div>
-        <p className="text-sm leading-relaxed text-slate-600">{message}</p>
+        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{message}</p>
       </div>
     </Modal>
   );

@@ -28,11 +28,12 @@ const baseState: AppState = {
   ],
   view: 'lista',
   sidebarOpen: false,
-  filters: { search: '', status: [], prioridade: [], prazo: 'todas', favoritas: false, categorias: [], sortBy: null },
+  filters: { search: '', status: [], prioridade: [], prazo: 'todas', favoritas: false, categorias: [], projeto: null, sortBy: null },
   kpiCollapsed: false,
   filtersOpen: true,
   modal: { type: 'none' },
   past: [],
+  tema: 'claro',
 };
 
 describe('appReducer — CHANGE_STATUS', () => {
@@ -303,5 +304,155 @@ describe('appReducer — controles de interface', () => {
     expect(next.filters.sortBy).toBe('titulo');
     expect(next.filters.status).toEqual([]);
     expect(next.filters.favoritas).toBe(false);
+  });
+});
+
+describe('appReducer — subtarefas (checklist)', () => {
+  it('adiciona, alterna e remove subtarefa', () => {
+    let s = appReducer(baseState, { type: 'ADD_SUBTAREFA', taskId: 'TA-001', titulo: '  Etapa 1  ' });
+    const item = s.tasks.find((t) => t.id === 'TA-001')!.subtarefas![0];
+    expect(item).toMatchObject({ titulo: 'Etapa 1', concluida: false });
+    s = appReducer(s, { type: 'TOGGLE_SUBTAREFA', taskId: 'TA-001', subtarefaId: item.id });
+    expect(s.tasks.find((t) => t.id === 'TA-001')!.subtarefas![0].concluida).toBe(true);
+    s = appReducer(s, { type: 'REMOVE_SUBTAREFA', taskId: 'TA-001', subtarefaId: item.id });
+    expect(s.tasks.find((t) => t.id === 'TA-001')!.subtarefas).toHaveLength(0);
+  });
+
+  it('adicionar/remover empilham undo; alternar não', () => {
+    let s = appReducer(baseState, { type: 'ADD_SUBTAREFA', taskId: 'TA-001', titulo: 'x' });
+    expect(s.past).toHaveLength(1);
+    const id = s.tasks.find((t) => t.id === 'TA-001')!.subtarefas![0].id;
+    s = appReducer(s, { type: 'TOGGLE_SUBTAREFA', taskId: 'TA-001', subtarefaId: id });
+    expect(s.past).toHaveLength(1); // TOGGLE não empilha
+    s = appReducer(s, { type: 'REMOVE_SUBTAREFA', taskId: 'TA-001', subtarefaId: id });
+    expect(s.past).toHaveLength(2);
+  });
+
+  it('subtarefa sem título é no-op', () => {
+    expect(appReducer(baseState, { type: 'ADD_SUBTAREFA', taskId: 'TA-001', titulo: '  ' })).toBe(baseState);
+  });
+});
+
+describe('appReducer — anotações', () => {
+  it('adiciona e remove anotação com timestamp', () => {
+    let s = appReducer(baseState, { type: 'ADD_ANOTACAO', taskId: 'TA-001', texto: '  Ideia importante  ' });
+    const nota = s.tasks.find((t) => t.id === 'TA-001')!.anotacoes![0];
+    expect(nota.texto).toBe('Ideia importante');
+    expect(nota.criadaEm).toBeDefined();
+    s = appReducer(s, { type: 'REMOVE_ANOTACAO', taskId: 'TA-001', anotacaoId: nota.id });
+    expect(s.tasks.find((t) => t.id === 'TA-001')!.anotacoes).toHaveLength(0);
+  });
+
+  it('anotação em branco é no-op', () => {
+    expect(appReducer(baseState, { type: 'ADD_ANOTACAO', taskId: 'TA-001', texto: ' ' })).toBe(baseState);
+  });
+});
+
+describe('appReducer — recorrência', () => {
+  const comRecorrencia = (recorrencia: 'diaria' | 'semanal' | 'mensal', prazo: string | null): AppState => ({
+    ...baseState,
+    tasks: [
+      {
+        ...baseState.tasks[0],
+        status: 'EM_ANDAMENTO' as const,
+        recorrencia,
+        prazo,
+        subtarefas: [
+          { id: 'st1', titulo: 'A', concluida: true },
+          { id: 'st2', titulo: 'B', concluida: false },
+        ],
+        anotacoes: [{ id: 'an1', texto: 'nota', criadaEm: '2026-08-01T08:00:00' }],
+      },
+      baseState.tasks[1],
+    ],
+  });
+
+  it('concluir tarefa diária cria a próxima ocorrência (prazo +1 dia)', () => {
+    const next = appReducer(comRecorrencia('diaria', '2026-08-10'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'CONCLUIDA',
+    });
+    expect(next.tasks).toHaveLength(3);
+    const ocorrencia = next.tasks.find((t) => t.id !== 'TA-001' && t.id !== 'TA-002')!;
+    expect(ocorrencia.status).toBe('CAIXA_ENTRADA');
+    expect(ocorrencia.prazo).toBe('2026-08-11');
+    expect(ocorrencia.titulo).toBe('Login');
+    expect(ocorrencia.concluidaEm).toBeUndefined();
+    expect(ocorrencia.historico[0]).toMatchObject({
+      tipo: 'status',
+      observacao: 'Próxima ocorrência (diaria) de TA-001.',
+    });
+    // subtarefas preservadas mas desmarcadas; anotações zeradas
+    expect(ocorrencia.subtarefas!.map((s) => s.concluida)).toEqual([false, false]);
+    expect(ocorrencia.anotacoes).toEqual([]);
+  });
+
+  it('semanal soma 7 dias; mensal clampeia 31/01 → 28/02', () => {
+    const sem = appReducer(comRecorrencia('semanal', '2026-08-10'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'CONCLUIDA',
+    });
+    expect(sem.tasks[sem.tasks.length - 1]!.prazo).toBe('2026-08-17');
+    const mensal = appReducer(comRecorrencia('mensal', '2026-01-31'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'CONCLUIDA',
+    });
+    expect(mensal.tasks[mensal.tasks.length - 1]!.prazo).toBe('2026-02-28');
+  });
+
+  it('tarefa sem recorrência não gera ocorrência', () => {
+    const next = appReducer(baseState, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'CONCLUIDA' });
+    expect(next.tasks).toHaveLength(2);
+  });
+});
+
+describe('appReducer — lembrete e tema', () => {
+  it('UPDATE_TASK aceita projeto/lembrete/recorrencia e reseta lembreteNotificado', () => {
+    let s = appReducer(baseState, {
+      type: 'UPDATE_TASK',
+      taskId: 'TA-001',
+      changes: { projeto: 'Lançamento', lembrete: '2026-08-10T09:00', recorrencia: 'semanal' },
+    });
+    let t = s.tasks.find((t) => t.id === 'TA-001')!;
+    expect(t).toMatchObject({ projeto: 'Lançamento', lembrete: '2026-08-10T09:00', recorrencia: 'semanal', lembreteNotificado: false });
+    s = appReducer(s, { type: 'MARK_LEMBRETE_NOTIFICADO', taskId: 'TA-001' });
+    t = s.tasks.find((t) => t.id === 'TA-001')!;
+    expect(t.lembreteNotificado).toBe(true);
+    // Alterar o lembrete novamente volta a permitir notificar
+    s = appReducer(s, { type: 'UPDATE_TASK', taskId: 'TA-001', changes: { lembrete: '2026-08-11T09:00' } });
+    t = s.tasks.find((t) => t.id === 'TA-001')!;
+    expect(t.lembreteNotificado).toBe(false);
+  });
+
+  it('MARK_LEMBRETE_NOTIFICADO não empilha undo', () => {
+    const s = appReducer(baseState, {
+      type: 'UPDATE_TASK',
+      taskId: 'TA-001',
+      changes: { lembrete: '2026-08-10T09:00' },
+    });
+    const next = appReducer(s, { type: 'MARK_LEMBRETE_NOTIFICADO', taskId: 'TA-001' });
+    expect(next.past).toHaveLength(1); // apenas o UPDATE empilhou
+  });
+
+  it('TOGGLE_TEMA alterna claro/escuro', () => {
+    const next = appReducer(baseState, { type: 'TOGGLE_TEMA' });
+    expect(next.tema).toBe('escuro');
+    expect(appReducer(next, { type: 'TOGGLE_TEMA' }).tema).toBe('claro');
+  });
+
+  it('reabrir a tarefa (EM_ANDAMENTO) volta a permitir notificar o lembrete', () => {
+    let s = appReducer(baseState, {
+      type: 'UPDATE_TASK',
+      taskId: 'TA-001',
+      changes: { lembrete: '2026-08-10T09:00' },
+    });
+    s = appReducer(s, { type: 'MARK_LEMBRETE_NOTIFICADO', taskId: 'TA-001' });
+    expect(s.tasks.find((t) => t.id === 'TA-001')!.lembreteNotificado).toBe(true);
+    s = appReducer(s, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'A_FAZER' });
+    s = appReducer(s, { type: 'CHANGE_STATUS', taskId: 'TA-001', novoStatus: 'EM_ANDAMENTO' });
+    expect(s.tasks.find((t) => t.id === 'TA-001')!.lembreteNotificado).toBe(false);
   });
 });

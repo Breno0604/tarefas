@@ -7,6 +7,11 @@ import {
   filterTasks,
   hasActiveFilters,
   nextTaskId,
+  progressoProjeto,
+  projetosDe,
+  proximaOcorrencia,
+  SEM_PROJETO,
+  subtarefasProgresso,
 } from './tasks';
 
 const NOW = new Date('2026-08-03T12:00:00');
@@ -78,6 +83,20 @@ describe('filterTasks', () => {
     const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, NOW);
     expect(result[0].prioridade).toBe('critica');
   });
+
+  it('filtra por projeto específico', () => {
+    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, projeto: 'Lançamento 2.0' }, NOW);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((t) => t.projeto === 'Lançamento 2.0')).toBe(true);
+  });
+
+  it('filtra tarefas sem projeto', () => {
+    const comProjeto = { ...TAREFAS[0], id: 'TA-PJ', projeto: 'X' };
+    const semProjeto = { ...TAREFAS[1], id: 'TA-SP' };
+    const result = filterTasks([comProjeto, semProjeto], { ...EMPTY_FILTERS, projeto: SEM_PROJETO }, NOW);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-SP');
+  });
 });
 
 describe('hasActiveFilters', () => {
@@ -91,6 +110,8 @@ describe('hasActiveFilters', () => {
     expect(hasActiveFilters({ ...EMPTY_FILTERS, favoritas: true })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, categorias: ['Marketing'] })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, prazo: 'hoje' })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, projeto: 'Lançamento 2.0' })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, projeto: SEM_PROJETO })).toBe(true);
   });
 
   it('ordenação não conta como filtro', () => {
@@ -190,5 +211,49 @@ describe('nextTaskId / createTask', () => {
     });
     expect(task.categoria).toBe('Marketing');
     expect(task.tags).toEqual(['email', 'urgente']);
+  });
+});
+
+describe('proximaOcorrencia', () => {
+  it('diária soma 1 dia', () => {
+    expect(proximaOcorrencia('2026-08-10', 'diaria')).toBe('2026-08-11');
+  });
+
+  it('semanal soma 7 dias preservando o dia da semana', () => {
+    expect(proximaOcorrencia('2026-08-10', 'semanal')).toBe('2026-08-17');
+  });
+
+  it('mensal avança um mês e clampeia 31/01 → 28/02', () => {
+    expect(proximaOcorrencia('2026-01-31', 'mensal')).toBe('2026-02-28');
+    expect(proximaOcorrencia('2026-03-15', 'mensal')).toBe('2026-04-15');
+  });
+
+  it('sem prazo retorna null', () => {
+    expect(proximaOcorrencia(null, 'diaria')).toBeNull();
+  });
+});
+
+describe('subtarefasProgresso / projetos', () => {
+  it('calcula feitas/total/pct', () => {
+    const comSubtarefas = {
+      ...TAREFAS[0],
+      subtarefas: [
+        { id: 's1', titulo: 'A', concluida: true },
+        { id: 's2', titulo: 'B', concluida: false },
+        { id: 's3', titulo: 'C', concluida: true },
+      ],
+    };
+    expect(subtarefasProgresso(comSubtarefas)).toEqual({ feitas: 2, total: 3, pct: 67 });
+    expect(subtarefasProgresso(TAREFAS[0])).toEqual({ feitas: 0, total: 0, pct: 0 });
+  });
+
+  it('lista projetos únicos ordenados e progresso por projeto', () => {
+    const comProjetos = [
+      { ...TAREFAS[0], id: 'TA-A', projeto: 'Zeta' },
+      { ...TAREFAS[1], id: 'TA-B', projeto: 'Alpha', status: 'CONCLUIDA' as const },
+      { ...TAREFAS[2], id: 'TA-C', projeto: 'Alpha' },
+    ];
+    expect(projetosDe(comProjetos)).toEqual(['Alpha', 'Zeta']);
+    expect(progressoProjeto(comProjetos, 'Alpha')).toEqual({ total: 2, concluidas: 1 });
   });
 });

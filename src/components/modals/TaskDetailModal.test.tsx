@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import TaskDetailModal from './TaskDetailModal';
 import { renderWithApp } from '../../test/renderWithApp';
 
@@ -45,5 +46,29 @@ describe('TaskDetailModal', () => {
     // TA-003 criada em 2026-08-04
     expect(screen.getByText('Criada em')).toBeInTheDocument();
     expect(screen.getByText('04/08/2026')).toBeInTheDocument();
+  });
+
+  it('adiciona e alterna subtarefas com progresso', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<TaskDetailModal taskId="TA-001" onClose={() => {}} />);
+
+    await user.type(screen.getByLabelText('Nova subtarefa'), 'Revisar contrato');
+    await user.click(screen.getByRole('button', { name: 'Adicionar subtarefa' }));
+
+    const checkbox = await screen.findByLabelText('Alternar subtarefa: Revisar contrato');
+    expect(checkbox).not.toBeChecked();
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(screen.getByText('1/1')).toBeInTheDocument();
+  });
+
+  it('adiciona uma anotação personalizada', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<TaskDetailModal taskId="TA-001" onClose={() => {}} />);
+
+    await user.type(screen.getByLabelText('Nova anotação'), 'Contexto importante para a reunião');
+    await user.click(screen.getByRole('button', { name: 'Adicionar anotação' }));
+
+    expect(await screen.findByText('Contexto importante para a reunião')).toBeInTheDocument();
   });
 });

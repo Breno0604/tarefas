@@ -3,6 +3,7 @@ import {
   diasDesde,
   formatDate,
   formatDateTime,
+  formatLocalMinute,
   idadeRelativa,
   isDueToday,
   isOverdue,
@@ -89,5 +90,11 @@ describe('idadeRelativa', () => {
     expect(idadeRelativa(0)).toBe('hoje');
     expect(idadeRelativa(1)).toBe('há 1 dia');
     expect(idadeRelativa(3)).toBe('há 3 dias');
+  });
+});
+
+describe('formatLocalMinute', () => {    it('formata YYYY-MM-DDTHH:mm no fuso local', () => {
+    expect(formatLocalMinute(new Date(2026, 7, 6, 9, 5))).toBe('2026-08-06T09:05');
+    expect(formatLocalMinute(new Date(2026, 0, 3, 23, 59))).toBe('2026-01-03T23:59');
   });
 });

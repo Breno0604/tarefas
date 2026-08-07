@@ -9,6 +9,8 @@ export type Priority = 'baixa' | 'media' | 'alta' | 'critica';
 export type TaskView = 'lista' | 'quadro';
 export type PrazoFilter = 'todas' | 'hoje' | 'vencidas' | 'proximos7' | 'semPrazo';
 export type TaskSort = 'criadaEm' | 'titulo' | 'prazo' | 'prioridade';
+export type Recorrencia = 'diaria' | 'semanal' | 'mensal';
+export type Tema = 'claro' | 'escuro';
 
 export interface HistoryEntry {
   id: string;
@@ -17,6 +19,18 @@ export interface HistoryEntry {
   novoStatus: TaskStatus | null;
   tipo: 'status' | 'info';
   observacao?: string;
+}
+
+export interface Subtarefa {
+  id: string;
+  titulo: string;
+  concluida: boolean;
+}
+
+export interface Anotacao {
+  id: string;
+  texto: string;
+  criadaEm: string; // ISO
 }
 
 export interface Task {
@@ -33,6 +47,12 @@ export interface Task {
   atualizadaEm?: string; // ISO datetime
   concluidaEm?: string; // ISO datetime (última vez que entrou em CONCLUIDA)
   historico: HistoryEntry[];
+  subtarefas?: Subtarefa[]; // padrão: []
+  anotacoes?: Anotacao[]; // padrão: []
+  projeto?: string; // string livre; undefined = sem projeto
+  lembrete?: string | null; // ISO datetime | null; padrão: null
+  lembreteNotificado?: boolean; // flag interna do hook de notificação
+  recorrencia?: Recorrencia | null; // padrão: null
 }
 
 export interface Filters {
@@ -42,6 +62,7 @@ export interface Filters {
   prazo: PrazoFilter;
   favoritas: boolean;
   categorias: string[];
+  projeto: string | null; // null = todos; '__sem_projeto__' = sem projeto
   sortBy: TaskSort | null; // null = ordem original (do seed)
 }
 

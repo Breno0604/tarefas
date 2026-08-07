@@ -16,6 +16,7 @@ function StateProbe() {
         kpiCollapsed: state.kpiCollapsed,
         filtersOpen: state.filtersOpen,
         favoritas: state.filters.favoritas,
+        tema: state.tema,
       })}
     </output>
   );
@@ -125,5 +126,22 @@ describe('Topbar — controles do topo', () => {
     await user.click(screen.getByRole('button', { name: 'Ver como Quadro' }));
     expect(screen.getByRole('button', { name: 'Ver como Lista' })).toBeInTheDocument();
     expect(JSON.parse(screen.getByTestId('probe').textContent!).view).toBe('quadro');
+  });
+
+  it('alterna o tema claro/escuro aplicando a classe dark', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />
+        <StateProbe />
+      </>
+    );
+
+    expect(screen.getByRole('button', { name: 'Ativar tema escuro' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ativar tema escuro' }));
+
+    expect(screen.getByRole('button', { name: 'Ativar tema claro' })).toBeInTheDocument();
+    expect(JSON.parse(screen.getByTestId('probe').textContent!).tema).toBe('escuro');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 });

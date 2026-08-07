@@ -54,4 +54,14 @@ describe('FilterBar', () => {
     expect(screen.getByRole('option', { name: 'Título' })).toBeInTheDocument();
     expect(sort).toHaveValue('');
   });
+
+  it('oferece filtro por projeto derivado das tarefas do seed', () => {
+    renderWithApp(<FilterBar />);
+    const projeto = screen.getByRole('combobox', { name: 'Projeto' });
+    expect(projeto).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Todos os projetos/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Sem projeto/ })).toBeInTheDocument();
+    // TA-003 do seed pertence ao projeto "Lançamento 2.0"
+    expect(screen.getByRole('option', { name: /Lançamento 2\.0/ })).toBeInTheDocument();
+  });
 });

@@ -34,7 +34,7 @@ export default function CancelModal({ taskId, onClose }: CancelModalProps) {
       onClose={onClose}
       footer={
         <>
-          <button onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          <button onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
             Voltar
           </button>
           <button
@@ -48,12 +48,12 @@ export default function CancelModal({ taskId, onClose }: CancelModalProps) {
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
-          Você está cancelando a tarefa <span className="font-semibold text-slate-800">{task.titulo}</span>. Ela será
-          marcada como <span className="font-semibold text-slate-600">Cancelada</span> e não poderá ser reativada.
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Você está cancelando a tarefa <span className="font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</span>. Ela será
+          marcada como <span className="font-semibold text-slate-600 dark:text-slate-300">Cancelada</span> e não poderá ser reativada.
         </p>
         <div>
-          <label htmlFor="cancel-observacao" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="cancel-observacao"            className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Motivo do cancelamento *
           </label>
           <textarea
@@ -61,7 +61,7 @@ export default function CancelModal({ taskId, onClose }: CancelModalProps) {
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-slate-400 dark:focus:ring-slate-800"
             placeholder="Descreva por que a tarefa perdeu o sentido..."
           />
         </div>

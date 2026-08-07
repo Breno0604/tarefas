@@ -60,7 +60,7 @@ export default function TasksTable({
   );
 
   const mobileEmpty = tasks.length === 0 && (
-    <div className="flex flex-col items-center gap-2 py-16 text-slate-400 md:hidden">
+    <div className="flex flex-col items-center gap-2 py-16 text-slate-400 md:hidden dark:text-slate-500">
       {totalCount === 0 ? (
         <>
           <Sparkles className="h-10 w-10" />
@@ -78,21 +78,21 @@ export default function TasksTable({
   );
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
       {mobileEmpty}
       {mobileCardList}
 
       {/* Desktop: table */}
       <div className="hidden md:block">
         {!reorderEnabled && (
-          <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500">
+          <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
             <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
             Reordenação por arrastar fica disponível sem filtros, busca ou ordenação — use "Limpar" e "Ordem original".
           </div>
         )}
         <table className="w-full min-w-[900px] text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
               <th className="px-4 py-3">Tarefa</th>
               <th className="px-4 py-3">Prioridade</th>
               <th className="px-4 py-3">Prazo</th>
@@ -121,13 +121,13 @@ export default function TasksTable({
         </table>
         {tasks.length === 0 &&
           (totalCount === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-16 text-slate-400">
+            <div className="flex flex-col items-center gap-2 py-16 text-slate-400 dark:text-slate-500">
               <Sparkles className="h-10 w-10" />
               <p className="text-sm font-medium">Nenhuma tarefa criada ainda</p>
               <p className="text-xs">Clique em "Nova Tarefa" para começar.</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-16 text-slate-400">
+            <div className="flex flex-col items-center gap-2 py-16 text-slate-400 dark:text-slate-500">
               <Inbox className="h-10 w-10" />
               <p className="text-sm font-medium">Nenhuma tarefa encontrada</p>
               <p className="text-xs">Ajuste a busca ou os filtros para ver mais resultados.</p>

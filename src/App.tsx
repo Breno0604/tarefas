@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { formatLocalMinute } from './utils/date';
 import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
@@ -8,12 +10,82 @@ import TaskDetailModal from './components/modals/TaskDetailModal';
 import CancelModal from './components/modals/CancelModal';
 import HistoryModal from './components/modals/HistoryModal';
 
+/** Dispara notificações do navegador para lembretes vencidos ainda não notificados. */
+function useLembretes() {
+  const { state, dispatch } = useApp();
+
+  useEffect(() => {
+    const verificar = () => {
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      const agora = formatLocalMinute(new Date());
+      for (const t of state.tasks) {
+        if (!t.lembrete || t.lembreteNotificado) continue;
+        if (t.status === 'CONCLUIDA' || t.status === 'CANCELADA') continue;
+        // Compara apenas 'YYYY-MM-DDTHH:mm' (normaliza segundos caso existam).
+        if (t.lembrete.slice(0, 16) <= agora) {
+          try {
+            new Notification(`Lembrete: ${t.titulo}`, {
+              body: t.descricao || 'Você definiu um lembrete para esta tarefa.',
+            });
+          } catch {
+            // Sem suporte a Notification no ambiente: ignora.
+          }
+          dispatch({ type: 'MARK_LEMBRETE_NOTIFICADO', taskId: t.id });
+        }
+      }
+    };
+    verificar();
+    const id = window.setInterval(verificar, 20_000);
+    return () => window.clearInterval(id);
+  }, [state.tasks, dispatch]);
+}
+
+/** Atalhos: N nova tarefa · / busca · V alternar lista/quadro · Ctrl+Z desfazer. */
+function useShortcuts() {
+  const { state, dispatch } = useApp();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      const digitando =
+        alvo &&
+        (alvo.tagName === 'INPUT' ||
+          alvo.tagName === 'TEXTAREA' ||
+          alvo.tagName === 'SELECT' ||
+          alvo.isContentEditable);
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          dispatch({ type: 'UNDO' });
+        }
+        return;
+      }
+      if (digitando || state.modal.type !== 'none') return;
+      const k = e.key.toLowerCase();
+      if (k === 'n') {
+        dispatch({ type: 'OPEN_MODAL', modal: { type: 'create' } });
+      } else if (k === '/') {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('input[aria-label="Buscar tarefas"]');
+        input?.focus();
+        input?.select();
+      } else if (k === 'v') {
+        dispatch({ type: 'SET_VIEW', view: state.view === 'lista' ? 'quadro' : 'lista' });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [state.modal, state.view, dispatch]);
+}
+
 function Shell() {
   const { state, dispatch } = useApp();
   const { modal } = state;
+  useLembretes();
+  useShortcuts();
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-100">
+    <div className="h-screen overflow-hidden bg-slate-100 dark:bg-slate-900">
       <Sidebar />
       <div className="flex h-full flex-col">
         <Topbar

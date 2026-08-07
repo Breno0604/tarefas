@@ -1,12 +1,22 @@
-import type { Task } from '../types';
+import type { Anotacao, Subtarefa, Task } from '../types';
 import { canTransition } from '../utils/status';
 import { newHistoryEntry } from '../utils/history';
-import { EMPTY_FILTERS, nextTaskId } from '../utils/tasks';
+import { EMPTY_FILTERS, nextTaskId, proximaOcorrencia } from '../utils/tasks';
 import type { AppAction, AppState } from './types';
 
 const CAMPOS_EDITAVEIS = ['titulo', 'descricao', 'prazo', 'prioridade'] as const;
 
-const CAMPOS_WHITELIST = ['titulo', 'descricao', 'prazo', 'prioridade', 'categoria', 'tags'] as const;
+const CAMPOS_WHITELIST = [
+  'titulo',
+  'descricao',
+  'prazo',
+  'prioridade',
+  'categoria',
+  'tags',
+  'projeto',
+  'lembrete',
+  'recorrencia',
+] as const;
 
 type CampoEdicao = (typeof CAMPOS_WHITELIST)[number];
 
@@ -31,7 +41,7 @@ function exibirValor(campo: string, valor: unknown): string {
   return String(valor);
 }
 
-/** Compara valor por valor: tags por conteúdo (ordem preservada), categoria normalizando vazio. */
+/** Compara valor por valor: tags por conteúdo (ordem preservada), categoria/projeto normalizando vazio. */
 function mudou(campo: CampoEdicao, task: Task, mudancas: Partial<Task>): boolean {
   const novo = mudancas[campo];
   if (campo === 'tags') {
@@ -41,6 +51,15 @@ function mudou(campo: CampoEdicao, task: Task, mudancas: Partial<Task>): boolean
   }
   if (campo === 'categoria') {
     return (novo ?? '') !== (task.categoria ?? '');
+  }
+  if (campo === 'projeto') {
+    return (novo ?? '') !== (task.projeto ?? '');
+  }
+  if (campo === 'lembrete') {
+    return (novo ?? null) !== (task.lembrete ?? null);
+  }
+  if (campo === 'recorrencia') {
+    return (novo ?? null) !== (task.recorrencia ?? null);
   }
   if (novo === undefined) return false;
   return novo !== task[campo];
@@ -59,6 +78,11 @@ function montarObservacaoEdicao(
     .join('; ');
 }
 
+/** Id único para subtarefas/anotações. */
+function uid(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function appReducerCore(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'TOGGLE_SIDEBAR':
@@ -69,6 +93,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       return { ...state, kpiCollapsed: !state.kpiCollapsed };
     case 'TOGGLE_FILTERS':
       return { ...state, filtersOpen: !state.filtersOpen };
+    case 'TOGGLE_TEMA':
+      return { ...state, tema: state.tema === 'escuro' ? 'claro' : 'escuro' };
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.filters } };
     case 'RESET_FILTERS':
@@ -132,6 +158,17 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
           case 'tags':
             mudancasAplicadas.tags = action.changes.tags ?? [];
             break;
+          case 'projeto':
+            mudancasAplicadas.projeto = action.changes.projeto;
+            break;
+          case 'lembrete':
+            mudancasAplicadas.lembrete = action.changes.lembrete ?? null;
+            // Lembrete alterado → pode notificar novamente.
+            mudancasAplicadas.lembreteNotificado = false;
+            break;
+          case 'recorrencia':
+            mudancasAplicadas.recorrencia = action.changes.recorrencia ?? null;
+            break;
         }
       }
       return {
@@ -155,24 +192,55 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
         action.observacao
       );
       const agora = new Date().toISOString();
+      const concluida: Task = {
+        ...task,
+        status: action.novoStatus,
+        atualizadaEm: agora,
+        concluidaEm:
+          action.novoStatus === 'CONCLUIDA'
+            ? agora
+            : action.novoStatus === 'EM_ANDAMENTO'
+              ? undefined
+              : task.concluidaEm,
+        // Ao reabrir/retomar (EM_ANDAMENTO), o lembrete volta a poder notificar.
+        lembreteNotificado:
+          action.novoStatus === 'EM_ANDAMENTO' ? false : task.lembreteNotificado,
+        historico: [...task.historico, entry],
+      };
+      if (action.novoStatus === 'CONCLUIDA' && task.recorrencia) {
+        // Gera a próxima ocorrência da tarefa recorrente.
+        const ocorrencia: Task = {
+          ...task,
+          id: nextTaskId(state.tasks),
+          status: 'CAIXA_ENTRADA',
+          prazo: proximaOcorrencia(task.prazo, task.recorrencia),
+          criadaEm: agora,
+          atualizadaEm: agora,
+          concluidaEm: undefined,
+          lembrete: null,
+          lembreteNotificado: false,
+          anotacoes: [],
+          subtarefas: (task.subtarefas ?? []).map((s) => ({ ...s, concluida: false })),
+          historico: [
+            newHistoryEntry(
+              null,
+              'CAIXA_ENTRADA',
+              'status',
+              `Próxima ocorrência (${task.recorrencia}) de ${task.id}.`
+            ),
+          ],
+        };
+        return {
+          ...state,
+          tasks: [
+            ...state.tasks.map((t) => (t.id === action.taskId ? concluida : t)),
+            ocorrencia,
+          ],
+        };
+      }
       return {
         ...state,
-        tasks: state.tasks.map((t) =>
-          t.id === action.taskId
-            ? {
-                ...t,
-                status: action.novoStatus,
-                atualizadaEm: agora,
-                concluidaEm:
-                  action.novoStatus === 'CONCLUIDA'
-                    ? agora
-                    : action.novoStatus === 'EM_ANDAMENTO'
-                      ? undefined
-                      : t.concluidaEm,
-                historico: [...t.historico, entry],
-              }
-            : t
-        ),
+        tasks: state.tasks.map((t) => (t.id === action.taskId ? concluida : t)),
       };
     }
     case 'DUPLICATE_TASK': {
@@ -187,6 +255,8 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
         criadaEm: agora,
         atualizadaEm: agora,
         concluidaEm: undefined,
+        lembrete: null,
+        lembreteNotificado: false,
         historico: [newHistoryEntry(null, 'CAIXA_ENTRADA', 'status', `Tarefa duplicada de ${task.id}.`)],
       };
       return { ...state, tasks: [...state.tasks, copy] };
@@ -217,6 +287,97 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       tasks.splice(target, 0, moved);
       return { ...state, tasks };
     }
+    case 'ADD_SUBTAREFA': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      const titulo = action.titulo.trim();
+      if (!task || !titulo) return state;
+      const item: Subtarefa = { id: uid('st'), titulo, concluida: false };
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId
+            ? { ...t, subtarefas: [...(t.subtarefas ?? []), item], atualizadaEm: new Date().toISOString() }
+            : t
+        ),
+      };
+    }
+    case 'TOGGLE_SUBTAREFA': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      const lista = task?.subtarefas ?? [];
+      if (!task || !lista.some((s) => s.id === action.subtarefaId)) return state;
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId
+            ? {
+                ...t,
+                subtarefas: t.subtarefas?.map((s) =>
+                  s.id === action.subtarefaId ? { ...s, concluida: !s.concluida } : s
+                ),
+                atualizadaEm: new Date().toISOString(),
+              }
+            : t
+        ),
+      };
+    }
+    case 'REMOVE_SUBTAREFA': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      const lista = task?.subtarefas ?? [];
+      if (!task || !lista.some((s) => s.id === action.subtarefaId)) return state;
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId
+            ? {
+                ...t,
+                subtarefas: t.subtarefas?.filter((s) => s.id !== action.subtarefaId),
+                atualizadaEm: new Date().toISOString(),
+              }
+            : t
+        ),
+      };
+    }
+    case 'ADD_ANOTACAO': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      const texto = action.texto.trim();
+      if (!task || !texto) return state;
+      const nota: Anotacao = { id: uid('an'), texto, criadaEm: new Date().toISOString() };
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId
+            ? { ...t, anotacoes: [...(t.anotacoes ?? []), nota], atualizadaEm: new Date().toISOString() }
+            : t
+        ),
+      };
+    }
+    case 'REMOVE_ANOTACAO': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      const lista = task?.anotacoes ?? [];
+      if (!task || !lista.some((a) => a.id === action.anotacaoId)) return state;
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId
+            ? {
+                ...t,
+                anotacoes: t.anotacoes?.filter((a) => a.id !== action.anotacaoId),
+                atualizadaEm: new Date().toISOString(),
+              }
+            : t
+        ),
+      };
+    }
+    case 'MARK_LEMBRETE_NOTIFICADO': {
+      const task = state.tasks.find((t) => t.id === action.taskId);
+      if (!task || task.lembreteNotificado) return state;
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.taskId ? { ...t, lembreteNotificado: true } : t
+        ),
+      };
+    }
     default:
       return state;
   }
@@ -225,7 +386,12 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
 const UNDO_LIMIT = 50;
 
 /** Ações que mudam tarefas mas NÃO entram na pilha de undo (sem toast; undo seria confuso). */
-const NO_UNDO: ReadonlySet<AppAction['type']> = new Set(['TOGGLE_FAVORITE', 'REORDER_TASKS']);
+const NO_UNDO: ReadonlySet<AppAction['type']> = new Set([
+  'TOGGLE_FAVORITE',
+  'REORDER_TASKS',
+  'TOGGLE_SUBTAREFA',
+  'MARK_LEMBRETE_NOTIFICADO',
+]);
 
 /**
  * Reducer público: aplica a ação e empilha o estado anterior em `past` sempre que

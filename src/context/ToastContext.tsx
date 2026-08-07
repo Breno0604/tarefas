@@ -85,25 +85,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className="pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg"
+              className="pointer-events-auto flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-800"
               role="status"
             >
               <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${COLORS[t.type]}`} />
-              <p className="flex-1 text-sm leading-relaxed text-slate-700">{t.message}</p>
+              <p className="flex-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{t.message}</p>
               {t.action && (
                 <button
                   onClick={() => {
                     t.action?.onClick();
                     remove(t.id);
                   }}
-                  className="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100"
+                  className="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/40"
                 >
                   {t.action.label}
                 </button>
               )}
               <button
                 onClick={() => remove(t.id)}
-                className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+                className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-300"
                 aria-label="Fechar notificação"
               >
                 <X className="h-4 w-4" />

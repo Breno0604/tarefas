@@ -2,11 +2,11 @@ import type { TaskStatus } from '../../types';
 import { STATUS_LABELS } from '../../utils/status';
 
 const STYLES: Record<TaskStatus, string> = {
-  CAIXA_ENTRADA: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-  A_FAZER: 'bg-cyan-50 text-cyan-700 ring-cyan-600/20',
-  EM_ANDAMENTO: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  CONCLUIDA: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  CANCELADA: 'bg-slate-200 text-slate-600 ring-slate-500/20',
+  CAIXA_ENTRADA: 'bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-500/30',
+  A_FAZER: 'bg-cyan-50 text-cyan-700 ring-cyan-600/20 dark:bg-cyan-950/50 dark:text-cyan-300 dark:ring-cyan-500/30',
+  EM_ANDAMENTO: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-500/30',
+  CONCLUIDA: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-500/30',
+  CANCELADA: 'bg-slate-200 text-slate-600 ring-slate-500/20 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-500/40',
 };
 
 export default function StatusBadge({ status }: { status: TaskStatus }) {

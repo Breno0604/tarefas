@@ -26,7 +26,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white py-16 text-slate-400 shadow-sm">
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white py-16 text-slate-400 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500">
         {totalCount === 0 ? <Sparkles className="h-10 w-10" /> : <Inbox className="h-10 w-10" />}
         <p className="text-sm font-medium">
           {totalCount === 0 ? 'Nenhuma tarefa criada ainda' : 'Nenhuma tarefa encontrada'}
@@ -94,10 +94,10 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
             onDragEnd={handleDragEnd}
             className={`flex min-w-[240px] flex-1 flex-col rounded-xl p-2 transition-colors ${
               highlight === 'indigo'
-                ? 'bg-indigo-100/70 ring-2 ring-inset ring-indigo-300'
+                ? 'bg-indigo-100/70 ring-2 ring-inset ring-indigo-300 dark:bg-indigo-950/50 dark:ring-indigo-500/50'
                 : highlight === 'blocked'
-                  ? 'bg-rose-100/70 ring-2 ring-inset ring-rose-300'
-                  : 'bg-slate-200/60'
+                  ? 'bg-rose-100/70 ring-2 ring-inset ring-rose-300 dark:bg-rose-950/40 dark:ring-rose-500/50'
+                  : 'bg-slate-200/60 dark:bg-slate-800/70'
             }`}
           >
             <div className="mb-2 flex items-center justify-between px-1">
@@ -105,7 +105,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
                 <StatusBadge status={status} />
                 {highlight === 'blocked' && (
                   <span
-                    className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700"
+                    className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
                     title="Transição não permitida"
                   >
                     <Ban className="h-3 w-3" />
@@ -113,7 +113,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
                   </span>
                 )}
               </div>
-              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-500">
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
                 {columnTasks.length}
               </span>
             </div>
@@ -128,7 +128,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
                 />
               ))}
               {columnTasks.length === 0 && (
-                <p className="rounded-lg border border-dashed border-slate-300 py-6 text-center text-xs text-slate-400">
+                <p className="rounded-lg border border-dashed border-slate-300 py-6 text-center text-xs text-slate-400 dark:border-slate-600 dark:text-slate-500">
                   {STATUS_LABELS[status]} — vazio
                 </p>
               )}

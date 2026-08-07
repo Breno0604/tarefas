@@ -41,6 +41,7 @@ export const TAREFAS: Task[] = [
     prazo: '2026-08-07',
     status: 'CAIXA_ENTRADA',
     categoria: 'Desenvolvimento',
+    projeto: 'Lançamento 2.0',
     tags: ['bug', 'crítico'],
     criadaEm: '2026-08-04T08:00:00',
     historico: [],
@@ -68,6 +69,7 @@ export const TAREFAS: Task[] = [
     prioridade: 'alta',
     prazo: '2026-08-04',
     status: 'EM_ANDAMENTO',
+    projeto: 'Infraestrutura',
     criadaEm: '2026-08-01T10:00:00',
     historico: [
       h('h2', '2026-08-01T11:00:00', 'CAIXA_ENTRADA', 'A_FAZER'),
@@ -99,6 +101,7 @@ export const TAREFAS: Task[] = [
     prazo: '2026-08-03',
     status: 'CONCLUIDA',
     categoria: 'Desenvolvimento',
+    projeto: 'Plataforma',
     tags: ['auth', 'segurança'],
     criadaEm: '2026-08-01T07:45:00',
     concluidaEm: '2026-08-03T15:40:00',
