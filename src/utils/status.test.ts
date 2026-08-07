@@ -12,14 +12,29 @@ describe('canTransition', () => {
     expect(canTransition('CONCLUIDA', 'EM_ANDAMENTO')).toBe(true);
   });
 
-  it('permite cancelar a partir de qualquer status não-terminal', () => {
-    for (const from of ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO'] as const) {
-      expect(canTransition(from, 'CANCELADA')).toBe(true);
+  it('permite arquivar a partir de qualquer status não-terminal', () => {
+    for (const from of ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'SUSPENSA'] as const) {
+      expect(canTransition(from, 'ARQUIVADA')).toBe(true);
     }
   });
 
-  it('bloqueia cancelamento a partir de CONCLUIDA', () => {
-    expect(canTransition('CONCLUIDA', 'CANCELADA')).toBe(false);
+  it('bloqueia arquivamento a partir de CONCLUIDA', () => {
+    expect(canTransition('CONCLUIDA', 'ARQUIVADA')).toBe(false);
+  });
+
+  it('permite suspender a partir de A_FAZER e EM_ANDAMENTO (não da caixa de entrada)', () => {
+    expect(canTransition('A_FAZER', 'SUSPENSA')).toBe(true);
+    expect(canTransition('EM_ANDAMENTO', 'SUSPENSA')).toBe(true);
+    expect(canTransition('CAIXA_ENTRADA', 'SUSPENSA')).toBe(false);
+    expect(canTransition('CONCLUIDA', 'SUSPENSA')).toBe(false);
+  });
+
+  it('permite reativar SUSPENSA → A_FAZER', () => {
+    expect(canTransition('SUSPENSA', 'A_FAZER')).toBe(true);
+  });
+
+  it('permite desarquivar ARQUIVADA → CAIXA_ENTRADA', () => {
+    expect(canTransition('ARQUIVADA', 'CAIXA_ENTRADA')).toBe(true);
   });
 
   it('bloqueia transições inválidas e reversas', () => {
@@ -28,34 +43,32 @@ describe('canTransition', () => {
     expect(canTransition('EM_ANDAMENTO', 'A_FAZER')).toBe(false);
     expect(canTransition('CONCLUIDA', 'A_FAZER')).toBe(false);
     expect(canTransition('CONCLUIDA', 'CAIXA_ENTRADA')).toBe(false);
-  });
-
-  it('CANCELADA é terminal: nenhuma transição de saída', () => {
-    const statuses = ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'] as const;
-    for (const to of statuses) {
-      expect(canTransition('CANCELADA', to)).toBe(false);
-    }
+    expect(canTransition('SUSPENSA', 'EM_ANDAMENTO')).toBe(false);
   });
 });
 
 describe('transicoesDisponiveis', () => {
-  it('CAIXA_ENTRADA oferece A_FAZER e CANCELADA', () => {
-    expect(transicoesDisponiveis('CAIXA_ENTRADA').sort()).toEqual(['A_FAZER', 'CANCELADA']);
+  it('CAIXA_ENTRADA oferece A_FAZER e ARQUIVADA', () => {
+    expect(transicoesDisponiveis('CAIXA_ENTRADA').sort()).toEqual(['ARQUIVADA', 'A_FAZER']);
   });
 
-  it('A_FAZER oferece EM_ANDAMENTO e CANCELADA', () => {
-    expect(transicoesDisponiveis('A_FAZER').sort()).toEqual(['CANCELADA', 'EM_ANDAMENTO']);
+  it('A_FAZER oferece EM_ANDAMENTO, SUSPENSA e ARQUIVADA', () => {
+    expect(transicoesDisponiveis('A_FAZER').sort()).toEqual(['ARQUIVADA', 'EM_ANDAMENTO', 'SUSPENSA']);
   });
 
-  it('EM_ANDAMENTO oferece CONCLUIDA e CANCELADA', () => {
-    expect(transicoesDisponiveis('EM_ANDAMENTO').sort()).toEqual(['CANCELADA', 'CONCLUIDA']);
+  it('EM_ANDAMENTO oferece CONCLUIDA, SUSPENSA e ARQUIVADA', () => {
+    expect(transicoesDisponiveis('EM_ANDAMENTO').sort()).toEqual(['ARQUIVADA', 'CONCLUIDA', 'SUSPENSA']);
+  });
+
+  it('SUSPENSA oferece reativar (A_FAZER) e arquivar', () => {
+    expect(transicoesDisponiveis('SUSPENSA').sort()).toEqual(['ARQUIVADA', 'A_FAZER']);
   });
 
   it('CONCLUIDA só oferece retomar', () => {
     expect(transicoesDisponiveis('CONCLUIDA')).toEqual(['EM_ANDAMENTO']);
   });
 
-  it('CANCELADA não tem transições de saída', () => {
-    expect(transicoesDisponiveis('CANCELADA')).toEqual([]);
+  it('ARQUIVADA só oferece desarquivar (CAIXA_ENTRADA)', () => {
+    expect(transicoesDisponiveis('ARQUIVADA')).toEqual(['CAIXA_ENTRADA']);
   });
 });

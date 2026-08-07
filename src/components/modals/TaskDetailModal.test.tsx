@@ -15,23 +15,24 @@ describe('TaskDetailModal', () => {
     expect(screen.getByRole('button', { name: 'Excluir' })).toBeInTheDocument();
   });
 
-  it('CAIXA_ENTRADA exibe ações Planejar e Cancelar', () => {
+  it('CAIXA_ENTRADA exibe ações Planejar e Arquivar', () => {
     renderWithApp(<TaskDetailModal taskId="TA-001" onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Planejar' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Arquivar' })).toBeInTheDocument();
   });
 
-  it('EM_ANDAMENTO exibe Concluir e Cancelar, sem Planejar', () => {
+  it('EM_ANDAMENTO exibe Concluir, Suspender e Arquivar, sem Planejar', () => {
     renderWithApp(<TaskDetailModal taskId="TA-005" onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suspender' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Arquivar' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Planejar' })).not.toBeInTheDocument();
   });
 
-  it('CONCLUIDA exibe Retomar e não exibe Cancelar', () => {
+  it('CONCLUIDA exibe Retomar e não exibe Arquivar', () => {
     renderWithApp(<TaskDetailModal taskId="TA-007" onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Retomar' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Arquivar' })).not.toBeInTheDocument();
   });
 
   it('exibe categoria e tags da tarefa', () => {

@@ -32,7 +32,10 @@ export default function HistoryModal({ taskId, onClose }: HistoryModalProps) {
                 entry.tipo === 'status' ? 'bg-indigo-500' : 'bg-slate-400'
               }`}
             />
-            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">{formatDateTime(entry.dataHora)}</p>
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+              {formatDateTime(entry.dataHora)}
+              {entry.usuario && <span> · por {entry.usuario}</span>}
+            </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {entry.tipo === 'status' ? (
                 <>

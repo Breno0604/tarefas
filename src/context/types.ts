@@ -23,15 +23,23 @@ export type AppAction =
   | { type: 'CLOSE_MODAL' }
   | { type: 'CREATE_TASK'; task: Task }
   | { type: 'UPDATE_TASK'; taskId: string; changes: Partial<Task> }
-  | { type: 'CHANGE_STATUS'; taskId: string; novoStatus: TaskStatus; observacao?: string }
+  | {
+      type: 'CHANGE_STATUS';
+      taskId: string;
+      novoStatus: TaskStatus;
+      observacao?: string;
+      retornoEm?: string | null; // usado ao suspender (SUSPENSA)
+    }
   | { type: 'DUPLICATE_TASK'; taskId: string }
-  | { type: 'DELETE_TASK'; taskId: string }
+  | { type: 'DELETE_TASK'; taskId: string; observacao?: string }
   | { type: 'TOGGLE_FAVORITE'; taskId: string }
   | { type: 'REORDER_TASKS'; taskId: string; toTaskId: string }
   | { type: 'ADD_SUBTAREFA'; taskId: string; titulo: string }
   | { type: 'TOGGLE_SUBTAREFA'; taskId: string; subtarefaId: string }
+  | { type: 'UPDATE_SUBTAREFA'; taskId: string; subtarefaId: string; titulo: string }
   | { type: 'REMOVE_SUBTAREFA'; taskId: string; subtarefaId: string }
   | { type: 'ADD_ANOTACAO'; taskId: string; texto: string }
+  | { type: 'UPDATE_ANOTACAO'; taskId: string; anotacaoId: string; texto: string }
   | { type: 'REMOVE_ANOTACAO'; taskId: string; anotacaoId: string }
   | { type: 'MARK_LEMBRETE_NOTIFICADO'; taskId: string }
   | { type: 'TOGGLE_TEMA' }

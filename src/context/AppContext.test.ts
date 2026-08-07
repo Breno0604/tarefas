@@ -85,74 +85,155 @@ describe('appReducer — CHANGE_STATUS', () => {
   });
 });
 
-describe('appReducer — cancelamento (CANCELADA)', () => {
+describe('appReducer — arquivamento (ARQUIVADA)', () => {
   const comStatus = (status: Task['status']): AppState => ({
     ...baseState,
     tasks: baseState.tasks.map((t) => (t.id === 'TA-001' ? { ...t, status } : t)),
   });
 
-  it('cancela CAIXA_ENTRADA com observação e grava histórico', () => {
+  it('arquiva CAIXA_ENTRADA com motivo e grava histórico', () => {
     const next = appReducer(comStatus('CAIXA_ENTRADA'), {
       type: 'CHANGE_STATUS',
       taskId: 'TA-001',
-      novoStatus: 'CANCELADA',
+      novoStatus: 'ARQUIVADA',
       observacao: 'Tarefa perdeu o sentido.',
     });
     const task = next.tasks.find((t) => t.id === 'TA-001')!;
-    expect(task.status).toBe('CANCELADA');
+    expect(task.status).toBe('ARQUIVADA');
     expect(task.concluidaEm).toBeUndefined();
     expect(task.historico[0]).toMatchObject({
       tipo: 'status',
       statusAnterior: 'CAIXA_ENTRADA',
-      novoStatus: 'CANCELADA',
-      observacao: 'Tarefa perdeu o sentido.',
+      novoStatus: 'ARQUIVADA',
+      observacao: 'Arquivada: Tarefa perdeu o sentido.',
     });
   });
 
-  it('cancela a partir de A_FAZER e EM_ANDAMENTO', () => {
-    for (const status of ['A_FAZER', 'EM_ANDAMENTO'] as const) {
+  it('arquiva a partir de A_FAZER, EM_ANDAMENTO e SUSPENSA', () => {
+    for (const status of ['A_FAZER', 'EM_ANDAMENTO', 'SUSPENSA'] as const) {
       const next = appReducer(comStatus(status), {
         type: 'CHANGE_STATUS',
         taskId: 'TA-001',
-        novoStatus: 'CANCELADA',
+        novoStatus: 'ARQUIVADA',
         observacao: 'x',
       });
-      expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('CANCELADA');
+      expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('ARQUIVADA');
     }
   });
 
-  it('não cancela a partir de CONCLUIDA', () => {
+  it('não arquiva a partir de CONCLUIDA', () => {
     const next = appReducer(comStatus('CONCLUIDA'), {
       type: 'CHANGE_STATUS',
       taskId: 'TA-001',
-      novoStatus: 'CANCELADA',
+      novoStatus: 'ARQUIVADA',
       observacao: 'x',
     });
     expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('CONCLUIDA');
     expect(next.past).toHaveLength(0);
   });
 
-  it('cancelamento sem observação é no-op (guarda anti-bypass)', () => {
+  it('arquivamento sem motivo é no-op (guarda anti-bypass)', () => {
     const next = appReducer(comStatus('CAIXA_ENTRADA'), {
       type: 'CHANGE_STATUS',
       taskId: 'TA-001',
-      novoStatus: 'CANCELADA',
+      novoStatus: 'ARQUIVADA',
     });
     expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('CAIXA_ENTRADA');
     expect(next.past).toHaveLength(0);
   });
 
-  it('CANCELADA é terminal: nenhuma transição de saída', () => {
-    const cancelada = comStatus('CANCELADA');
-    for (const novoStatus of ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA'] as const) {
-      const next = appReducer(cancelada, {
+  it('desarquiva ARQUIVADA → CAIXA_ENTRADA registrando no histórico', () => {
+    const arquivada = comStatus('ARQUIVADA');
+    const next = appReducer(arquivada, {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'CAIXA_ENTRADA',
+    });
+    const task = next.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.status).toBe('CAIXA_ENTRADA');
+    expect(task.historico[0]).toMatchObject({
+      tipo: 'status',
+      statusAnterior: 'ARQUIVADA',
+      novoStatus: 'CAIXA_ENTRADA',
+      observacao: 'Tarefa desarquivada.',
+    });
+  });
+
+  it('ARQUIVADA só permite desarquivar', () => {
+    const arquivada = comStatus('ARQUIVADA');
+    for (const novoStatus of ['A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA', 'SUSPENSA'] as const) {
+      const next = appReducer(arquivada, {
         type: 'CHANGE_STATUS',
         taskId: 'TA-001',
         novoStatus,
       });
-      expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('CANCELADA');
+      expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('ARQUIVADA');
       expect(next.past).toHaveLength(0);
     }
+  });
+});
+
+describe('appReducer — suspensão (SUSPENSA)', () => {
+  const comStatus = (status: Task['status']): AppState => ({
+    ...baseState,
+    tasks: baseState.tasks.map((t) => (t.id === 'TA-001' ? { ...t, status } : t)),
+  });
+
+  it('suspende EM_ANDAMENTO com data de retorno e grava no histórico', () => {
+    const next = appReducer(comStatus('EM_ANDAMENTO'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'SUSPENSA',
+      retornoEm: '2026-08-20',
+    });
+    const task = next.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.status).toBe('SUSPENSA');
+    expect(task.retornoEm).toBe('2026-08-20');
+    expect(task.historico[0]).toMatchObject({
+      tipo: 'status',
+      statusAnterior: 'EM_ANDAMENTO',
+      novoStatus: 'SUSPENSA',
+      observacao: 'Suspensa; retorno previsto em 20/08/2026.',
+    });
+  });
+
+  it('suspende sem prazo definido (retornoEm null)', () => {
+    const next = appReducer(comStatus('A_FAZER'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'SUSPENSA',
+      retornoEm: null,
+    });
+    const task = next.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.status).toBe('SUSPENSA');
+    expect(task.retornoEm).toBeNull();
+    expect(task.historico[0].observacao).toBe('Suspensa sem prazo definido de retorno.');
+  });
+
+  it('reativar SUSPENSA → A_FAZER limpa retornoEm', () => {
+    const suspensa = {
+      ...comStatus('SUSPENSA'),
+      tasks: comStatus('SUSPENSA').tasks.map((t) =>
+        t.id === 'TA-001' ? { ...t, retornoEm: '2026-08-20' } : t
+      ),
+    };
+    const next = appReducer(suspensa, {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'A_FAZER',
+    });
+    const task = next.tasks.find((t) => t.id === 'TA-001')!;
+    expect(task.status).toBe('A_FAZER');
+    expect(task.retornoEm).toBeNull();
+  });
+
+  it('não suspende a partir da caixa de entrada', () => {
+    const next = appReducer(comStatus('CAIXA_ENTRADA'), {
+      type: 'CHANGE_STATUS',
+      taskId: 'TA-001',
+      novoStatus: 'SUSPENSA',
+    });
+    expect(next.tasks.find((t) => t.id === 'TA-001')!.status).toBe('CAIXA_ENTRADA');
   });
 });
 

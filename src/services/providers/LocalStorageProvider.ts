@@ -39,6 +39,7 @@ function isHistoryEntry(value: unknown): boolean {
     (h.statusAnterior === null || TASK_STATUSES.includes(String(h.statusAnterior))) &&
     (h.novoStatus === null || TASK_STATUSES.includes(String(h.novoStatus))) &&
     (h.tipo === 'status' || h.tipo === 'info') &&
+    (h.usuario === undefined || typeof h.usuario === 'string') &&
     (h.observacao === undefined || typeof h.observacao === 'string')
   );
 }
@@ -70,7 +71,10 @@ function isTask(value: unknown): value is Task {
     (t.lembreteNotificado === undefined || typeof t.lembreteNotificado === 'boolean') &&
     (t.recorrencia === undefined ||
       t.recorrencia === null ||
-      RECORRENCIAS.includes(String(t.recorrencia)))
+      RECORRENCIAS.includes(String(t.recorrencia))) &&
+    (t.retornoEm === undefined ||
+      t.retornoEm === null ||
+      (typeof t.retornoEm === 'string' && /^\d{4}-\d{2}-\d{2}/.test(t.retornoEm)))
   );
 }
 

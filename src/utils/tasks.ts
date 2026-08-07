@@ -83,8 +83,9 @@ export interface Indicators {
   caixaEntrada: number;
   aFazer: number;
   emAndamento: number;
+  suspensas: number;
   concluidas: number;
-  canceladas: number;
+  arquivadas: number;
   atrasadas: number;
 }
 
@@ -93,8 +94,9 @@ export function computeIndicators(tasks: Task[], now: Date = new Date()): Indica
     CAIXA_ENTRADA: 0,
     A_FAZER: 0,
     EM_ANDAMENTO: 0,
+    SUSPENSA: 0,
     CONCLUIDA: 0,
-    CANCELADA: 0,
+    ARQUIVADA: 0,
   };
   let atrasadas = 0;
   for (const t of tasks) {
@@ -106,8 +108,9 @@ export function computeIndicators(tasks: Task[], now: Date = new Date()): Indica
     caixaEntrada: counts.CAIXA_ENTRADA,
     aFazer: counts.A_FAZER,
     emAndamento: counts.EM_ANDAMENTO,
+    suspensas: counts.SUSPENSA,
     concluidas: counts.CONCLUIDA,
-    canceladas: counts.CANCELADA,
+    arquivadas: counts.ARQUIVADA,
     atrasadas,
   };
 }

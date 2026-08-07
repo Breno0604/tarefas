@@ -40,8 +40,9 @@ describe('isOverdue', () => {
     expect(isOverdue('2026-07-01T00:00:00', 'CONCLUIDA', NOW)).toBe(false);
   });
 
-  it('tarefa cancelada nunca é atrasada', () => {
-    expect(isOverdue('2026-07-01T00:00:00', 'CANCELADA', NOW)).toBe(false);
+  it('tarefa arquivada ou suspensa nunca é atrasada', () => {
+    expect(isOverdue('2026-07-01T00:00:00', 'ARQUIVADA', NOW)).toBe(false);
+    expect(isOverdue('2026-07-01T00:00:00', 'SUSPENSA', NOW)).toBe(false);
   });
 
   it('sem prazo nunca é atrasada', () => {

@@ -5,8 +5,10 @@ import type { AppAction } from './types';
 const STATUS_TOAST: Partial<Record<TaskStatus, string>> = {
   A_FAZER: 'Tarefa movida para "A fazer"',
   EM_ANDAMENTO: 'Tarefa em andamento',
+  SUSPENSA: 'Tarefa suspensa',
   CONCLUIDA: 'Tarefa concluída',
-  CANCELADA: 'Tarefa cancelada',
+  ARQUIVADA: 'Tarefa arquivada',
+  CAIXA_ENTRADA: 'Tarefa movida para a caixa de entrada',
 };
 
 /** Mensagem de toast por ação, ou null quando a ação não deve exibir toast. */

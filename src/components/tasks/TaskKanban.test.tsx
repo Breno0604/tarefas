@@ -25,13 +25,14 @@ function renderKanban(props: Partial<Parameters<typeof TaskKanban>[0]> = {}) {
 beforeEach(() => localStorage.clear())
 
 describe('TaskKanban', () => {
-  it('renderiza as cinco colunas com seus rótulos de StatusBadge', () => {
+  it('renderiza as seis colunas com seus rótulos de StatusBadge', () => {
     renderKanban()
     expect(screen.getByText('Caixa de entrada')).toBeInTheDocument()
     expect(screen.getByText('A fazer')).toBeInTheDocument()
     expect(screen.getByText('Em andamento')).toBeInTheDocument()
+    expect(screen.getByText('Suspensa')).toBeInTheDocument()
     expect(screen.getByText('Concluída')).toBeInTheDocument()
-    expect(screen.getByText('Cancelada')).toBeInTheDocument()
+    expect(screen.getByText('Arquivada')).toBeInTheDocument()
   })
 
   it('renderiza cards de tarefa com títulos', () => {
@@ -87,7 +88,7 @@ describe('TaskKanban', () => {
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CAIXA_ENTRADA'))
   })
 
-  it('drop para CANCELADA não altera o status (cancelamento exige observação)', async () => {
+  it('drop para ARQUIVADA não altera o status (arquivamento exige motivo)', async () => {
     const taskId = 'TA-001'
     renderWithApp(
       <>
@@ -97,12 +98,31 @@ describe('TaskKanban', () => {
     )
 
     const card = screen.getByText('Ler e-mails pendentes').closest('div[draggable]')!
-    const column = screen.getAllByText('Cancelada')[0].closest('div[class*="min-w-"]')!
+    const column = screen.getAllByText('Arquivada')[0].closest('div[class*="min-w-"]')!
 
     fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: 'move' } })
     fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
     fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
 
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CAIXA_ENTRADA'))
+  })
+
+  it('drop para SUSPENSA não altera o status (suspensão exige data de retorno)', async () => {
+    const taskId = 'TA-005' // EM_ANDAMENTO → SUSPENSA é transição válida, mas exige retornoEm
+    renderWithApp(
+      <>
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+        <Probe id={taskId} />
+      </>
+    )
+
+    const card = screen.getByText('Migração de servidor de produção').closest('div[draggable]')!
+    const column = screen.getAllByText('Suspensa')[0].closest('div[class*="min-w-"]')!
+
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: 'move' } })
+    fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
+    fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
+
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('EM_ANDAMENTO'))
   })
 })

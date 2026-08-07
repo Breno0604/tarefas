@@ -2,11 +2,11 @@ import { useState, type DragEvent } from 'react';
 import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { canTransition, STATUS_LABELS } from '../../utils/status';
+import { canTransition, STATUS_LABELS, STATUS_ORDER } from '../../utils/status';
 import StatusBadge from './StatusBadge';
 import TaskCard from './TaskCard';
 
-const COLUMNS: TaskStatus[] = ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'];
+const COLUMNS: TaskStatus[] = STATUS_ORDER;
 
 interface TaskKanbanProps {
   tasks: Task[];
@@ -48,7 +48,9 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
   };
 
   const canDropOn = (status: TaskStatus): boolean => {
-    if (status === 'CANCELADA') return false; // cancelamento exige observação (CancelModal)
+    // ARQUIVADA exige motivo (ArchiveModal) e SUSPENSA exige data de retorno (SuspendModal):
+    // ambos são feitos por modal, não por drag & drop.
+    if (status === 'ARQUIVADA' || status === 'SUSPENSA') return false;
     if (!dragInfo) return true;
     const dragged = state.tasks.find((t) => t.id === dragInfo.id);
     if (!dragged) return false;
@@ -65,7 +67,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     e.preventDefault();
     setOverStatus(null);
     setDragInfo(null);
-    if (status === 'CANCELADA') return;
+    if (status === 'ARQUIVADA' || status === 'SUSPENSA') return;
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);

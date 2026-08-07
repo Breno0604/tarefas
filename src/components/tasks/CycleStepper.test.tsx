@@ -4,18 +4,23 @@ import { render, screen } from '@testing-library/react';
 import CycleStepper from './CycleStepper';
 
 describe('CycleStepper', () => {
-  it('mostra o badge Cancelada para tarefa cancelada', () => {
-    render(<CycleStepper status="CANCELADA" />);
-    expect(screen.getByText('Cancelada')).toBeInTheDocument();
+  it('mostra o badge Arquivada para tarefa arquivada', () => {
+    render(<CycleStepper status="ARQUIVADA" />);
+    expect(screen.getByText('Arquivada')).toBeInTheDocument();
   });
 
-  it('não exibe etapa Cancelada no ciclo de uma tarefa normal', () => {
+  it('mostra o badge Suspensa para tarefa suspensa', () => {
+    render(<CycleStepper status="SUSPENSA" />);
+    expect(screen.getByText('Suspensa')).toBeInTheDocument();
+  });
+
+  it('não exibe etapa Arquivada no ciclo de uma tarefa normal', () => {
     render(<CycleStepper status="CONCLUIDA" />);
-    expect(screen.queryByText('Cancelada')).not.toBeInTheDocument();
+    expect(screen.queryByText('Arquivada')).not.toBeInTheDocument();
   });
 
-  it('marca todos os passos como não concluídos para uma tarefa cancelada', () => {
-    render(<CycleStepper status="CANCELADA" />);
-    expect(screen.getByTitle('Ciclo: CANCELADA')).toBeInTheDocument();
+  it('marca todos os passos como não concluídos para uma tarefa arquivada', () => {
+    render(<CycleStepper status="ARQUIVADA" />);
+    expect(screen.getByTitle('Ciclo: ARQUIVADA')).toBeInTheDocument();
   });
 });

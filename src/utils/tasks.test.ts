@@ -32,10 +32,10 @@ describe('filterTasks', () => {
     expect(result.every((t) => t.status === 'CAIXA_ENTRADA' || t.status === 'A_FAZER')).toBe(true);
   });
 
-  it('filtra por vencidas (exclui concluídas e canceladas)', () => {
+  it('filtra por vencidas (exclui concluídas, arquivadas e suspensas)', () => {
     const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, prazo: 'vencidas' }, NOW);
     expect(result.length).toBeGreaterThan(0);
-    expect(result.every((t) => t.status !== 'CONCLUIDA' && t.status !== 'CANCELADA')).toBe(true);
+    expect(result.every((t) => t.status !== 'CONCLUIDA' && t.status !== 'ARQUIVADA' && t.status !== 'SUSPENSA')).toBe(true);
     expect(
       result.every((t) => t.prazo !== null && new Date(t.prazo) < new Date('2026-08-03T00:00:00'))
     ).toBe(true);
@@ -127,8 +127,9 @@ describe('computeIndicators', () => {
       ind.caixaEntrada +
         ind.aFazer +
         ind.emAndamento +
+        ind.suspensas +
         ind.concluidas +
-        ind.canceladas
+        ind.arquivadas
     ).toBe(ind.total);
   });
 
@@ -144,12 +145,14 @@ describe('computeIndicators', () => {
     expect(ind.atrasadas).toBe(base.atrasadas);
   });
 
-  it('conta CANCELADA e não a marca como atrasada', () => {
-    const cancelada = { ...TAREFAS[0], id: 'TA-CANC', status: 'CANCELADA' as const, prazo: '2026-07-01' };
+  it('conta ARQUIVADA e SUSPENSA sem marcá-las como atrasadas', () => {
+    const arquivada = { ...TAREFAS[0], id: 'TA-ARQ', status: 'ARQUIVADA' as const, prazo: '2026-07-01' };
+    const suspensa = { ...TAREFAS[1], id: 'TA-SUS', status: 'SUSPENSA' as const, prazo: '2026-07-01' };
     const base = computeIndicators(TAREFAS, NOW);
-    const ind = computeIndicators([...TAREFAS, cancelada], NOW);
-    expect(ind.total).toBe(TAREFAS.length + 1);
-    expect(ind.canceladas).toBe(base.canceladas + 1);
+    const ind = computeIndicators([...TAREFAS, arquivada, suspensa], NOW);
+    expect(ind.total).toBe(TAREFAS.length + 2);
+    expect(ind.arquivadas).toBe(base.arquivadas + 1);
+    expect(ind.suspensas).toBe(base.suspensas + 1);
     expect(ind.atrasadas).toBe(base.atrasadas);
   });
 });

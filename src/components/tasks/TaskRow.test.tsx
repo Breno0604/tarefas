@@ -63,18 +63,20 @@ describe('TaskRow — ações', () => {
   it('exibe ações do ciclo por status', () => {
     renderRow(CAIXA_ENTRADA);
     expect(screen.getByTitle('Planejar')).toBeInTheDocument();
-    expect(screen.getByTitle('Cancelar')).toBeInTheDocument();
+    expect(screen.getByTitle('Arquivar')).toBeInTheDocument();
 
     renderRow(EM_ANDAMENTO);
     expect(screen.getByTitle('Concluir')).toBeInTheDocument();
+    expect(screen.getByTitle('Suspender')).toBeInTheDocument();
 
     renderRow(CONCLUIDA);
     expect(screen.getByTitle('Retomar')).toBeInTheDocument();
   });
 
-  it('CONCLUIDA não exibe Cancelar', () => {
+  it('CONCLUIDA não exibe Arquivar nem Suspender', () => {
     renderRow(CONCLUIDA);
-    expect(screen.queryByTitle('Cancelar')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Arquivar')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Suspender')).not.toBeInTheDocument();
   });
 
   it('favoritar alterna o estado visual da estrela', async () => {

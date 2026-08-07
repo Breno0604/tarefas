@@ -2,8 +2,9 @@ export type TaskStatus =
   | 'CAIXA_ENTRADA'
   | 'A_FAZER'
   | 'EM_ANDAMENTO'
+  | 'SUSPENSA'
   | 'CONCLUIDA'
-  | 'CANCELADA';
+  | 'ARQUIVADA';
 
 export type Priority = 'baixa' | 'media' | 'alta' | 'critica';
 export type TaskView = 'lista' | 'quadro';
@@ -15,6 +16,7 @@ export type Tema = 'claro' | 'escuro';
 export interface HistoryEntry {
   id: string;
   dataHora: string; // ISO
+  usuario?: string; // responsável pela alteração (app pessoal: 'Eu')
   statusAnterior: TaskStatus | null;
   novoStatus: TaskStatus | null;
   tipo: 'status' | 'info';
@@ -53,6 +55,7 @@ export interface Task {
   lembrete?: string | null; // ISO datetime | null; padrão: null
   lembreteNotificado?: boolean; // flag interna do hook de notificação
   recorrencia?: Recorrencia | null; // padrão: null
+  retornoEm?: string | null; // data 'YYYY-MM-DD' de retorno da SUSPENSA | null = sem prazo definido
 }
 
 export interface Filters {
@@ -71,5 +74,6 @@ export type ModalState =
   | { type: 'create' }
   | { type: 'edit'; taskId: string }
   | { type: 'detail'; taskId: string }
-  | { type: 'cancel'; taskId: string }
+  | { type: 'archive'; taskId: string }
+  | { type: 'suspend'; taskId: string }
   | { type: 'history'; taskId: string };

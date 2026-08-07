@@ -151,4 +151,39 @@ describe('storage', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
     expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
   });
+
+  it('mantém tarefa suspensa com retornoEm e histórico com usuário', () => {
+    const suspensa = {
+      ...fakeTask('TA-SUS', 'SUSPENSA'),
+      retornoEm: '2026-08-20',
+      historico: [
+        {
+          id: 'h1',
+          dataHora: '2026-08-06T09:00:00',
+          usuario: 'Eu',
+          statusAnterior: 'EM_ANDAMENTO',
+          novoStatus: 'SUSPENSA',
+          tipo: 'status' as const,
+          observacao: 'Suspensa; retorno previsto em 20/08/2026.',
+        },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [suspensa] }));
+    expect(loadState()).toEqual({ tasks: [suspensa] });
+  });
+
+  it('descarta tarefa com retornoEm fora do formato de data', () => {
+    const invalida: unknown = { ...fakeTask('TA-BAD'), retornoEm: 'amanhã' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
+
+  it('descarta entrada de histórico com usuario não string', () => {
+    const invalida: unknown = {
+      ...fakeTask('TA-BAD'),
+      historico: [{ id: 'h1', dataHora: '2026-08-06T09:00:00', usuario: 7, statusAnterior: null, novoStatus: 'CAIXA_ENTRADA', tipo: 'status' }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] }));
+    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
+  });
 });

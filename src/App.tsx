@@ -7,7 +7,8 @@ import Topbar from './components/layout/Topbar';
 import SectionTarefas from './components/sections/SectionTarefas';
 import TaskFormModal from './components/modals/TaskFormModal';
 import TaskDetailModal from './components/modals/TaskDetailModal';
-import CancelModal from './components/modals/CancelModal';
+import ArchiveModal from './components/modals/ArchiveModal';
+import SuspendModal from './components/modals/SuspendModal';
 import HistoryModal from './components/modals/HistoryModal';
 
 /** Dispara notificações do navegador para lembretes vencidos ainda não notificados. */
@@ -20,7 +21,7 @@ function useLembretes() {
       const agora = formatLocalMinute(new Date());
       for (const t of state.tasks) {
         if (!t.lembrete || t.lembreteNotificado) continue;
-        if (t.status === 'CONCLUIDA' || t.status === 'CANCELADA') continue;
+        if (t.status === 'CONCLUIDA' || t.status === 'ARQUIVADA') continue;
         // Compara apenas 'YYYY-MM-DDTHH:mm' (normaliza segundos caso existam).
         if (t.lembrete.slice(0, 16) <= agora) {
           try {
@@ -109,8 +110,11 @@ function Shell() {
       {modal.type === 'detail' && (
         <TaskDetailModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
       )}
-      {modal.type === 'cancel' && (
-        <CancelModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
+      {modal.type === 'archive' && (
+        <ArchiveModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
+      )}
+      {modal.type === 'suspend' && (
+        <SuspendModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
       )}
       {modal.type === 'history' && (
         <HistoryModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />

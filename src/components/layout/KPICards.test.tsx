@@ -32,15 +32,16 @@ function Probe() {
 const indicators = computeIndicators(TAREFAS, new Date(2026, 7, 3));
 
 describe('KPICards', () => {
-  it('renders the 7 KPI cards with seed-derived values', () => {
+  it('renders the 8 KPI cards with seed-derived values', () => {
     renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
 
     expect(screen.getByRole('button', { name: /Total de tarefas/ })).toHaveTextContent(String(indicators.total));
     expect(screen.getByRole('button', { name: /Caixa de entrada/ })).toHaveTextContent(String(indicators.caixaEntrada));
     expect(screen.getByRole('button', { name: /A fazer/ })).toHaveTextContent(String(indicators.aFazer));
     expect(screen.getByRole('button', { name: /Em andamento/ })).toHaveTextContent(String(indicators.emAndamento));
+    expect(screen.getByRole('button', { name: /Suspensas/ })).toHaveTextContent(String(indicators.suspensas));
     expect(screen.getByRole('button', { name: /Concluídas/ })).toHaveTextContent(String(indicators.concluidas));
-    expect(screen.getByRole('button', { name: /Canceladas/ })).toHaveTextContent(String(indicators.canceladas));
+    expect(screen.getByRole('button', { name: /Arquivadas/ })).toHaveTextContent(String(indicators.arquivadas));
     expect(screen.getByRole('button', { name: /Atrasadas/ })).toHaveTextContent(String(indicators.atrasadas));
   });
 

@@ -9,11 +9,13 @@ describe('StatusBadge', () => {
     render(<StatusBadge status="A_FAZER" />);
     render(<StatusBadge status="EM_ANDAMENTO" />);
     render(<StatusBadge status="CONCLUIDA" />);
-    render(<StatusBadge status="CANCELADA" />);
+    render(<StatusBadge status="SUSPENSA" />);
+    render(<StatusBadge status="ARQUIVADA" />);
     expect(screen.getByText('Caixa de entrada')).toBeInTheDocument();
     expect(screen.getByText('A fazer')).toBeInTheDocument();
     expect(screen.getByText('Em andamento')).toBeInTheDocument();
     expect(screen.getByText('Concluída')).toBeInTheDocument();
-    expect(screen.getByText('Cancelada')).toBeInTheDocument();
+    expect(screen.getByText('Suspensa')).toBeInTheDocument();
+    expect(screen.getByText('Arquivada')).toBeInTheDocument();
   });
 });

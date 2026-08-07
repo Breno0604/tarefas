@@ -1,11 +1,12 @@
-import { Check, XCircle } from 'lucide-react';
+import { Check, PauseCircle, XCircle } from 'lucide-react';
 import type { TaskStatus } from '../../types';
 import { STATUS_ORDER } from '../../utils/status';
 
-const STEPS = STATUS_ORDER.filter((s) => s !== 'CANCELADA');
+// SUSPENSA e ARQUIVADA são estados laterais: não aparecem como etapa do ciclo.
+const STEPS = STATUS_ORDER.filter((s) => s !== 'SUSPENSA' && s !== 'ARQUIVADA');
 
 function stepState(status: TaskStatus, index: number): 'done' | 'current' | 'todo' {
-  if (status === 'CANCELADA') return 'todo';
+  if (status === 'SUSPENSA' || status === 'ARQUIVADA') return 'todo';
   const pos = STATUS_ORDER.indexOf(status);
   if (index < pos) return 'done';
   if (index === pos) return 'current';
@@ -18,7 +19,8 @@ interface CycleStepperProps {
 }
 
 export default function CycleStepper({ status, compact = false }: CycleStepperProps) {
-  const isCancelada = status === 'CANCELADA';
+  const isSuspensa = status === 'SUSPENSA';
+  const isArquivada = status === 'ARQUIVADA';
 
   return (
     <div className="flex items-center" title={`Ciclo: ${status}`}>
@@ -49,10 +51,16 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
           </div>
         );
       })}
-      {isCancelada && (
+      {isSuspensa && (
+        <div className="ml-2 flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20 dark:bg-violet-950/50 dark:text-violet-300 dark:ring-violet-500/30">
+          <PauseCircle className="h-3 w-3" />
+          Suspensa
+        </div>
+      )}
+      {isArquivada && (
         <div className="ml-2 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-500/40">
           <XCircle className="h-3 w-3" />
-          Cancelada
+          Arquivada
         </div>
       )}
     </div>

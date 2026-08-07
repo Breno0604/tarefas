@@ -4,16 +4,18 @@ export const STATUS_ORDER: TaskStatus[] = [
   'CAIXA_ENTRADA',
   'A_FAZER',
   'EM_ANDAMENTO',
+  'SUSPENSA',
   'CONCLUIDA',
-  'CANCELADA',
+  'ARQUIVADA',
 ];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   CAIXA_ENTRADA: 'Caixa de entrada',
   A_FAZER: 'A fazer',
   EM_ANDAMENTO: 'Em andamento',
+  SUSPENSA: 'Suspensa',
   CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
+  ARQUIVADA: 'Arquivada',
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
@@ -34,10 +36,15 @@ export const TRANSITIONS: { from: TaskStatus; to: TaskStatus }[] = [
   { from: 'CAIXA_ENTRADA', to: 'A_FAZER' },
   { from: 'A_FAZER', to: 'EM_ANDAMENTO' },
   { from: 'EM_ANDAMENTO', to: 'CONCLUIDA' },
-  { from: 'CAIXA_ENTRADA', to: 'CANCELADA' },
-  { from: 'A_FAZER', to: 'CANCELADA' },
-  { from: 'EM_ANDAMENTO', to: 'CANCELADA' },
+  { from: 'A_FAZER', to: 'SUSPENSA' },
+  { from: 'EM_ANDAMENTO', to: 'SUSPENSA' },
+  { from: 'SUSPENSA', to: 'A_FAZER' },
+  { from: 'SUSPENSA', to: 'ARQUIVADA' },
+  { from: 'CAIXA_ENTRADA', to: 'ARQUIVADA' },
+  { from: 'A_FAZER', to: 'ARQUIVADA' },
+  { from: 'EM_ANDAMENTO', to: 'ARQUIVADA' },
   { from: 'CONCLUIDA', to: 'EM_ANDAMENTO' },
+  { from: 'ARQUIVADA', to: 'CAIXA_ENTRADA' },
 ];
 
 export function canTransition(from: TaskStatus, to: TaskStatus): boolean {

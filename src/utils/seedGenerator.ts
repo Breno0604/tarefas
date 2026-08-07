@@ -26,9 +26,10 @@ const PRIORITY_PLAN: Priority[] = ['baixa', 'media', 'alta', 'critica', 'media',
 const STATUS_COUNTS: Record<TaskStatus, number> = {
   CAIXA_ENTRADA: 10,
   A_FAZER: 10,
-  EM_ANDAMENTO: 12,
+  EM_ANDAMENTO: 10,
+  SUSPENSA: 3,
   CONCLUIDA: 12,
-  CANCELADA: 6,
+  ARQUIVADA: 5,
 };
 
 interface CategoriaPool {
@@ -292,26 +293,31 @@ function planoDaTarefa(status: TaskStatus, rng: () => number): Plano {
       return { status, passos: [trans('A_FAZER')] };
     case 'EM_ANDAMENTO':
       return { status, passos: [trans('A_FAZER'), trans('EM_ANDAMENTO')] };
+    case 'SUSPENSA':
+      return {
+        status,
+        passos: [trans('A_FAZER'), trans('EM_ANDAMENTO'), trans('SUSPENSA')],
+      };
     case 'CONCLUIDA':
       return {
         status,
         passos: [trans('A_FAZER'), trans('EM_ANDAMENTO'), trans('CONCLUIDA')],
       };
-    case 'CANCELADA': {
+    case 'ARQUIVADA': {
       const fonte = pick(rng, ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO'] as const);
       if (fonte === 'CAIXA_ENTRADA')
-        return { status, passos: [trans('CANCELADA', pick(rng, OBS_CANCELAMENTO))] };
+        return { status, passos: [trans('ARQUIVADA', pick(rng, OBS_CANCELAMENTO))] };
       if (fonte === 'A_FAZER')
         return {
           status,
-          passos: [trans('A_FAZER'), trans('CANCELADA', pick(rng, OBS_CANCELAMENTO))],
+          passos: [trans('A_FAZER'), trans('ARQUIVADA', pick(rng, OBS_CANCELAMENTO))],
         };
       return {
         status,
         passos: [
           trans('A_FAZER'),
           trans('EM_ANDAMENTO'),
-          trans('CANCELADA', pick(rng, OBS_CANCELAMENTO)),
+          trans('ARQUIVADA', pick(rng, OBS_CANCELAMENTO)),
         ],
       };
     }
@@ -326,9 +332,10 @@ function idxCriacao(status: TaskStatus, rng: () => number): number {
     case 'A_FAZER':
       return randInt(rng, Math.max(0, max - 10), max - 1);
     case 'CONCLUIDA':
-    case 'CANCELADA':
+    case 'ARQUIVADA':
       return randInt(rng, Math.max(0, max - 20), max - 1);
     case 'EM_ANDAMENTO':
+    case 'SUSPENSA':
     default:
       return randInt(rng, 0, max - 1);
   }
@@ -408,6 +415,7 @@ export function generateSeedTasks(): Task[] {
       ...(rng() < 0.1 ? { favorita: true } : {}),
       ...(categoria ? { categoria } : {}),
       ...(tags && tags.length > 0 ? { tags } : {}),
+      ...(status === 'SUSPENSA' ? { retornoEm: rng() < 0.5 ? prazo : null } : {}),
       criadaEm: iso(criada),
       ...(atualizadaEm && atualizadaEm !== iso(criada) ? { atualizadaEm } : {}),
       ...(concluidaEm ? { concluidaEm } : {}),

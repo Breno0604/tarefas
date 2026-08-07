@@ -17,8 +17,9 @@ import { PRIORITY_RANK, STATUS_LABELS } from '../utils/status';
 /* ══════════════════════════════════════════════════════════════════
    SIMULAÇÃO — 1 SEMANA DE USO (06/08/2026 a 12/08/2026)
    Dirige o appReducer real com relógio fake, validando:
-   - fluxo GTD: criar → A_FAZER → EM_ANDAMENTO → CONCLUIDA / CANCELADA
-   - histórico (entradas de status, info de edição, duplicação)
+   - fluxo GTD: criar → A_FAZER → EM_ANDAMENTO → CONCLUIDA / ARQUIVADA / SUSPENSA
+   - arquivamento com motivo e desarquivamento (ARQUIVADA → CAIXA_ENTRADA)
+   - histórico (entradas de status, info de edição, duplicação, usuário)
    - concluidaEm (set ao concluir, limpo ao reabrir)
    - undo (pilha `past`, ações fora da pilha) e rejeição de transições inválidas
    - KPIs (computeIndicators) e filtros (filterTasks)
@@ -107,7 +108,7 @@ afterEach(() => {
 });
 
 describe('simulação de uma semana de uso (app pessoal GTD)', () => {
-  it('dia a dia: cria, conclui, cancela, edita, duplica, desfaz e persiste — KPIs e histórico consistentes', () => {
+  it('dia a dia: cria, conclui, arquiva, desarquiva, edita, duplica, desfaz e persiste — KPIs e histórico consistentes', () => {
     const report: string[] = [];
     const kpiLinhas: string[] = [];
 
@@ -122,10 +123,11 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
       total: 58,
       caixaEntrada: 13,
       aFazer: 11,
-      emAndamento: 14,
+      emAndamento: 12,
+      suspensas: 3,
       concluidas: 14,
-      canceladas: 6,
-      atrasadas: expect.any(Number) as unknown as number,
+      arquivadas: 5,
+      atrasadas: 5,
     });
     // Regras de atraso no baseline
     const ta001 = state.tasks.find((t) => t.id === 'TA-001')!;
@@ -161,6 +163,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
       novoStatus: 'CAIXA_ENTRADA',
       tipo: 'status',
       observacao: 'Tarefa criada.',
+      usuario: 'Eu',
     });
 
     r = criar(state, 'Agendar revisão trimestral', 'media', '2026-08-15');
@@ -179,36 +182,38 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(ta001Dia1.historico.map((h) => h.novoStatus)).toEqual(['A_FAZER', 'EM_ANDAMENTO']);
     expect(ta001Dia1.historico.every((h) => h.dataHora.startsWith('2026-08-06'))).toBe(true);
 
-    // Cancelar escopo despriorizado (com observação)
-    state = mover(state, 'TA-002', 'CANCELADA', 'Escopo absorvido por outra frente.');
+    // Arquivar escopo despriorizado (com motivo)
+    state = mover(state, 'TA-002', 'ARQUIVADA', 'Escopo absorvido por outra frente.');
     const ta002 = state.tasks.find((t) => t.id === 'TA-002')!;
-    expect(ta002.status).toBe('CANCELADA');
-    expect(ta002.historico[ta002.historico.length - 1]?.observacao).toBe('Escopo absorvido por outra frente.');
+    expect(ta002.status).toBe('ARQUIVADA');
+    expect(ta002.historico[ta002.historico.length - 1]?.observacao).toBe('Arquivada: Escopo absorvido por outra frente.');
 
     // Transições inválidas são rejeitadas sem mexer no estado nem na pilha
     const snapshot1 = state.tasks;
     const past1 = state.past.length;
     expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: 'TA-059', novoStatus: 'CONCLUIDA' }).tasks).toBe(snapshot1);
-    expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: 'TA-004', novoStatus: 'CANCELADA' }).tasks).toBe(snapshot1); // sem observação
+    expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: 'TA-004', novoStatus: 'ARQUIVADA' }).tasks).toBe(snapshot1); // sem motivo
     expect(appReducer(state, { type: 'UPDATE_TASK', taskId: 'TA-004', changes: { status: 'CONCLUIDA' } }).tasks).toBe(snapshot1); // fora da whitelist
     expect(state.past.length).toBe(past1);
 
     // KPIs fim do dia 1
     let ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 60,
       ce: 13,
       af: 11,
-      em: 15,
+      em: 13,
+      su: 3,
       co: 14,
-      ca: 7,
+      ar: 6,
+      at: 5,
     });
     kpiLinhas.push(`06/08 qui      | ${JSON.stringify(ind)}`);
     report.push('  • criou "Responder proposta do cliente X" (TA-059, alta, prazo 07/08)');
     report.push('  • criou "Agendar revisão trimestral" (TA-060, média, prazo 15/08)');
     report.push('  • triou TA-001: Caixa de entrada → A fazer → Em andamento');
-    report.push('  • cancelou TA-002 ("Escopo absorvido por outra frente.")');
-    report.push('  • rejeitou: CAIXA_ENTRADA→CONCLUIDA direto, CANCELADA sem observação, UPDATE com status');
+    report.push('  • arquivou TA-002 ("Arquivada: Escopo absorvido por outra frente.")');
+    report.push('  • rejeitou: CAIXA_ENTRADA→CONCLUIDA direto, ARQUIVADA sem motivo, UPDATE com status');
 
     // ── DIA 2 — sex 07/08 ────────────────────────────────────────────
     now = SEMANA[1];
@@ -244,21 +249,24 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(info.statusAnterior).toBe('A_FAZER');
     expect(info.novoStatus).toBe('A_FAZER');
     expect(info.observacao).toContain('Prazo alterado de 2026-08-10 para 2026-08-12');
+    expect(info.usuario).toBe('Eu');
 
     ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 61,
       ce: 13,
       af: 11,
-      em: 15,
+      em: 13,
+      su: 3,
       co: 15,
-      ca: 7,
+      ar: 6,
+      at: 5,
     });
     kpiLinhas.push(`07/08 sex      | ${JSON.stringify(ind)}`);
     report.push('  • concluiu TA-001 (prazo venceu ontem → Atrasadas caiu ao concluir)');
     report.push('  • bug crítico TA-003 em execução');
     report.push('  • criou "Preparar apresentação de status" (TA-061, prazo 10/08)');
-    report.push('  • editou prazo de TA-004 → histórico ganhou entrada [info]');
+    report.push('  • editou prazo de TA-004 → histórico ganhou entrada [info] com usuário');
 
     // ── DIA 3 — sáb 08/08 ────────────────────────────────────────────
     now = SEMANA[2];
@@ -278,11 +286,17 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(copia.historico).toHaveLength(1);
     expect(copia.historico[0].observacao).toBe('Tarefa duplicada de TA-004.');
 
-    // Favoritar não entra na pilha de undo
+    // Favoritar não entra na pilha de undo, mas fica registrado no histórico
     const pastAntesFav = state.past.length;
     state = appReducer(state, { type: 'TOGGLE_FAVORITE', taskId: 'TA-059' });
     expect(state.past.length).toBe(pastAntesFav);
-    expect(state.tasks.find((t) => t.id === 'TA-059')!.favorita).toBe(true);
+    const ta059Favoritada = state.tasks.find((t) => t.id === 'TA-059')!;
+    expect(ta059Favoritada.favorita).toBe(true);
+    expect(ta059Favoritada.historico[ta059Favoritada.historico.length - 1]).toMatchObject({
+      tipo: 'info',
+      observacao: 'Tarefa adicionada aos favoritos.',
+      usuario: 'Eu',
+    });
 
     // Reabrir uma concluída (retomar) limpa concluidaEm
     state = mover(state, 'TA-007', 'EM_ANDAMENTO');
@@ -294,18 +308,20 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(state.tasks.find((t) => t.id === 'TA-007')!.concluidaEm).toMatch(/^2026-08-08T/);
 
     ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 62,
       ce: 14,
       af: 11,
-      em: 14,
+      em: 12,
+      su: 3,
       co: 16,
-      ca: 7,
+      ar: 6,
+      at: 7,
     });
     kpiLinhas.push(`08/08 sáb      | ${JSON.stringify(ind)}`);
     report.push('  • concluiu o bug crítico TA-003');
     report.push('  • duplicou TA-004 → TA-062 na caixa de entrada');
-    report.push('  • favoritou a proposta (não entra no undo)');
+    report.push('  • favoritou a proposta (não entra no undo, mas fica no histórico)');
     report.push('  • reabriu TA-007 (concluidaEm limpo) e reconcluiu');
 
     // ── DIA 4 — dom 09/08 ────────────────────────────────────────────
@@ -317,13 +333,15 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(r.task.id).toBe('TA-063');
     expect(r.task.prazo).toBeNull();
     ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 63,
       ce: 15,
       af: 11,
-      em: 14,
+      em: 12,
+      su: 3,
       co: 16,
-      ca: 7,
+      ar: 6,
+      at: 8,
     });
     kpiLinhas.push(`09/08 dom      | ${JSON.stringify(ind)}`);
     report.push('  • criou "Organizar fotos da viagem" (TA-063, sem prazo)');
@@ -341,7 +359,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     const propostaFim = state.tasks.find((t) => t.id === 'TA-059')!;
     expect(propostaFim.status).toBe('CONCLUIDA');
     expect(propostaFim.concluidaEm).toMatch(/^2026-08-10T/);
-    expect(propostaFim.historico).toHaveLength(4); // criação + 3 transições
+    expect(propostaFim.historico).toHaveLength(5); // criação + favorito + 3 transições
     expect(isOverdue(propostaFim.prazo, propostaFim.status, now)).toBe(false);
 
     // Apresentação: inicia → desfaz (UNDO) → reinicia
@@ -357,13 +375,15 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     state = mover(state, 'TA-061', 'EM_ANDAMENTO');
 
     ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 63,
       ce: 13,
       af: 11,
-      em: 15,
+      em: 13,
+      su: 3,
       co: 17,
-      ca: 7,
+      ar: 6,
+      at: 7,
     });
     kpiLinhas.push(`10/08 seg      | ${JSON.stringify(ind)}`);
     report.push('  • concluiu a proposta atrasada (TA-059)');
@@ -373,21 +393,23 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     now = SEMANA[5];
     vi.setSystemTime(now);
     report.push('── DIA 6 — ter 11/08 ──');
-    state = mover(state, 'TA-063', 'CANCELADA', 'Não vou conseguir fazer este mês.');
-    expect(state.tasks.find((t) => t.id === 'TA-063')!.status).toBe('CANCELADA');
+    state = mover(state, 'TA-063', 'ARQUIVADA', 'Não vou conseguir fazer este mês.');
+    expect(state.tasks.find((t) => t.id === 'TA-063')!.status).toBe('ARQUIVADA');
     state = mover(state, 'TA-061', 'CONCLUIDA');
     expect(state.tasks.find((t) => t.id === 'TA-061')!.concluidaEm).toMatch(/^2026-08-11T/);
     ind = kpi(state.tasks, now);
-    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, co: ind.concluidas, ca: ind.canceladas }).toEqual({
+    expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 63,
       ce: 12,
       af: 11,
-      em: 14,
+      em: 12,
+      su: 3,
       co: 18,
-      ca: 8,
+      ar: 7,
+      at: 9,
     });
     kpiLinhas.push(`11/08 ter      | ${JSON.stringify(ind)}`);
-    report.push('  • cancelou TA-063 ("Não vou conseguir fazer este mês.")');
+    report.push('  • arquivou TA-063 ("Não vou conseguir fazer este mês.")');
     report.push('  • concluiu a apresentação (TA-061)');
 
     // ── DIA 7 — qua 12/08 ────────────────────────────────────────────
@@ -409,29 +431,46 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     state = appReducer(state, { type: 'DELETE_TASK', taskId: 'TA-062' });
     expect(state.tasks.some((t) => t.id === 'TA-062')).toBe(false);
 
+    // Desarquivar TA-002 (ARQUIVADA → CAIXA_ENTRADA) — volta para a caixa de entrada
+    state = mover(state, 'TA-002', 'CAIXA_ENTRADA');
+    const ta002Final = state.tasks.find((t) => t.id === 'TA-002')!;
+    expect(ta002Final.status).toBe('CAIXA_ENTRADA');
+    expect(ta002Final.historico[ta002Final.historico.length - 1]).toMatchObject({
+      statusAnterior: 'ARQUIVADA',
+      novoStatus: 'CAIXA_ENTRADA',
+      tipo: 'status',
+      observacao: 'Tarefa desarquivada.',
+    });
+
     const final = kpi(state.tasks, now);
-    expect({ total: final.total, ce: final.caixaEntrada, af: final.aFazer, em: final.emAndamento, co: final.concluidas, ca: final.canceladas }).toEqual({
+    expect({ total: final.total, ce: final.caixaEntrada, af: final.aFazer, em: final.emAndamento, su: final.suspensas, co: final.concluidas, ar: final.arquivadas, at: final.atrasadas }).toEqual({
       total: 63,
-      ce: 12,
+      ce: 13,
       af: 11,
-      em: 14,
+      em: 12,
+      su: 3,
       co: 18,
-      ca: 8,
+      ar: 6,
+      at: 12,
     });
     // Regras no fim da semana
     expect(isOverdue('2026-08-15', 'CAIXA_ENTRADA', now)).toBe(false); // prazo futuro
     expect(isOverdue(null, 'A_FAZER', now)).toBe(false); // sem prazo nunca atrasa
-    expect(isOverdue('2026-08-01', 'CANCELADA', now)).toBe(false); // cancelada nunca atrasa
+    expect(isOverdue('2026-08-01', 'ARQUIVADA', now)).toBe(false); // arquivada nunca atrasa
     expect(final.atrasadas).toBe(state.tasks.filter((t) => isOverdue(t.prazo, t.status, now)).length);
     expect(final.atrasadas).toBeGreaterThanOrEqual(1);
     kpiLinhas.push(`12/08 qua      | ${JSON.stringify(final)}`);
     report.push('  • criou "Ler relatório de julho" (TA-064) e reordenou manualmente');
     report.push('  • excluiu a duplicada TA-062');
+    report.push('  • desarquivou TA-002 (volta à Caixa de entrada, registrado no histórico)');
 
     // Filtros no estado final
     const soCaixa = filterTasks(state.tasks, { ...EMPTY_FILTERS, status: ['CAIXA_ENTRADA'] }, now);
-    expect(soCaixa).toHaveLength(12);
+    expect(soCaixa).toHaveLength(13);
     expect(soCaixa.every((t) => t.status === 'CAIXA_ENTRADA')).toBe(true);
+    const soArquivadas = filterTasks(state.tasks, { ...EMPTY_FILTERS, status: ['ARQUIVADA'] }, now);
+    expect(soArquivadas).toHaveLength(6);
+    expect(soArquivadas.every((t) => t.status === 'ARQUIVADA')).toBe(true);
     const ordenadas = filterTasks(state.tasks, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, now);
     for (let i = 1; i < ordenadas.length; i++) {
       expect(PRIORITY_RANK[ordenadas[i - 1].prioridade]).toBeLessThanOrEqual(
@@ -454,7 +493,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     /* ── RELATÓRIO ── */
     const linhas = ['', '═'.repeat(74), '  SIMULAÇÃO — 1 SEMANA (06/08/2026 a 12/08/2026) — app pessoal GTD', '═'.repeat(74)];
     linhas.push(
-      '  KPI (Total | Caixa entrada | A fazer | Em andamento | Concluídas | Canceladas | Atrasadas)'
+      '  KPI (Total | Caixa entrada | A fazer | Em andamento | Suspensas | Concluídas | Arquivadas | Atrasadas)'
     );
     linhas.push('  ' + '─'.repeat(70));
     for (const l of kpiLinhas) linhas.push(`  ${l}`);
@@ -467,7 +506,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     linhas.push(timeline(ta001Final));
     linhas.push('', `  HISTÓRICO de TA-059 (${propostaFinal.titulo}) — final: ${STATUS_LABELS[propostaFinal.status]}`);
     linhas.push(timeline(propostaFinal));
-    linhas.push('', '  RESUMO: 5 criadas · 5 concluídas · 2 canceladas · 1 excluída · 1 duplicada · 1 reaberta · 1 editada · 1 desfeita');
+    linhas.push('', '  RESUMO: 5 criadas · 5 concluídas · 2 arquivadas · 1 desarquivada · 1 excluída · 1 duplicada · 1 reaberta · 1 editada · 1 desfeita');
     linhas.push('  Persistência v2: salvo → carregado (round-trip OK) · pilha de undo ≤ 50');
     linhas.push('═'.repeat(74), '');
     for (const l of linhas) console.log(l);

@@ -46,8 +46,12 @@ export default function TaskRow({
       onConfirmComplete(task);
       return;
     }
-    if (novoStatus === 'CANCELADA') {
-      dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
+    if (novoStatus === 'ARQUIVADA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'archive', taskId: task.id } });
+      return;
+    }
+    if (novoStatus === 'SUSPENSA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'suspend', taskId: task.id } });
       return;
     }
     dispatch({ type: 'CHANGE_STATUS', taskId: task.id, novoStatus });

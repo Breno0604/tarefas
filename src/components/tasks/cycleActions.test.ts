@@ -34,8 +34,28 @@ describe('cycleActionFor', () => {
     expect(act?.label).toBe('Concluir');
   });
 
-  it('CANCELADA → Cancelar', () => {
-    const act = cycleActionFor({ ...TASK, status: 'EM_ANDAMENTO' }, 'CANCELADA');
-    expect(act?.label).toBe('Cancelar');
+  it('ARQUIVADA → Arquivar', () => {
+    const act = cycleActionFor({ ...TASK, status: 'EM_ANDAMENTO' }, 'ARQUIVADA');
+    expect(act?.label).toBe('Arquivar');
+  });
+
+  it('SUSPENSA → Suspender', () => {
+    const act = cycleActionFor({ ...TASK, status: 'EM_ANDAMENTO' }, 'SUSPENSA');
+    expect(act?.label).toBe('Suspender');
+  });
+
+  it('SUSPENSA em status SUSPENSA → Reativar', () => {
+    const act = cycleActionFor({ ...TASK, status: 'SUSPENSA' }, 'A_FAZER');
+    expect(act?.label).toBe('Reativar');
+  });
+
+  it('ARQUIVADA → CAIXA_ENTRADA → Desarquivar', () => {
+    const act = cycleActionFor({ ...TASK, status: 'ARQUIVADA' }, 'CAIXA_ENTRADA');
+    expect(act?.label).toBe('Desarquivar');
+  });
+
+  it('CAIXA_ENTRADA não oferece ação de Desarquivar', () => {
+    const act = cycleActionFor(TASK, 'CAIXA_ENTRADA');
+    expect(act).toBeNull();
   });
 });

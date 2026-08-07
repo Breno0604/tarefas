@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { Bell, Copy, History, Pencil, Plus, RefreshCw, Star, Trash2 } from 'lucide-react';
+import {
+  Bell,
+  CalendarClock,
+  Check,
+  Copy,
+  History,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Star,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { transicoesDisponiveis } from '../../utils/status';
 import { formatDate, formatDateTime } from '../../utils/date';
@@ -40,6 +52,8 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
   const [confirmConcluir, setConfirmConcluir] = useState(false);
   const [novaSubtarefa, setNovaSubtarefa] = useState('');
   const [novaAnotacao, setNovaAnotacao] = useState('');
+  const [editandoSub, setEditandoSub] = useState<{ id: string; titulo: string } | null>(null);
+  const [editandoNota, setEditandoNota] = useState<{ id: string; texto: string } | null>(null);
   const task = state.tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -55,8 +69,13 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
       setConfirmConcluir(true);
       return;
     }
-    if (novoStatus === 'CANCELADA') {
-      dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
+    if (novoStatus === 'ARQUIVADA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'archive', taskId: task.id } });
+      onClose();
+      return;
+    }
+    if (novoStatus === 'SUSPENSA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'suspend', taskId: task.id } });
       onClose();
       return;
     }
@@ -69,10 +88,34 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
     setNovaSubtarefa('');
   };
 
+  const salvarSubtarefa = () => {
+    if (editandoSub && editandoSub.titulo.trim()) {
+      dispatch({
+        type: 'UPDATE_SUBTAREFA',
+        taskId: task.id,
+        subtarefaId: editandoSub.id,
+        titulo: editandoSub.titulo,
+      });
+    }
+    setEditandoSub(null);
+  };
+
   const addAnotacao = () => {
     if (!novaAnotacao.trim()) return;
     dispatch({ type: 'ADD_ANOTACAO', taskId: task.id, texto: novaAnotacao });
     setNovaAnotacao('');
+  };
+
+  const salvarAnotacao = () => {
+    if (editandoNota && editandoNota.texto.trim()) {
+      dispatch({
+        type: 'UPDATE_ANOTACAO',
+        taskId: task.id,
+        anotacaoId: editandoNota.id,
+        texto: editandoNota.texto,
+      });
+    }
+    setEditandoNota(null);
   };
 
   return (
@@ -151,6 +194,15 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                   {RECORRENCIA_LABELS[task.recorrencia]}
                 </span>
               )}
+              {task.status === 'SUSPENSA' && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20 dark:bg-violet-950/50 dark:text-violet-300 dark:ring-violet-500/30"
+                  title={task.retornoEm ? `Retorno previsto em ${formatDate(task.retornoEm)}` : 'Sem prazo definido para retorno'}
+                >
+                  <CalendarClock className="h-3 w-3" />
+                  {task.retornoEm ? `Retorno: ${formatDate(task.retornoEm)}` : 'Sem prazo de retorno'}
+                </span>
+              )}
               <button
                 onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
                 title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
@@ -203,33 +255,70 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               </div>
             )}
             <ul className="space-y-1.5">
-              {(task.subtarefas ?? []).map((s) => (
-                <li key={s.id} className="group flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-white dark:hover:bg-slate-700/50">
-                  <input
-                    type="checkbox"
-                    checked={s.concluida}
-                    onChange={() => dispatch({ type: 'TOGGLE_SUBTAREFA', taskId: task.id, subtarefaId: s.id })}
-                    className="h-4 w-4 shrink-0 rounded accent-indigo-600"
-                    aria-label={`Alternar subtarefa: ${s.titulo}`}
-                  />
-                  <span
-                    className={`min-w-0 flex-1 text-sm ${
-                      s.concluida
-                        ? 'text-slate-400 line-through dark:text-slate-500'
-                        : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    {s.titulo}
-                  </span>
-                  <button
-                    onClick={() => dispatch({ type: 'REMOVE_SUBTAREFA', taskId: task.id, subtarefaId: s.id })}
-                    aria-label={`Remover subtarefa: ${s.titulo}`}
-                    className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
+              {(task.subtarefas ?? []).map((s) =>
+                editandoSub?.id === s.id ? (
+                  <li key={s.id} className="flex items-center gap-2 rounded-md bg-white px-1 py-1 ring-1 ring-indigo-300 dark:bg-slate-700/60 dark:ring-indigo-500/50">
+                    <input
+                      value={editandoSub.titulo}
+                      onChange={(e) => setEditandoSub({ id: s.id, titulo: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') salvarSubtarefa();
+                        if (e.key === 'Escape') setEditandoSub(null);
+                      }}
+                      aria-label="Editar subtarefa"
+                      className={inputCls}
+                      autoFocus
+                    />
+                    <button
+                      onClick={salvarSubtarefa}
+                      aria-label="Salvar subtarefa"
+                      className="rounded p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setEditandoSub(null)}
+                      aria-label="Cancelar edição de subtarefa"
+                      className="rounded p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </li>
+                ) : (
+                  <li key={s.id} className="group flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-white dark:hover:bg-slate-700/50">
+                    <input
+                      type="checkbox"
+                      checked={s.concluida}
+                      onChange={() => dispatch({ type: 'TOGGLE_SUBTAREFA', taskId: task.id, subtarefaId: s.id })}
+                      className="h-4 w-4 shrink-0 rounded accent-indigo-600"
+                      aria-label={`Alternar subtarefa: ${s.titulo}`}
+                    />
+                    <span
+                      className={`min-w-0 flex-1 text-sm ${
+                        s.concluida
+                          ? 'text-slate-400 line-through dark:text-slate-500'
+                          : 'text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {s.titulo}
+                    </span>
+                    <button
+                      onClick={() => setEditandoSub({ id: s.id, titulo: s.titulo })}
+                      aria-label={`Editar subtarefa: ${s.titulo}`}
+                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-indigo-400"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => dispatch({ type: 'REMOVE_SUBTAREFA', taskId: task.id, subtarefaId: s.id })}
+                      aria-label={`Remover subtarefa: ${s.titulo}`}
+                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                )
+              )}
             </ul>
             {progresso.total === 0 && (
               <p className="mb-2 text-xs text-slate-400 dark:text-slate-500">
@@ -264,23 +353,61 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               Anotações
             </p>
             <ul className="space-y-2">
-              {(task.anotacoes ?? []).map((n) => (
-                <li key={n.id} className="group rounded-md bg-white p-3 ring-1 ring-slate-200/70 dark:bg-slate-700/60 dark:ring-slate-600/60">
-                  <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{n.texto}</p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                      {formatDateTime(n.criadaEm)}
-                    </span>
-                    <button
-                      onClick={() => dispatch({ type: 'REMOVE_ANOTACAO', taskId: task.id, anotacaoId: n.id })}
-                      aria-label="Remover anotação"
-                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
+              {(task.anotacoes ?? []).map((n) =>
+                editandoNota?.id === n.id ? (
+                  <li key={n.id} className="rounded-md bg-white p-3 ring-1 ring-indigo-300 dark:bg-slate-700/60 dark:ring-indigo-500/50">
+                    <textarea
+                      value={editandoNota.texto}
+                      onChange={(e) => setEditandoNota({ id: n.id, texto: e.target.value })}
+                      rows={2}
+                      aria-label="Editar anotação"
+                      className={inputCls}
+                      autoFocus
+                    />
+                    <div className="mt-2 flex justify-end gap-1">
+                      <button
+                        onClick={salvarAnotacao}
+                        aria-label="Salvar anotação"
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                      >
+                        <Check className="h-3.5 w-3.5" /> Salvar
+                      </button>
+                      <button
+                        onClick={() => setEditandoNota(null)}
+                        aria-label="Cancelar edição de anotação"
+                        className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  <li key={n.id} className="group rounded-md bg-white p-3 ring-1 ring-slate-200/70 dark:bg-slate-700/60 dark:ring-slate-600/60">
+                    <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{n.texto}</p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                        {formatDateTime(n.criadaEm)}
+                      </span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => setEditandoNota({ id: n.id, texto: n.texto })}
+                          aria-label="Editar anotação"
+                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-indigo-400"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => dispatch({ type: 'REMOVE_ANOTACAO', taskId: task.id, anotacaoId: n.id })}
+                          aria-label="Remover anotação"
+                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                )
+              )}
             </ul>
             <textarea
               value={novaAnotacao}
