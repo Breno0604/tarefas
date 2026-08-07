@@ -5143,7 +5143,7 @@ rg -n "responsavelId|criadorId|currentUserId|NOME_POR_ID|COLABORADORES|GESTOR|GE
 ```
 Expected: nenhum resultado (ou apenas comentários doc inócuos). Remover qualquer referência remanescente.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
