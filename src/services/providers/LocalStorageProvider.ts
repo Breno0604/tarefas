@@ -2,8 +2,8 @@ import type { Task } from '../../types';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
 import type { LoadedState, StorageProvider } from '../StorageProvider';
 
-export const STORAGE_KEY = 'tarefas.app.v1';
-const VERSION = 1;
+export const STORAGE_KEY = 'tarefas.app.v2';
+const VERSION = 2;
 
 interface PersistedState {
   version: number;
@@ -19,7 +19,6 @@ function isHistoryEntry(value: unknown): boolean {
   return (
     typeof h.id === 'string' &&
     typeof h.dataHora === 'string' &&
-    typeof h.usuario === 'string' &&
     (h.statusAnterior === null || TASK_STATUSES.includes(String(h.statusAnterior))) &&
     (h.novoStatus === null || TASK_STATUSES.includes(String(h.novoStatus))) &&
     (h.tipo === 'status' || h.tipo === 'info') &&
@@ -34,8 +33,6 @@ function isTask(value: unknown): value is Task {
     typeof t.id === 'string' &&
     typeof t.titulo === 'string' &&
     typeof t.descricao === 'string' &&
-    typeof t.responsavelId === 'string' &&
-    typeof t.criadorId === 'string' &&
     TASK_STATUSES.includes(String(t.status)) &&
     PRIORITIES.includes(String(t.prioridade)) &&
     (t.prazo === null || (typeof t.prazo === 'string' && /^\d{4}-\d{2}-\d{2}/.test(t.prazo))) &&

@@ -1,15 +1,10 @@
-import { Check, RotateCcw, XCircle } from 'lucide-react';
+import { Check, XCircle } from 'lucide-react';
 import type { TaskStatus } from '../../types';
 import { STATUS_ORDER } from '../../utils/status';
 
 const STEPS = STATUS_ORDER.filter((s) => s !== 'CANCELADA');
 
 function stepState(status: TaskStatus, index: number): 'done' | 'current' | 'todo' {
-  if (status === 'DEVOLVIDA') {
-    if (index < 3) return 'done';
-    if (index === 3) return 'current';
-    return 'todo';
-  }
   if (status === 'CANCELADA') return 'todo';
   const pos = STATUS_ORDER.indexOf(status);
   if (index < pos) return 'done';
@@ -23,7 +18,6 @@ interface CycleStepperProps {
 }
 
 export default function CycleStepper({ status, compact = false }: CycleStepperProps) {
-  const isDevolvida = status === 'DEVOLVIDA';
   const isCancelada = status === 'CANCELADA';
 
   return (
@@ -55,12 +49,6 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
           </div>
         );
       })}
-      {isDevolvida && (
-        <div className="ml-2 flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20">
-          <RotateCcw className="h-3 w-3" />
-          Devolvida
-        </div>
-      )}
       {isCancelada && (
         <div className="ml-2 flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
           <XCircle className="h-3 w-3" />

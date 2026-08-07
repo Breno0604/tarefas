@@ -4,15 +4,16 @@ import { render, screen } from '@testing-library/react';
 import StatusBadge from './StatusBadge';
 
 describe('StatusBadge', () => {
-  it('renderiza o rótulo Cancelada para CANCELADA', () => {
+  it('renderiza os rótulos dos status GTD', () => {
+    render(<StatusBadge status="CAIXA_ENTRADA" />);
+    render(<StatusBadge status="A_FAZER" />);
+    render(<StatusBadge status="EM_ANDAMENTO" />);
+    render(<StatusBadge status="CONCLUIDA" />);
     render(<StatusBadge status="CANCELADA" />);
+    expect(screen.getByText('Caixa de entrada')).toBeInTheDocument();
+    expect(screen.getByText('A fazer')).toBeInTheDocument();
+    expect(screen.getByText('Em andamento')).toBeInTheDocument();
+    expect(screen.getByText('Concluída')).toBeInTheDocument();
     expect(screen.getByText('Cancelada')).toBeInTheDocument();
-  });
-
-  it('renderiza os rótulos dos demais status', () => {
-    render(<StatusBadge status="NOVA" />);
-    render(<StatusBadge status="DEVOLVIDA" />);
-    expect(screen.getByText('Nova')).toBeInTheDocument();
-    expect(screen.getByText('Devolvida')).toBeInTheDocument();
   });
 });

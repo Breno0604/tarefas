@@ -1,124 +1,61 @@
 import { describe, expect, it } from 'vitest';
-import { availableTransitions, canTransition, podeReatribuir, proximoPasso } from './status';
+import { canTransition, transicoesDisponiveis } from './status';
 
 describe('canTransition', () => {
-  it('permite NOVA → RECEBIDA para colaborador', () => {
-    expect(canTransition('NOVA', 'RECEBIDA', 'colaborador')).toBe(true);
+  it('permite o fluxo linear GTD', () => {
+    expect(canTransition('CAIXA_ENTRADA', 'A_FAZER')).toBe(true);
+    expect(canTransition('A_FAZER', 'EM_ANDAMENTO')).toBe(true);
+    expect(canTransition('EM_ANDAMENTO', 'CONCLUIDA')).toBe(true);
   });
 
-  it('bloqueia NOVA → RECEBIDA para gestor', () => {
-    expect(canTransition('NOVA', 'RECEBIDA', 'gestor')).toBe(false);
+  it('permite retomar CONCLUIDA → EM_ANDAMENTO', () => {
+    expect(canTransition('CONCLUIDA', 'EM_ANDAMENTO')).toBe(true);
   });
 
-  it('permite CONCLUIDA → FINALIZADA apenas para gestor', () => {
-    expect(canTransition('CONCLUIDA', 'FINALIZADA', 'gestor')).toBe(true);
-    expect(canTransition('CONCLUIDA', 'FINALIZADA', 'colaborador')).toBe(false);
+  it('permite cancelar a partir de qualquer status não-terminal', () => {
+    for (const from of ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO'] as const) {
+      expect(canTransition(from, 'CANCELADA')).toBe(true);
+    }
   });
 
-  it('permite CONCLUIDA → DEVOLVIDA apenas para gestor', () => {
-    expect(canTransition('CONCLUIDA', 'DEVOLVIDA', 'gestor')).toBe(true);
-    expect(canTransition('CONCLUIDA', 'DEVOLVIDA', 'colaborador')).toBe(false);
-  });
-
-  it('permite DEVOLVIDA → EM_EXECUCAO para colaborador', () => {
-    expect(canTransition('DEVOLVIDA', 'EM_EXECUCAO', 'colaborador')).toBe(true);
-  });
-
-  it('permite CONCLUIDA → EM_EXECUCAO (reabrir) para colaborador e gestor', () => {
-    expect(canTransition('CONCLUIDA', 'EM_EXECUCAO', 'colaborador')).toBe(true);
-    expect(canTransition('CONCLUIDA', 'EM_EXECUCAO', 'gestor')).toBe(true);
-  });
-
-  it('permite FINALIZADA → EM_EXECUCAO (reabrir aprovação) apenas para gestor', () => {
-    expect(canTransition('FINALIZADA', 'EM_EXECUCAO', 'gestor')).toBe(true);
-    expect(canTransition('FINALIZADA', 'EM_EXECUCAO', 'colaborador')).toBe(false);
+  it('bloqueia cancelamento a partir de CONCLUIDA', () => {
+    expect(canTransition('CONCLUIDA', 'CANCELADA')).toBe(false);
   });
 
   it('bloqueia transições inválidas e reversas', () => {
-    expect(canTransition('NOVA', 'FINALIZADA', 'gestor')).toBe(false);
-    expect(canTransition('FINALIZADA', 'NOVA', 'gestor')).toBe(false);
-    expect(canTransition('RECEBIDA', 'NOVA', 'colaborador')).toBe(false);
-    expect(canTransition('FINALIZADA', 'DEVOLVIDA', 'gestor')).toBe(false);
-  });
-
-  it('permite CANCELADA apenas para gestor a partir de NOVA, RECEBIDA, EM_EXECUCAO e DEVOLVIDA', () => {
-    for (const from of ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'DEVOLVIDA'] as const) {
-      expect(canTransition(from, 'CANCELADA', 'gestor')).toBe(true);
-      expect(canTransition(from, 'CANCELADA', 'colaborador')).toBe(false);
-    }
-  });
-
-  it('bloqueia cancelamento a partir de CONCLUIDA e FINALIZADA', () => {
-    expect(canTransition('CONCLUIDA', 'CANCELADA', 'gestor')).toBe(false);
-    expect(canTransition('FINALIZADA', 'CANCELADA', 'gestor')).toBe(false);
+    expect(canTransition('A_FAZER', 'CAIXA_ENTRADA')).toBe(false);
+    expect(canTransition('CAIXA_ENTRADA', 'CONCLUIDA')).toBe(false);
+    expect(canTransition('EM_ANDAMENTO', 'A_FAZER')).toBe(false);
+    expect(canTransition('CONCLUIDA', 'A_FAZER')).toBe(false);
+    expect(canTransition('CONCLUIDA', 'CAIXA_ENTRADA')).toBe(false);
   });
 
   it('CANCELADA é terminal: nenhuma transição de saída', () => {
-    const statuses = ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'CONCLUIDA', 'DEVOLVIDA', 'FINALIZADA', 'CANCELADA'] as const;
+    const statuses = ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'] as const;
     for (const to of statuses) {
-      expect(canTransition('CANCELADA', to, 'gestor')).toBe(false);
-      expect(canTransition('CANCELADA', to, 'colaborador')).toBe(false);
+      expect(canTransition('CANCELADA', to)).toBe(false);
     }
   });
 });
 
-describe('availableTransitions', () => {
-  it('colaborador em EM_EXECUCAO só pode CONCLUIDA', () => {
-    expect(availableTransitions('EM_EXECUCAO', 'colaborador')).toEqual(['CONCLUIDA']);
+describe('transicoesDisponiveis', () => {
+  it('CAIXA_ENTRADA oferece A_FAZER e CANCELADA', () => {
+    expect(transicoesDisponiveis('CAIXA_ENTRADA').sort()).toEqual(['A_FAZER', 'CANCELADA']);
   });
 
-  it('colaborador em CONCLUIDA só pode reabrir', () => {
-    expect(availableTransitions('CONCLUIDA', 'colaborador')).toEqual(['EM_EXECUCAO']);
+  it('A_FAZER oferece EM_ANDAMENTO e CANCELADA', () => {
+    expect(transicoesDisponiveis('A_FAZER').sort()).toEqual(['CANCELADA', 'EM_ANDAMENTO']);
   });
 
-  it('gestor em CONCLUIDA pode FINALIZADA, DEVOLVIDA e reabrir', () => {
-    expect(availableTransitions('CONCLUIDA', 'gestor').sort()).toEqual(['DEVOLVIDA', 'EM_EXECUCAO', 'FINALIZADA']);
+  it('EM_ANDAMENTO oferece CONCLUIDA e CANCELADA', () => {
+    expect(transicoesDisponiveis('EM_ANDAMENTO').sort()).toEqual(['CANCELADA', 'CONCLUIDA']);
   });
 
-  it('gestor em FINALIZADA pode reabrir aprovação', () => {
-    expect(availableTransitions('FINALIZADA', 'gestor')).toEqual(['EM_EXECUCAO']);
+  it('CONCLUIDA só oferece retomar', () => {
+    expect(transicoesDisponiveis('CONCLUIDA')).toEqual(['EM_ANDAMENTO']);
   });
 
-  it('colaborador em FINALIZADA não tem ações de ciclo', () => {
-    expect(availableTransitions('FINALIZADA', 'colaborador')).toEqual([]);
-  });
-
-  it('gestor em NOVA só pode cancelar', () => {
-    expect(availableTransitions('NOVA', 'gestor')).toEqual(['CANCELADA']);
-  });
-
-  it('gestor em CANCELADA não tem transições de saída', () => {
-    expect(availableTransitions('CANCELADA', 'gestor')).toEqual([]);
-    expect(availableTransitions('CANCELADA', 'colaborador')).toEqual([]);
-  });
-});
-
-describe('podeReatribuir', () => {
-  it('permite reatribuir em estados ativos e CONCLUIDA', () => {
-    for (const status of ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'CONCLUIDA', 'DEVOLVIDA'] as const) {
-      expect(podeReatribuir(status)).toBe(true);
-    }
-  });
-
-  it('bloqueia reatribuição de tarefas encerradas (FINALIZADA e CANCELADA)', () => {
-    expect(podeReatribuir('FINALIZADA')).toBe(false);
-    expect(podeReatribuir('CANCELADA')).toBe(false);
-  });
-});
-
-describe('proximoPasso', () => {
-  it('a vez é do colaborador em NOVA, RECEBIDA, EM_EXECUCAO e DEVOLVIDA', () => {
-    for (const status of ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'DEVOLVIDA'] as const) {
-      expect(proximoPasso(status)).toBe('colaborador');
-    }
-  });
-
-  it('a vez é do gestor em CONCLUIDA (aguardando aprovação)', () => {
-    expect(proximoPasso('CONCLUIDA')).toBe('gestor');
-  });
-
-  it('ninguém é responsável em FINALIZADA e CANCELADA', () => {
-    expect(proximoPasso('FINALIZADA')).toBe('nenhum');
-    expect(proximoPasso('CANCELADA')).toBe('nenhum');
+  it('CANCELADA não tem transições de saída', () => {
+    expect(transicoesDisponiveis('CANCELADA')).toEqual([]);
   });
 });

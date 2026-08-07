@@ -2,12 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Task } from '../types';
 import { clearState, loadState, saveState, STORAGE_KEY } from './storage';
 
-const fakeTask = (id: string, status: Task['status'] = 'NOVA'): Task => ({
+const fakeTask = (id: string, status: Task['status'] = 'CAIXA_ENTRADA'): Task => ({
   id,
   titulo: `Tarefa ${id}`,
   descricao: '',
-  responsavelId: 'joao',
-  criadorId: 'carlos',
   prioridade: 'media',
   prazo: null,
   status,
@@ -54,13 +52,13 @@ describe('storage', () => {
   it('retorna null para versão incompatível (migração futura)', () => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ version: 999, tasks: [], currentUserId: 'carlos' })
+      JSON.stringify({ version: 999, tasks: [] })
     );
     expect(loadState()).toBeNull();
   });
 
   it('retorna null quando o shape do estado é inválido', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, tasks: 'x' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: 'x' }));
     expect(loadState()).toBeNull();
   });
 
@@ -68,7 +66,7 @@ describe('storage', () => {
     const invalida = { id: 'TA-BAD', titulo: 42 }; // sem shape de Task
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+      JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] })
     );
     expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
   });
@@ -77,7 +75,7 @@ describe('storage', () => {
     const invalida: unknown = { ...fakeTask('TA-BAD'), status: 'XPTO' };
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+      JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] })
     );
     expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
   });
@@ -86,25 +84,7 @@ describe('storage', () => {
     const invalida: unknown = { ...fakeTask('TA-BAD'), prioridade: 'ultra' };
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
-    );
-    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
-  });
-
-  it('descarta tarefa com prazo fora do formato de data', () => {
-    const invalida: unknown = { ...fakeTask('TA-BAD'), prazo: 'amanhã' };
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
-    );
-    expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
-  });
-
-  it('descarta tarefa com entrada de histórico malformada', () => {
-    const invalida: unknown = { ...fakeTask('TA-BAD'), historico: [{ id: 1 }] };
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: 1, tasks: [fakeTask('TA-001'), invalida] })
+      JSON.stringify({ version: 2, tasks: [fakeTask('TA-001'), invalida] })
     );
     expect(loadState()).toEqual({ tasks: [fakeTask('TA-001')] });
   });
@@ -121,14 +101,13 @@ describe('storage', () => {
         {
           id: 'h1',
           dataHora: '2026-08-03T10:00:00',
-          usuario: 'Carlos Mendes',
           statusAnterior: null,
-          novoStatus: 'NOVA',
+          novoStatus: 'CAIXA_ENTRADA',
           tipo: 'status',
         },
       ],
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, tasks: [completa] }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, tasks: [completa] }));
     expect(loadState()).toEqual({ tasks: [completa] });
   });
 

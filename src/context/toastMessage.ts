@@ -1,13 +1,11 @@
 import type { TaskStatus } from '../types';
 import type { AppAction } from './types';
 
-// Sem 'NOVA': CREATE_TASK tem toast próprio no switch de toastMessage.
+// Sem 'CAIXA_ENTRADA': CREATE_TASK tem toast próprio no switch de toastMessage.
 const STATUS_TOAST: Partial<Record<TaskStatus, string>> = {
-  RECEBIDA: 'Tarefa recebida',
-  EM_EXECUCAO: 'Tarefa em execução',
-  CONCLUIDA: 'Tarefa concluída — aguardando análise',
-  DEVOLVIDA: 'Tarefa devolvida',
-  FINALIZADA: 'Tarefa finalizada',
+  A_FAZER: 'Tarefa movida para "A fazer"',
+  EM_ANDAMENTO: 'Tarefa em andamento',
+  CONCLUIDA: 'Tarefa concluída',
   CANCELADA: 'Tarefa cancelada',
 };
 
@@ -22,8 +20,6 @@ export function toastMessage(action: AppAction): string | null {
       return 'Tarefa duplicada';
     case 'DELETE_TASK':
       return 'Tarefa excluída';
-    case 'REASSIGN':
-      return 'Responsável alterado';
     case 'CHANGE_STATUS':
       return STATUS_TOAST[action.novoStatus] ?? null;
     default:

@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from 'react';
-import { GESTOR_ID, TAREFAS } from '../data/mockData';
+import { TAREFAS } from '../data/mockData';
 import { EMPTY_FILTERS } from '../utils/tasks';
 import { loadState, saveState } from '../services/storage';
 import { useToast } from './ToastContext';
@@ -19,8 +19,6 @@ export type { AppAction, AppState } from './types';
 
 const initialState: AppState = {
   tasks: TAREFAS,
-  currentUserId: GESTOR_ID,
-  section: 'tarefas',
   view: 'lista',
   sidebarOpen: false,
   filters: EMPTY_FILTERS,
@@ -43,7 +41,7 @@ function initState(): AppState {
   const saved = loadState();
   const kpiCollapsed = localStorage.getItem(KPI_COLLAPSED_KEY) === '1';
   if (saved) {
-    // Persiste apenas as tarefas; o app sempre abre como gestor (usuário atual é estado de sessão).
+    // Persiste apenas as tarefas; demais campos são estado de sessão (não persistido).
     return {
       ...initialState,
       kpiCollapsed,

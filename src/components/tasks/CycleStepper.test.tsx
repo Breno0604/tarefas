@@ -10,7 +10,7 @@ describe('CycleStepper', () => {
   });
 
   it('não exibe etapa Cancelada no ciclo de uma tarefa normal', () => {
-    render(<CycleStepper status="FINALIZADA" />);
+    render(<CycleStepper status="CONCLUIDA" />);
     expect(screen.queryByText('Cancelada')).not.toBeInTheDocument();
   });
 

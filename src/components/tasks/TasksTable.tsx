@@ -94,7 +94,6 @@ export default function TasksTable({
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3">Tarefa</th>
-              <th className="px-4 py-3">Responsável</th>
               <th className="px-4 py-3">Prioridade</th>
               <th className="px-4 py-3">Prazo</th>
               <th className="px-4 py-3">Status</th>

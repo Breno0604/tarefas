@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, FilterX } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { COLABORADORES } from '../../data/mockData';
-import { tasksVisiveis } from '../../utils/permissions';
 import { hasActiveFilters } from '../../utils/tasks';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
 import type { Filters, PrazoFilter, Priority, TaskSort, TaskStatus } from '../../types';
@@ -75,7 +73,6 @@ function MultiSelect<T extends string>({
 export default function FilterBar() {
   const { state, dispatch } = useApp();
   const { filters } = state;
-  const visiveis = tasksVisiveis(state.tasks, state.currentUserId);
 
   const update = (patch: Partial<Filters>) => {
     dispatch({ type: 'SET_FILTERS', filters: patch });
@@ -89,9 +86,8 @@ export default function FilterBar() {
     value: p,
     label: PRIORITY_LABELS[p],
   }));
-  const responsavelOptions = COLABORADORES.map((c) => ({ value: c.id, label: c.nome }));
   const categoriaOptions = Array.from(
-    new Set(visiveis.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
+    new Set(state.tasks.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
   ).map((c) => ({ value: c, label: c }));
 
   const prazoOptions: { value: PrazoFilter; label: string }[] = [
@@ -116,12 +112,12 @@ export default function FilterBar() {
     <div className="flex flex-wrap items-center gap-2">
       <MultiSelect label="Status" options={statusOptions} selected={filters.status} onChange={(v) => update({ status: v })} />
       <MultiSelect label="Prioridade" options={prioridadeOptions} selected={filters.prioridade} onChange={(v) => update({ prioridade: v })} />
-      <MultiSelect label="Responsável" options={responsavelOptions} selected={filters.responsavel} onChange={(v) => update({ responsavel: v })} />
       <MultiSelect label="Categoria" options={categoriaOptions} selected={filters.categorias} onChange={(v) => update({ categorias: v })} />
 
       <select
         value={filters.prazo}
         onChange={(e) => update({ prazo: e.target.value as PrazoFilter })}
+        title="Prazo"
         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
       >
         {prazoOptions.map((p) => (
@@ -129,19 +125,6 @@ export default function FilterBar() {
             {p.label}
           </option>
         ))}
-      </select>
-
-      <select
-        value={filters.paradas ?? ''}
-        onChange={(e) => update({ paradas: e.target.value === '' ? null : Number(e.target.value) })}
-        title="Movimentação"
-        aria-label="Movimentação"
-        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-      >
-        <option value="">Sem movimentação há: qualquer</option>
-        <option value="7">7 dias ou mais</option>
-        <option value="14">14 dias ou mais</option>
-        <option value="30">30 dias ou mais</option>
       </select>
 
       <select

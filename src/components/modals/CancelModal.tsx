@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { NOME_POR_ID } from '../../data/mockData';
 import Modal from '../modal/Modal';
 
 interface CancelModalProps {
@@ -23,7 +22,6 @@ export default function CancelModal({ taskId, onClose }: CancelModalProps) {
       type: 'CHANGE_STATUS',
       taskId: task.id,
       novoStatus: 'CANCELADA',
-      usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
       observacao: observacao.trim(),
     });
     onClose();

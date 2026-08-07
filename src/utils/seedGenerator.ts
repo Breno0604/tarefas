@@ -2,18 +2,11 @@ import type { HistoryEntry, Priority, Task, TaskStatus } from '../types';
 
 /**
  * Gera tarefas fictícias determinísticas simulando uso diário nos últimos 30 dias
- * (06/07/2026 → 05/08/2026). Complementa o seed base (TA-001..TA-016), que é mantido
- * verbatim. Cobre todos os status, prioridades, retrabalho, cancelamento e favoritos.
+ * (06/07/2026 → 05/08/2026). Complementa o seed base (TA-001..TA-008), que é mantido
+ * verbatim no mockData. Cobre todos os status GTD e prioridades, com favoritos e cancelamentos.
  */
 
-export interface SeedUser {
-  id: string;
-  nome: string;
-}
-
-const SEED_NUMBER = 20260706;
-
-const GESTOR_ID = 'carlos';
+const SEED_NUMBER = 20260806;
 
 const START = new Date(2026, 6, 6);
 const END = new Date(2026, 7, 5);
@@ -31,13 +24,11 @@ const WORKING_DAYS: Date[] = (() => {
 const PRIORITY_PLAN: Priority[] = ['baixa', 'media', 'alta', 'critica', 'media', 'alta'];
 
 const STATUS_COUNTS: Record<TaskStatus, number> = {
-  NOVA: 6,
-  RECEBIDA: 6,
-  EM_EXECUCAO: 10,
-  CONCLUIDA: 8,
-  DEVOLVIDA: 5,
-  FINALIZADA: 14,
-  CANCELADA: 5,
+  CAIXA_ENTRADA: 10,
+  A_FAZER: 10,
+  EM_ANDAMENTO: 12,
+  CONCLUIDA: 12,
+  CANCELADA: 6,
 };
 
 interface CategoriaPool {
@@ -202,13 +193,7 @@ const POOLS: Record<string, CategoriaPool> = {
   },
 };
 
-const CATEGORIA_POR_RESPONSAVEL: Record<string, string[]> = {
-  joao: ['Desenvolvimento', 'Infraestrutura', 'Documentação'],
-  lucas: ['Desenvolvimento', 'Infraestrutura'],
-  maria: ['Marketing', 'Vendas'],
-  pedro: ['Design', 'Marketing'],
-  ana: ['Suporte', 'Documentação', 'Treinamento'],
-};
+const CATEGORIAS = Object.keys(POOLS);
 
 /** PRNG determinístico (mulberry32). */
 function mulberry32(seed: number): () => number {
@@ -264,33 +249,19 @@ function busy(d: Date, rng: () => number): Date {
 function entry(
   id: string,
   dataHora: string,
-  usuario: string,
   statusAnterior: TaskStatus | null,
   novoStatus: TaskStatus | null,
   tipo: HistoryEntry['tipo'],
   observacao?: string
 ): HistoryEntry {
-  return { id, dataHora, usuario, statusAnterior, novoStatus, tipo, observacao };
+  return { id, dataHora, statusAnterior, novoStatus, tipo, observacao };
 }
-
-const OBS_DEVOLUCAO = [
-  'Incluir o cenário faltante antes de aprovar.',
-  'Ajustar o retorno visual pedido no review.',
-  'Corrigir os detalhes apontados na validação.',
-  'Complementar a cobertura de testes.',
-];
 
 const OBS_CANCELAMENTO = [
   'Prioridade deslocada para outra frente.',
   'Escopo absorvido por outra tarefa.',
   'Solicitação não se aplica mais.',
   'Duplicado de iniciativa já entregue.',
-];
-
-const OBS_APROVACAO = [
-  'Aprovado em homologação.',
-  'Conferido e aprovado.',
-  'Aprovado após revisão.',
 ];
 
 function shuffle<T>(rng: () => number, arr: T[]): T[] {
@@ -303,7 +274,6 @@ function shuffle<T>(rng: () => number, arr: T[]): T[] {
 
 interface Passo {
   status: TaskStatus;
-  usuario: string;
   observacao?: string;
 }
 
@@ -312,83 +282,36 @@ interface Plano {
   passos: Passo[];
 }
 
-function planoDaTarefa(status: TaskStatus, responsavel: SeedUser, gestor: SeedUser, rng: () => number): Plano {
+function planoDaTarefa(status: TaskStatus, rng: () => number): Plano {
   const passos: Passo[] = [];
-  const trans = (novo: TaskStatus, usuario: string, obs?: string): Passo => ({ status: novo, usuario, observacao: obs });
+  const trans = (novo: TaskStatus, obs?: string): Passo => ({ status: novo, observacao: obs });
   switch (status) {
-    case 'NOVA':
+    case 'CAIXA_ENTRADA':
       return { status, passos };
-    case 'RECEBIDA':
-      return { status, passos: [trans('RECEBIDA', responsavel.nome)] };
-    case 'EM_EXECUCAO':
-      return { status, passos: [trans('RECEBIDA', responsavel.nome), trans('EM_EXECUCAO', responsavel.nome)] };
+    case 'A_FAZER':
+      return { status, passos: [trans('A_FAZER')] };
+    case 'EM_ANDAMENTO':
+      return { status, passos: [trans('A_FAZER'), trans('EM_ANDAMENTO')] };
     case 'CONCLUIDA':
       return {
         status,
-        passos: [
-          trans('RECEBIDA', responsavel.nome),
-          trans('EM_EXECUCAO', responsavel.nome),
-          trans('CONCLUIDA', responsavel.nome),
-        ],
+        passos: [trans('A_FAZER'), trans('EM_ANDAMENTO'), trans('CONCLUIDA')],
       };
-    case 'DEVOLVIDA':
-      return {
-        status,
-        passos: [
-          trans('RECEBIDA', responsavel.nome),
-          trans('EM_EXECUCAO', responsavel.nome),
-          trans('CONCLUIDA', responsavel.nome),
-          trans('DEVOLVIDA', gestor.nome, pick(rng, OBS_DEVOLUCAO)),
-        ],
-      };
-    case 'FINALIZADA': {
-      const comRetrabalho = rng() < 0.35;
-      if (comRetrabalho) {
-        return {
-          status,
-          passos: [
-            trans('RECEBIDA', responsavel.nome),
-            trans('EM_EXECUCAO', responsavel.nome),
-            trans('CONCLUIDA', responsavel.nome),
-            trans('DEVOLVIDA', gestor.nome, pick(rng, OBS_DEVOLUCAO)),
-            trans('EM_EXECUCAO', responsavel.nome),
-            trans('CONCLUIDA', responsavel.nome),
-            trans('FINALIZADA', gestor.nome, pick(rng, OBS_APROVACAO)),
-          ],
-        };
-      }
-      return {
-        status,
-        passos: [
-          trans('RECEBIDA', responsavel.nome),
-          trans('EM_EXECUCAO', responsavel.nome),
-          trans('CONCLUIDA', responsavel.nome),
-          trans('FINALIZADA', gestor.nome, pick(rng, OBS_APROVACAO)),
-        ],
-      };
-    }
     case 'CANCELADA': {
-      const fonte = pick(rng, ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'DEVOLVIDA'] as const);
-      if (fonte === 'NOVA') return { status, passos: [trans('CANCELADA', gestor.nome, pick(rng, OBS_CANCELAMENTO))] };
-      if (fonte === 'RECEBIDA')
-        return { status, passos: [trans('RECEBIDA', responsavel.nome), trans('CANCELADA', gestor.nome, pick(rng, OBS_CANCELAMENTO))] };
-      if (fonte === 'EM_EXECUCAO')
+      const fonte = pick(rng, ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO'] as const);
+      if (fonte === 'CAIXA_ENTRADA')
+        return { status, passos: [trans('CANCELADA', pick(rng, OBS_CANCELAMENTO))] };
+      if (fonte === 'A_FAZER')
         return {
           status,
-          passos: [
-            trans('RECEBIDA', responsavel.nome),
-            trans('EM_EXECUCAO', responsavel.nome),
-            trans('CANCELADA', gestor.nome, pick(rng, OBS_CANCELAMENTO)),
-          ],
+          passos: [trans('A_FAZER'), trans('CANCELADA', pick(rng, OBS_CANCELAMENTO))],
         };
       return {
         status,
         passos: [
-          trans('RECEBIDA', responsavel.nome),
-          trans('EM_EXECUCAO', responsavel.nome),
-          trans('CONCLUIDA', responsavel.nome),
-          trans('DEVOLVIDA', gestor.nome, pick(rng, OBS_DEVOLUCAO)),
-          trans('CANCELADA', gestor.nome, pick(rng, OBS_CANCELAMENTO)),
+          trans('A_FAZER'),
+          trans('EM_ANDAMENTO'),
+          trans('CANCELADA', pick(rng, OBS_CANCELAMENTO)),
         ],
       };
     }
@@ -398,53 +321,43 @@ function planoDaTarefa(status: TaskStatus, responsavel: SeedUser, gestor: SeedUs
 function idxCriacao(status: TaskStatus, rng: () => number): number {
   const max = WORKING_DAYS.length;
   switch (status) {
-    case 'NOVA':
+    case 'CAIXA_ENTRADA':
       return randInt(rng, Math.max(0, max - 5), max - 1);
-    case 'RECEBIDA':
+    case 'A_FAZER':
       return randInt(rng, Math.max(0, max - 10), max - 1);
     case 'CONCLUIDA':
-    case 'DEVOLVIDA':
-      return randInt(rng, Math.max(0, max - 20), max - 1);
-    case 'FINALIZADA':
     case 'CANCELADA':
-      return randInt(rng, 2, max - 1);
-    case 'EM_EXECUCAO':
+      return randInt(rng, Math.max(0, max - 20), max - 1);
+    case 'EM_ANDAMENTO':
     default:
       return randInt(rng, 0, max - 1);
   }
-}
-
-function categoriaPara(responsavelId: string, rng: () => number): string | undefined {
-  const candidatas = CATEGORIA_POR_RESPONSAVEL[responsavelId];
-  if (!candidatas) return undefined;
-  return pick(rng, candidatas);
 }
 
 /** Monta o histórico cronológico a partir do plano e do momento de criação. */
 function montarHistorico(
   plano: Plano,
   criadaEm: Date,
-  gestor: SeedUser,
   rng: () => number,
   index: number
 ): HistoryEntry[] {
   const historico: HistoryEntry[] = [
-    entry(`${index}-0`, iso(criadaEm), gestor.nome, null, 'NOVA', 'status', 'Tarefa criada.'),
+    entry(`${index}-0`, iso(criadaEm), null, 'CAIXA_ENTRADA', 'status', 'Tarefa criada.'),
   ];
   let atual = criadaEm;
   plano.passos.forEach((passo, i) => {
     atual = addBusinessDays(atual, randInt(rng, 1, 3));
     atual = busy(atual, rng);
-    const anterior = i === 0 ? 'NOVA' : plano.passos[i - 1].status;
-    historico.push(entry(`${index}-${i + 1}`, iso(atual), passo.usuario, anterior, passo.status, 'status', passo.observacao));
+    const anterior = i === 0 ? 'CAIXA_ENTRADA' : plano.passos[i - 1].status;
+    historico.push(
+      entry(`${index}-${i + 1}`, iso(atual), anterior, passo.status, 'status', passo.observacao)
+    );
   });
   return historico;
 }
 
-export function generateSeedTasks(users: readonly SeedUser[]): Task[] {
+export function generateSeedTasks(): Task[] {
   const rng = mulberry32(SEED_NUMBER);
-  const colaboradores = users.filter((u) => u.id !== GESTOR_ID);
-  const gestor = users.find((u) => u.id === GESTOR_ID) ?? users[0];
 
   const statuses: TaskStatus[] = [];
   for (const [status, qtd] of Object.entries(STATUS_COUNTS) as [TaskStatus, number][]) {
@@ -452,21 +365,16 @@ export function generateSeedTasks(users: readonly SeedUser[]): Task[] {
   }
   shuffle(rng, statuses);
 
-  let idNum = 17;
+  let idNum = 9;
   return statuses.map((status, index) => {
-    // Tarefas CONCLUIDA não vão para o joao: o teste de permissão do kanban
-    // exige ausência de "Reabrir" quando o joao vê o quadro inteiro.
-    const poolResponsaveis =
-      status === 'CONCLUIDA' ? colaboradores.filter((u) => u.id !== 'joao') : colaboradores;
-    const responsavel = pick(rng, poolResponsaveis);
     const prioridade = pick(rng, PRIORITY_PLAN);
     const criada = new Date(WORKING_DAYS[idxCriacao(status, rng)]);
     criada.setHours(horaUtil(rng, 8, 11), randInt(rng, 0, 59), 0, 0);
 
-    const plano = planoDaTarefa(status, responsavel, gestor, rng);
-    const historico = montarHistorico(plano, criada, gestor, rng, index);
+    const plano = planoDaTarefa(status, rng);
+    const historico = montarHistorico(plano, criada, rng, index);
 
-    const categoria = rng() < 0.75 ? categoriaPara(responsavel.id, rng) : undefined;
+    const categoria = rng() < 0.75 ? pick(rng, CATEGORIAS) : undefined;
     const pool = categoria ? POOLS[categoria] : undefined;
     const titulo = pool ? pick(rng, pool.titulos) : pick(rng, POOLS.Desenvolvimento.titulos);
     const descricao = pool ? pick(rng, pool.descricoes) : pick(rng, POOLS.Desenvolvimento.descricoes);
@@ -486,7 +394,7 @@ export function generateSeedTasks(users: readonly SeedUser[]): Task[] {
 
     const atualizadaEm = historico[historico.length - 1].dataHora;
     const concluidaEm =
-      status === 'CONCLUIDA' || status === 'FINALIZADA'
+      status === 'CONCLUIDA'
         ? [...historico].reverse().find((h) => h.novoStatus === 'CONCLUIDA')?.dataHora
         : undefined;
 
@@ -494,8 +402,6 @@ export function generateSeedTasks(users: readonly SeedUser[]): Task[] {
       id: `TA-${padId(idNum)}`,
       titulo,
       descricao,
-      responsavelId: responsavel.id,
-      criadorId: gestor.id,
       prioridade,
       prazo,
       status,

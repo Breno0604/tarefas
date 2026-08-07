@@ -2,14 +2,11 @@ import { useState, type DragEvent } from 'react';
 import { Ban, Inbox, Sparkles } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf } from '../../utils/status';
-import { podeAlterarStatusPara } from '../../utils/permissions';
-import { NOME_POR_ID } from '../../data/mockData';
 import { canTransition, STATUS_LABELS } from '../../utils/status';
 import StatusBadge from './StatusBadge';
 import TaskCard from './TaskCard';
 
-const COLUMNS: TaskStatus[] = ['NOVA', 'RECEBIDA', 'EM_EXECUCAO', 'CONCLUIDA', 'DEVOLVIDA', 'FINALIZADA', 'CANCELADA'];
+const COLUMNS: TaskStatus[] = ['CAIXA_ENTRADA', 'A_FAZER', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'];
 
 interface TaskKanbanProps {
   tasks: Task[];
@@ -43,8 +40,6 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     );
   }
 
-  const role = roleOf(state.currentUserId);
-
   const handleDragStart = (taskId: string) => (e: DragEvent) => {
     e.dataTransfer.setData('text/plain', taskId);
     e.dataTransfer.effectAllowed = 'move';
@@ -53,11 +48,11 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
   };
 
   const canDropOn = (status: TaskStatus): boolean => {
-    if (status === 'CANCELADA' || status === 'DEVOLVIDA') return false;
+    if (status === 'CANCELADA') return false; // cancelamento exige observação (CancelModal)
     if (!dragInfo) return true;
     const dragged = state.tasks.find((t) => t.id === dragInfo.id);
     if (!dragged) return false;
-    return podeAlterarStatusPara(state.currentUserId, dragged, status) && canTransition(dragInfo.status, status, role);
+    return canTransition(dragInfo.status, status);
   };
 
   const handleDragOver = (status: TaskStatus) => (e: DragEvent) => {
@@ -70,19 +65,13 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     e.preventDefault();
     setOverStatus(null);
     setDragInfo(null);
-    if (status === 'CANCELADA' || status === 'DEVOLVIDA') return;
+    if (status === 'CANCELADA') return;
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);
     if (!dragged || dragged.status === status) return;
-    if (!podeAlterarStatusPara(state.currentUserId, dragged, status)) return;
-    if (!canTransition(dragged.status, status, role)) return;
-    dispatch({
-      type: 'CHANGE_STATUS',
-      taskId,
-      novoStatus: status,
-      usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-    });
+    if (!canTransition(dragged.status, status)) return;
+    dispatch({ type: 'CHANGE_STATUS', taskId, novoStatus: status });
   };
 
   const handleDragEnd = () => {
@@ -117,7 +106,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
                 {highlight === 'blocked' && (
                   <span
                     className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700"
-                    title="Transição não permitida para o papel atual"
+                    title="Transição não permitida"
                   >
                     <Ban className="h-3 w-3" />
                     não permitido

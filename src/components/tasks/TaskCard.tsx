@@ -2,15 +2,10 @@ import { Star } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf, availableTransitions } from '../../utils/status';
-import { podeAlterarStatus, podeAlterarStatusPara } from '../../utils/permissions';
-import { findUser, NOME_POR_ID } from '../../data/mockData';
+import { transicoesDisponiveis } from '../../utils/status';
 import PriorityBadge from './PriorityBadge';
 import DueDateCell from './DueDateCell';
 import CategoryTag from './CategoryTag';
-import ProximoPassoBadge from './ProximoPassoBadge';
-import ReworkBadge from './ReworkBadge';
-import { contarDevolucoes } from '../../utils/tasks';
 import { cycleActionFor } from './cycleActions';
 
 interface TaskCardProps {
@@ -26,11 +21,7 @@ export default function TaskCard({
   onDragStart,
   onDragEnd,
 }: TaskCardProps) {
-  const { state, dispatch } = useApp();
-  const role = roleOf(state.currentUserId);
-  const responsavel = findUser(task.responsavelId);
-  const can = availableTransitions(task.status, role);
-  const podeAlterar = podeAlterarStatus(state.currentUserId, task);
+  const { dispatch } = useApp();
 
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
@@ -41,26 +32,22 @@ export default function TaskCard({
       dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
       return;
     }
-    dispatch({
-      type: 'CHANGE_STATUS',
-      taskId: task.id,
-      novoStatus,
-      usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-    });
+    dispatch({ type: 'CHANGE_STATUS', taskId: task.id, novoStatus });
   };
 
-  const action = can.map((target) => cycleActionFor(task, target)).find((a) => a !== null) ?? null;
+  const action =
+    transicoesDisponiveis(task.status)
+      .map((target) => cycleActionFor(task, target))
+      .find((a) => a !== null) ?? null;
 
   const openDetail = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } });
 
   return (
     <div
-      draggable={podeAlterar || undefined}
+      draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`w-full rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
-        podeAlterar ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
-      }`}
+      className="w-full cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing"
     >
       <button
         onClick={openDetail}
@@ -71,19 +58,13 @@ export default function TaskCard({
           <p className="text-sm font-semibold text-slate-800">{task.titulo}</p>
           <PriorityBadge prioridade={task.prioridade} />
         </div>
-        <p className="mt-1 truncate text-xs text-slate-400">
-          {task.id} · {responsavel?.nome.split(' ')[0]}
-        </p>
+        <p className="mt-1 truncate text-xs text-slate-400">{task.id}</p>
         {(task.categoria || (task.tags && task.tags.length > 0)) && (
           <div className="mt-2 flex flex-wrap items-center gap-1">
             {task.categoria && <CategoryTag label={task.categoria} />}
             {task.tags?.map((t) => <CategoryTag key={t} label={`#${t}`} />)}
           </div>
         )}
-        <div className="mt-2 flex flex-wrap items-center gap-1">
-          <ReworkBadge qtd={contarDevolucoes(task)} />
-          <ProximoPassoBadge task={task} />
-        </div>
       </button>
 
       <div className="mt-3 flex items-center justify-between">
@@ -101,7 +82,7 @@ export default function TaskCard({
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
-          {podeAlterar && action && podeAlterarStatusPara(state.currentUserId, task, action.target) && (
+          {action && (
             <button
               onClick={() => changeStatus(action.target)}
               title={action.label}

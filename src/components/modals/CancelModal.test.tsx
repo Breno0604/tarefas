@@ -15,7 +15,7 @@ beforeEach(() => localStorage.clear());
 
 describe('CancelModal', () => {
   it('desabilita confirmar sem observação (obrigatória)', () => {
-    renderWithApp(<CancelModal taskId="TA-005" onClose={() => {}} />);
+    renderWithApp(<CancelModal taskId="TA-003" onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Confirmar cancelamento' })).toBeDisabled();
   });
 
@@ -23,8 +23,8 @@ describe('CancelModal', () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
-        <CancelModal taskId="TA-005" onClose={() => {}} />
-        <Probe id="TA-005" />
+        <CancelModal taskId="TA-003" onClose={() => {}} />
+        <Probe id="TA-003" />
       </>
     );
 

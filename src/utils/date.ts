@@ -31,8 +31,7 @@ export function isOverdue(
   status: TaskStatus,
   now: Date = new Date()
 ): boolean {
-  if (!prazo || status === 'FINALIZADA' || status === 'CANCELADA' || status === 'CONCLUIDA')
-    return false;
+  if (!prazo || status === 'CONCLUIDA' || status === 'CANCELADA') return false;
   return parsePrazo(prazo) < startOfToday(now);
 }
 

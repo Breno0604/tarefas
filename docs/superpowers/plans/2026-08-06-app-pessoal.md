@@ -1,15 +1,17 @@
 # App de Tarefas Pessoal (usuário único) — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+>
+> **Revisão (06/08/2026):** corrigidas as referências cruzadas dos testes (Fase 7 → Fase 6, com a numeração certa das Tasks 33-41); comandos da Task 32 adaptados ao bash (sem `src/utils/perfis.ts`, que não existe no projeto); faixas de linha das Tasks 9, 21, 28 e 37 atualizadas; padrões do `rg` final da Task 41 ampliados (inclui `findUser` e as funções de `permissions.ts`); nota sobre asserções dependentes do seed na Task 34; import de `vi` e asserção de criação do TaskFormModal corrigidos (Tasks 38 e 40); metas de compilação ajustadas ao `tsconfig.json`, que inclui os testes — o build só passa na Task 41.
 
 **Goal:** Converter o app multiusuário em um app pessoal de tarefas de usuário único, com fluxo GTD (Caixa de entrada → A fazer → Em andamento → Concluída + Cancelada), removendo toda a camada de usuários/perfis/permissões.
 
-**Architecture:** O trabalho segue a especificação `docs/superpowers/specs/2026-08-06-app-pessoal-design.md`. Primeiro a camada de domínio (tipos, status, filtros, histórico, persistência, seed), depois o estado global (reducer/context), depois os componentes de UI (remoção da camada multiusuário e novo fluxo de status), por fim os testes. Cada fase deixa o projeto compilável via `npm run build` (tsc) e a suíte verde via `npm test`.
+**Architecture:** O trabalho segue a especificação `docs/superpowers/specs/2026-08-06-app-pessoal-design.md`. Primeiro a camada de domínio (tipos, status, filtros, histórico, persistência, seed), depois o estado global (reducer/context), depois os componentes de UI (remoção da camada multiusuário e novo fluxo de status), por fim os testes. O `tsconfig.json` inclui `src` inteiro (`"include": ["src"]`), então o `tsc` também checa os arquivos de teste; por isso `npm run build` só passa de fato na Task 41 (após a Fase 6 reescrever os testes) e `npm test` só fica verde na Fase 6 (Tasks 33-41). Cada fase termina com um checkpoint de `npm run build` cujos erros remanescentes esperados (incluindo os testes antigos) estão descritos no passo de verificação da fase.
 
 **Tech Stack:** React 19, TypeScript, Vite, Tailwind, lucide-react, Vitest + Testing Library. Sem novas dependências.
 
 **Notas de convenção (ler antes):**
-- Verificação sempre: `npm test` e `npm run build`.
+- Verificação: `npm run build` nos checkpoints de fase (ver o passo de verificação de cada fase); `npm test` a partir da Fase 6 — os testes antigos quebram com a mudança de tipos e são reescritos nas Tasks 33-41.
 - Status GTD: `CAIXA_ENTRADA → A_FAZER → EM_ANDAMENTO → CONCLUIDA`; `CANCELADA` a partir de qualquer status não-terminal; `CONCLUIDA → EM_ANDAMENTO` (retomar).
 - Histórico **perde** o campo `usuario`. Ações do reducer **perdem** o campo `usuario`.
 - `src/types.ts` é a fonte da verdade; o TypeScript (`npm run build`) acusa qualquer referência remanescente a `responsavelId`, `criadorId`, `currentUserId`, `Section`, `Role`, `Permission`, `Colaborador`, `NOME_POR_ID`, etc.
@@ -23,7 +25,7 @@
 **Files:**
 - Rewrite: `src/types.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/types.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/types.ts`**
 
 ```ts
 export type TaskStatus =
@@ -82,7 +84,7 @@ export type ModalState =
   | { type: 'history'; taskId: string };
 ```
 
-- [ ] **Step 2: Verificar compilação de referências** — nada a rodar ainda (demais arquivos quebram); o build será validado ao final da Fase 1.
+- [x] **Step 2: Verificar compilação de referências** — nada a rodar ainda (demais arquivos quebram); o build será validado ao final da Fase 1.
 
 ---
 
@@ -90,9 +92,9 @@ export type ModalState =
 
 **Files:**
 - Rewrite: `src/utils/status.ts`
-- Test: `src/utils/status.test.ts` (reescrito na Fase 7, Task 31)
+- Test: `src/utils/status.test.ts` (reescrito na Fase 6, Task 33)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/status.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/status.ts`**
 
 ```ts
 import type { Priority, TaskStatus } from '../types';
@@ -146,7 +148,7 @@ export function transicoesDisponiveis(status: TaskStatus): TaskStatus[] {
 }
 ```
 
-- [ ] **Step 2: Nota** — `roleOf`, `podeReatribuir`, `proximoPasso` e a importação de `mockData` foram removidos; qualquer importação deles quebrará o `tsc` e será corrigida nas tasks seguintes.
+- [x] **Step 2: Nota** — `roleOf`, `podeReatribuir`, `proximoPasso` e a importação de `mockData` foram removidos; qualquer importação deles quebrará o `tsc` e será corrigida nas tasks seguintes.
 
 ---
 
@@ -154,9 +156,9 @@ export function transicoesDisponiveis(status: TaskStatus): TaskStatus[] {
 
 **Files:**
 - Modify: `src/utils/date.ts:29-37`
-- Test: `src/utils/date.test.ts:29-53` (ajustado na Fase 7, Task 36)
+- Test: `src/utils/date.test.ts:29-53` (ajustado na Fase 6, Task 37)
 
-- [ ] **Step 1: Atualizar `isOverdue` para os novos status**
+- [x] **Step 1: Atualizar `isOverdue` para os novos status**
 
 ```ts
 export function isOverdue(
@@ -178,7 +180,7 @@ export function isOverdue(
 **Files:**
 - Rewrite: `src/utils/history.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/history.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/history.ts`**
 
 ```ts
 import type { HistoryEntry, TaskStatus } from '../types';
@@ -207,9 +209,9 @@ export function newHistoryEntry(
 
 **Files:**
 - Rewrite: `src/utils/tasks.ts`
-- Test: `src/utils/tasks.test.ts` (reescrito na Fase 7, Task 32)
+- Test: `src/utils/tasks.test.ts` (reescrito na Fase 6, Task 34)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/tasks.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/tasks.ts`**
 
 ```ts
 import type { Filters, Priority, Task, TaskSort, TaskStatus } from '../types';
@@ -348,7 +350,7 @@ export function createTask(tasks: Task[], input: NewTaskInput): Task {
 }
 ```
 
-- [ ] **Step 2: Nota** — foram removidos: `PARADAS_MIN_DIAS`, filtros `responsavel`/`paradas`/`comRetrabalho`, ordenação de fila de aprovação, `contarDevolucoes`, `diasAguardandoAprovacao`, `diasSemMovimentacao`, `ColaboradorMetrics`, `colaboradorMetrics`, `colaboradorResumo`, e o parâmetro `nomePorId` de `filterTasks`.
+- [x] **Step 2: Nota** — foram removidos: `PARADAS_MIN_DIAS`, filtros `responsavel`/`paradas`/`comRetrabalho`, ordenação de fila de aprovação, `contarDevolucoes`, `diasAguardandoAprovacao`, `diasSemMovimentacao`, `ColaboradorMetrics`, `colaboradorMetrics`, `colaboradorResumo`, e o parâmetro `nomePorId` de `filterTasks`.
 
 ---
 
@@ -357,7 +359,7 @@ export function createTask(tasks: Task[], input: NewTaskInput): Task {
 **Files:**
 - Rewrite: `src/context/types.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/types.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/types.ts`**
 
 ```ts
 import type { Filters, ModalState, Task, TaskStatus, TaskView } from '../types';
@@ -399,7 +401,7 @@ export type AppAction =
 **Files:**
 - Rewrite: `src/context/toastMessage.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/toastMessage.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/toastMessage.ts`**
 
 ```ts
 import type { TaskStatus } from '../types';
@@ -436,10 +438,10 @@ export function toastMessage(action: AppAction): string | null {
 
 ### Task 8: Verificar fim da Fase 1
 
-- [ ] **Step 1: Verificar build de TypeScript**
+- [x] **Step 1: Verificar build de TypeScript**
 
 Run: `npm run build`
-Expected: ainda pode falhar por referências em `mockData.ts`, `seedGenerator.ts`, `appReducer.ts`, `AppContext.tsx`, `LocalStorageProvider.ts` e componentes — isso é esperado. Verifique apenas que os erros são **apenas de importações/funções removidas** (não de digitação) e prossiga.
+Expected: ainda pode falhar por referências em `mockData.ts`, `seedGenerator.ts`, `appReducer.ts`, `AppContext.tsx`, `LocalStorageProvider.ts`, nos componentes **e nos arquivos de teste antigos** (`*.test.ts(x)`, que referenciam a API removida e só serão reescritos na Fase 6) — isso é esperado. Verifique apenas que os erros são **apenas de importações/funções removidas** (não de digitação) e prossiga.
 
 ---
 
@@ -450,25 +452,25 @@ Expected: ainda pode falhar por referências em `mockData.ts`, `seedGenerator.ts
 **Files:**
 - Modify: `src/services/providers/LocalStorageProvider.ts`
 
-- [ ] **Step 1: Bump de versão do storage**
+- [x] **Step 1: Bump de versão do storage**
 
-Altere a linha 5:
+Altere as linhas 5-6:
 ```ts
 export const STORAGE_KEY = 'tarefas.app.v2';
 const VERSION = 2;
 ```
 
-- [ ] **Step 2: Remover validação de `responsavelId`/`criadorId` em `isTask`**
+- [x] **Step 2: Remover validação de `responsavelId`/`criadorId` em `isTask`**
 
-Na função `isTask` (linhas 30-51), remova as duas linhas:
+Na função `isTask` (linhas 31-53), remova as duas linhas:
 ```ts
     typeof t.responsavelId === 'string' &&
     typeof t.criadorId === 'string' &&
 ```
 
-- [ ] **Step 3: Remover validação de `usuario` em `isHistoryEntry`**
+- [x] **Step 3: Remover validação de `usuario` em `isHistoryEntry`**
 
-Na função `isHistoryEntry` (linhas 16-28), remova a linha:
+Na função `isHistoryEntry` (linhas 16-29), remova a linha:
 ```ts
     typeof h.usuario === 'string' &&
 ```
@@ -511,7 +513,7 @@ function isTask(value: unknown): value is Task {
 }
 ```
 
-- [ ] **Step 4: Teste** (o `storage.test.ts` será reescrito na Fase 7, Task 34; por ora verifique apenas que compila.)
+- [x] **Step 4: Teste** (o `storage.test.ts` será reescrito na Fase 6, Task 36; por ora verifique apenas que compila.)
 
 ---
 
@@ -520,7 +522,7 @@ function isTask(value: unknown): value is Task {
 **Files:**
 - Rewrite: `src/utils/seedGenerator.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/seedGenerator.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/seedGenerator.ts`**
 
 ```ts
 import type { HistoryEntry, Priority, Task, TaskStatus } from '../types';
@@ -953,7 +955,7 @@ export const SEED_EXTRA_COUNT = Object.values(STATUS_COUNTS).reduce((a, b) => a 
 **Files:**
 - Rewrite: `src/data/mockData.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/data/mockData.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/data/mockData.ts`**
 
 ```ts
 import type { HistoryEntry, Task } from '../types';
@@ -1088,9 +1090,9 @@ export const TAREFAS: Task[] = [
 ];
 ```
 
-- [ ] **Step 2: Nota** — `GESTOR`, `GESTOR_ID`, `COLABORADORES`, `ALL_USERS`, `findUser` e `NOME_POR_ID` foram removidos. Qualquer importação remanescente quebrará o `tsc` e será corrigida nas próximas tasks.
+- [x] **Step 2: Nota** — `GESTOR`, `GESTOR_ID`, `COLABORADORES`, `ALL_USERS`, `findUser` e `NOME_POR_ID` foram removidos. Qualquer importação remanescente quebrará o `tsc` e será corrigida nas próximas tasks.
 
-- [ ] **Step 3: Verificar** — `npm run build` deve listar agora **apenas** erros em `appReducer.ts`, `AppContext.tsx` e nos componentes (que serão corrigidos nas próximas fases).
+- [x] **Step 3: Verificar** — `npm run build` deve listar agora **apenas** erros em `appReducer.ts`, `AppContext.tsx`, `navigation.ts`, nos componentes, no `App.tsx` e nos arquivos de teste antigos (que serão corrigidos/reescritos nas próximas fases).
 
 ---
 
@@ -1100,9 +1102,9 @@ export const TAREFAS: Task[] = [
 
 **Files:**
 - Rewrite: `src/context/appReducer.ts`
-- Test: `src/context/AppContext.test.ts` (reescrito na Fase 7, Task 33)
+- Test: `src/context/AppContext.test.ts` (reescrito na Fase 6, Task 35)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/appReducer.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/appReducer.ts`**
 
 ```ts
 import type { Task } from '../types';
@@ -1351,7 +1353,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 }
 ```
 
-- [ ] **Step 2: Nota** — removidos: `SET_CURRENT_USER`, `SET_SECTION`, `REASSIGN`, guards de permissão (`pode`, `podeAlterarStatusPara`), `roleOf`/`podeReatribuir`, campo `usuario` das ações, `responsavelId`/`criadorId`. `CHANGE_STATUS` para `EM_ANDAMENTO` a partir de `CONCLUIDA` limpa `concluidaEm` (retomar). Guard de campos fora da whitelist agora rejeita qualquer campo desconhecido (não apenas `responsavelId`).
+- [x] **Step 2: Nota** — removidos: `SET_CURRENT_USER`, `SET_SECTION`, `REASSIGN`, guards de permissão (`pode`, `podeAlterarStatusPara`), `roleOf`/`podeReatribuir`, campo `usuario` das ações, `responsavelId`/`criadorId`. `CHANGE_STATUS` para `EM_ANDAMENTO` a partir de `CONCLUIDA` limpa `concluidaEm` (retomar). Guard de campos fora da whitelist agora rejeita qualquer campo desconhecido (não apenas `responsavelId`).
 
 ---
 
@@ -1360,7 +1362,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 **Files:**
 - Rewrite: `src/context/AppContext.tsx`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/AppContext.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/AppContext.tsx`**
 
 ```tsx
 import {
@@ -1459,7 +1461,7 @@ export function useApp(): AppContextValue {
 **Files:**
 - Rewrite: `src/context/navigation.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/navigation.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/navigation.ts`**
 
 ```ts
 import type { Dispatch } from 'react';
@@ -1481,7 +1483,7 @@ export function openTarefas(
 }
 ```
 
-- [ ] **Step 2: Verificar compilação** — `npm run build` deve listar agora apenas erros nos componentes de UI.
+- [x] **Step 2: Verificar compilação** — `npm run build` deve listar agora apenas erros nos componentes de UI, no `App.tsx` e nos arquivos de teste antigos (reescritos na Fase 6).
 
 ---
 
@@ -1491,9 +1493,9 @@ export function openTarefas(
 
 **Files:**
 - Rewrite: `src/components/tasks/StatusBadge.tsx`
-- Test: `src/components/tasks/StatusBadge.test.tsx` (Fase 7)
+- Test: `src/components/tasks/StatusBadge.test.tsx` (Fase 6, Task 38)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/StatusBadge.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/StatusBadge.tsx`**
 
 ```tsx
 import type { TaskStatus } from '../../types';
@@ -1525,9 +1527,9 @@ export default function StatusBadge({ status }: { status: TaskStatus }) {
 
 **Files:**
 - Rewrite: `src/components/tasks/cycleActions.ts`
-- Test: `src/components/tasks/cycleActions.test.ts` (Fase 7)
+- Test: `src/components/tasks/cycleActions.test.ts` (Fase 6, Task 38)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/cycleActions.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/cycleActions.ts`**
 
 ```ts
 import { CheckCircle2, ListTodo, Play, RotateCcw, XCircle, type LucideIcon } from 'lucide-react';
@@ -1565,9 +1567,9 @@ export function cycleActionFor(task: Task, target: TaskStatus): CycleAction | nu
 
 **Files:**
 - Rewrite: `src/components/tasks/CycleStepper.tsx`
-- Test: `src/components/tasks/CycleStepper.test.tsx` (Fase 7)
+- Test: `src/components/tasks/CycleStepper.test.tsx` (Fase 6, Task 38)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/CycleStepper.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/CycleStepper.tsx`**
 
 ```tsx
 import { Check, XCircle } from 'lucide-react';
@@ -1638,9 +1640,9 @@ export default function CycleStepper({ status, compact = false }: CycleStepperPr
 
 **Files:**
 - Rewrite: `src/components/tasks/TaskRow.tsx`
-- Test: `src/components/tasks/TaskRow.test.tsx` (Fase 7)
+- Test: `src/components/tasks/TaskRow.test.tsx` (Fase 6, Task 38)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskRow.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskRow.tsx`**
 
 ```tsx
 import { Copy, Eye, GripVertical, Pencil, Star, Trash2 } from 'lucide-react';
@@ -1803,7 +1805,7 @@ export default function TaskRow({
 }
 ```
 
-- [ ] **Step 2: Nota** — coluna de ações agora termina com `justify-end`; colunas: Tarefa, Prioridade, Prazo, Status, Ciclo, Ações. Sem responsável, sem badges de retrabalho/próximo passo, sem gates de permissão.
+- [x] **Step 2: Nota** — coluna de ações agora termina com `justify-end`; colunas: Tarefa, Prioridade, Prazo, Status, Ciclo, Ações. Sem responsável, sem badges de retrabalho/próximo passo, sem gates de permissão.
 
 ---
 
@@ -1812,7 +1814,7 @@ export default function TaskRow({
 **Files:**
 - Rewrite: `src/components/tasks/TaskCard.tsx`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskCard.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskCard.tsx`**
 
 ```tsx
 import { Star } from 'lucide-react';
@@ -1922,9 +1924,9 @@ export default function TaskCard({
 
 **Files:**
 - Rewrite: `src/components/tasks/TaskKanban.tsx`
-- Test: `src/components/tasks/TaskKanban.test.tsx` (Fase 7)
+- Test: `src/components/tasks/TaskKanban.test.tsx` (Fase 6, Task 38)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskKanban.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/tasks/TaskKanban.tsx`**
 
 ```tsx
 import { useState, type DragEvent } from 'react';
@@ -2077,9 +2079,9 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
 **Files:**
 - Modify: `src/components/tasks/TasksTable.tsx:96-97`
 
-- [ ] **Step 1: Remover a coluna "Responsável" do cabeçalho**
+- [x] **Step 1: Remover a coluna "Responsável" do cabeçalho**
 
-Substitua as linhas 96-97:
+Substitua as linhas 96-98:
 ```tsx
               <th className="px-4 py-3">Tarefa</th>
               <th className="px-4 py-3">Responsável</th>
@@ -2091,7 +2093,7 @@ por:
               <th className="px-4 py-3">Prioridade</th>
 ```
 
-- [ ] **Step 2: Nota** — a largura mínima da tabela pode ser reduzida de `min-w-[900px]` para `min-w-[720px]` (linha 93), opcional.
+- [x] **Step 2: Nota** — a largura mínima da tabela pode ser reduzida de `min-w-[900px]` para `min-w-[720px]` (linha 93), opcional.
 
 ---
 
@@ -2101,9 +2103,9 @@ por:
 
 **Files:**
 - Rewrite: `src/components/layout/KPICards.tsx`
-- Test: `src/components/layout/KPICards.test.tsx` (Fase 7)
+- Test: `src/components/layout/KPICards.test.tsx` (Fase 6, Task 39)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/layout/KPICards.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/layout/KPICards.tsx`**
 
 ```tsx
 import {
@@ -2181,7 +2183,7 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
 }
 ```
 
-- [ ] **Step 2: Nota** — 7 KPIs: Total, Caixa de entrada, A fazer, Em andamento, Concluídas, Canceladas, Atrasadas. Filtros de status aplicados via `openTarefas` (que já não emite `SET_SECTION`).
+- [x] **Step 2: Nota** — 7 KPIs: Total, Caixa de entrada, A fazer, Em andamento, Concluídas, Canceladas, Atrasadas. Filtros de status aplicados via `openTarefas` (que já não emite `SET_SECTION`).
 
 ---
 
@@ -2189,9 +2191,9 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
 
 **Files:**
 - Rewrite: `src/components/layout/FilterBar.tsx`
-- Test: `src/components/layout/FilterBar.test.tsx` (Fase 7)
+- Test: `src/components/layout/FilterBar.test.tsx` (Fase 6, Task 39)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/layout/FilterBar.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/layout/FilterBar.tsx`**
 
 ```tsx
 import { useEffect, useRef, useState } from 'react';
@@ -2349,7 +2351,7 @@ export default function FilterBar() {
 }
 ```
 
-- [ ] **Step 2: Nota** — removidos os filtros Responsável e Movimentação (paradas); `categoriaOptions` agora deriva de `state.tasks` (todas as tarefas) em vez de `tasksVisiveis`.
+- [x] **Step 2: Nota** — removidos os filtros Responsável e Movimentação (paradas); `categoriaOptions` agora deriva de `state.tasks` (todas as tarefas) em vez de `tasksVisiveis`.
 
 ---
 
@@ -2357,9 +2359,9 @@ export default function FilterBar() {
 
 **Files:**
 - Rewrite: `src/components/layout/Topbar.tsx`
-- Test: `src/components/layout/Topbar.test.tsx` (Fase 7)
+- Test: `src/components/layout/Topbar.test.tsx` (Fase 6, Task 39)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/layout/Topbar.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/layout/Topbar.tsx`**
 
 ```tsx
 import {
@@ -2488,7 +2490,7 @@ export default function Topbar({ title, search, onSearch, onNewTask }: TopbarPro
 }
 ```
 
-- [ ] **Step 2: Nota** — os controles da seção Tarefas agora ficam sempre visíveis (não há outras seções) e o botão "+" não tem gate de permissão.
+- [x] **Step 2: Nota** — os controles da seção Tarefas agora ficam sempre visíveis (não há outras seções) e o botão "+" não tem gate de permissão.
 
 ---
 
@@ -2496,9 +2498,9 @@ export default function Topbar({ title, search, onSearch, onNewTask }: TopbarPro
 
 **Files:**
 - Rewrite: `src/components/layout/Sidebar.tsx`
-- Test: `src/components/layout/Sidebar.test.tsx` (Fase 7)
+- Test: `src/components/layout/Sidebar.test.tsx` (Fase 6, Task 39)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/layout/Sidebar.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/layout/Sidebar.tsx`**
 
 ```tsx
 import { AlertTriangle, ListChecks, X } from 'lucide-react';
@@ -2581,7 +2583,7 @@ export default function Sidebar() {
 }
 ```
 
-- [ ] **Step 2: Nota** — apenas a navegação para Tarefas (mais o atalho Atrasadas); removidos Visão Geral, Colaboradores, lista de colaboradores e o seletor de usuário.
+- [x] **Step 2: Nota** — apenas a navegação para Tarefas (mais o atalho Atrasadas); removidos Visão Geral, Colaboradores, lista de colaboradores e o seletor de usuário.
 
 ---
 
@@ -2589,9 +2591,9 @@ export default function Sidebar() {
 
 **Files:**
 - Rewrite: `src/components/modals/TaskDetailModal.tsx`
-- Test: `src/components/modals/TaskDetailModal.test.tsx` (Fase 7)
+- Test: `src/components/modals/TaskDetailModal.test.tsx` (Fase 6, Task 40)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/modals/TaskDetailModal.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/modals/TaskDetailModal.tsx`**
 
 ```tsx
 import { useState } from 'react';
@@ -2787,7 +2789,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
 }
 ```
 
-- [ ] **Step 2: Nota** — removidos: aprovar/devolver/reatribuir, badges de retrabalho/próximo passo, campos Responsável/Criada por. Botões do ciclo renderizados a partir de `transicoesDisponiveis` com rótulos do `cycleActionFor`.
+- [x] **Step 2: Nota** — removidos: aprovar/devolver/reatribuir, badges de retrabalho/próximo passo, campos Responsável/Criada por. Botões do ciclo renderizados a partir de `transicoesDisponiveis` com rótulos do `cycleActionFor`.
 
 ---
 
@@ -2795,9 +2797,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
 
 **Files:**
 - Rewrite: `src/components/modals/TaskFormModal.tsx`
-- Test: `src/components/modals/TaskFormModal.test.tsx` (Fase 7)
+- Test: `src/components/modals/TaskFormModal.test.tsx` (Fase 6, Task 40)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/modals/TaskFormModal.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/modals/TaskFormModal.tsx`**
 
 ```tsx
 import { useState } from 'react';
@@ -2940,9 +2942,9 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
 **Files:**
 - Rewrite: `src/components/modals/HistoryModal.tsx`
 
-- [ ] **Step 1: Remover o autor do histórico**
+- [x] **Step 1: Remover o autor do histórico**
 
-No arquivo atual, remova a linha 36 (`<p className="text-sm font-semibold text-slate-700">{entry.usuario}</p>`). O restante permanece igual:
+No arquivo atual, remova a linha 35 (`<p className="text-sm font-semibold text-slate-700">{entry.usuario}</p>`). O restante permanece igual:
 
 ```tsx
       {sorted.map((entry) => (
@@ -2963,9 +2965,9 @@ No arquivo atual, remova a linha 36 (`<p className="text-sm font-semibold text-s
 
 **Files:**
 - Rewrite: `src/components/modals/CancelModal.tsx`
-- Test: `src/components/modals/CancelModal.test.tsx` (Fase 7)
+- Test: `src/components/modals/CancelModal.test.tsx` (Fase 6, Task 40)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/modals/CancelModal.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/modals/CancelModal.tsx`**
 
 ```tsx
 import { useState } from 'react';
@@ -3047,9 +3049,9 @@ export default function CancelModal({ taskId, onClose }: CancelModalProps) {
 
 **Files:**
 - Rewrite: `src/components/sections/SectionTarefas.tsx`
-- Test: `src/components/sections/SectionTarefas.test.tsx` (Fase 7)
+- Test: `src/components/sections/SectionTarefas.test.tsx` (Fase 6, Task 40)
 
-- [ ] **Step 1: Substituir o conteúdo de `src/components/sections/SectionTarefas.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/components/sections/SectionTarefas.tsx`**
 
 ```tsx
 import { useMemo, useState } from 'react';
@@ -3145,7 +3147,7 @@ export default function SectionTarefas() {
 **Files:**
 - Rewrite: `src/App.tsx`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/App.tsx`**
+- [x] **Step 1: Substituir o conteúdo de `src/App.tsx`**
 
 ```tsx
 import { AppProvider, useApp } from './context/AppContext';
@@ -3215,7 +3217,7 @@ export default function App() {
 **Files:**
 - Delete: vários (ver Step 1)
 
-- [ ] **Step 1: Remover os arquivos (git rm)**
+- [x] **Step 1: Remover os arquivos (git rm)**
 
 ```bash
 git rm -q src/components/sections/SectionVisaoGeral.tsx
@@ -3229,20 +3231,20 @@ git rm -q src/components/tasks/ProximoPassoBadge.tsx
 git rm -q src/components/tasks/ReworkBadge.tsx
 git rm -q src/components/ui/Avatar.tsx
 git rm -q src/utils/permissions.ts
-git rm -q src/utils/perfis.ts 2>$null; Remove-Item -Force -ErrorAction SilentlyContinue src/utils/perfis.ts
 git rm -q src/utils/permissions.test.ts
 git rm -q src/components/tasks/ProximoPassoBadge.test.tsx
 git rm -q src/components/tasks/ReworkBadge.test.tsx
 git rm -q src/components/modals/ReassignModal.test.tsx
 git rm -q src/components/tasks/TaskRow.permissions.test.tsx
+rmdir src/components/collaborators 2>/dev/null || true
 ```
 
-(Se `src/utils/perfis.ts` não existir, ignore o erro. Se o diretório `src/components/collaborators/` ficar vazio, remova-o com `Remove-Item -Recurse`.)
+(`src/utils/perfis.ts` não existe no projeto atual; removê-lo não é necessário. Se o diretório `src/components/collaborators/` ficar vazio, o `rmdir` acima o remove.)
 
-- [ ] **Step 2: Verificar compilação e testes**
+- [x] **Step 2: Verificar compilação e testes**
 
 Run: `npm run build`
-Expected: PASS (nenhum erro de TypeScript). Se houver erros, eles são referências remanescentes que devem ser corrigidas com os componentes acima (o `tsc` lista arquivo/linha).
+Expected: erros **apenas nos arquivos de teste antigos** (`src/**/*.test.ts(x)`) — a aplicação (código sem testes) compila. Como o `tsc` inclui `src` inteiro, os testes antigos, que referenciam a API removida, continuam acusando erro até serem reescritos na Fase 6; o build passa de fato apenas na Task 41. Qualquer erro em arquivo de aplicação é referência remanescente a corrigir (o `tsc` lista arquivo/linha).
 
 ---
 
@@ -3255,7 +3257,7 @@ Expected: PASS (nenhum erro de TypeScript). Se houver erros, eles são referênc
 **Files:**
 - Rewrite: `src/utils/status.test.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/status.test.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/status.test.ts`**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -3321,7 +3323,7 @@ describe('transicoesDisponiveis', () => {
 });
 ```
 
-- [ ] **Step 2: Verificar** — Run: `npm test -- src/utils/status.test.ts`
+- [x] **Step 2: Verificar** — Run: `npm test -- src/utils/status.test.ts`
 Expected: PASS
 
 ---
@@ -3331,7 +3333,7 @@ Expected: PASS
 **Files:**
 - Rewrite: `src/utils/tasks.test.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/utils/tasks.test.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/utils/tasks.test.ts`**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -3530,8 +3532,10 @@ describe('nextTaskId / createTask', () => {
 });
 ```
 
-- [ ] **Step 2: Verificar** — Run: `npm test -- src/utils/tasks.test.ts`
+- [x] **Step 2: Verificar** — Run: `npm test -- src/utils/tasks.test.ts`
 Expected: PASS
+
+> **Nota:** as asserções "filtra por vencidas" e "existe pelo menos uma atrasada no seed" dependem do seed determinístico (50 tarefas geradas com prazos entre +5 e +25 dias úteis). Se falharem ao rodar, ajuste os dados de `mockData.ts`/`seedGenerator.ts`; se optar por mudar `NOW`, atualize também os literais de data hardcoded do arquivo (o teste "hoje" usa `prazo: '2026-08-03'` e o "vencidas" compara com `new Date('2026-08-03T00:00:00')`). Não relaxe a asserção sem reavaliar o seed.
 
 ---
 
@@ -3540,7 +3544,7 @@ Expected: PASS
 **Files:**
 - Rewrite: `src/context/AppContext.test.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/context/AppContext.test.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/context/AppContext.test.ts`**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -3852,7 +3856,7 @@ describe('appReducer — controles de interface', () => {
 });
 ```
 
-- [ ] **Step 2: Verificar** — Run: `npm test -- src/context/AppContext.test.ts`
+- [x] **Step 2: Verificar** — Run: `npm test -- src/context/AppContext.test.ts`
 Expected: PASS
 
 ---
@@ -3862,7 +3866,7 @@ Expected: PASS
 **Files:**
 - Rewrite: `src/services/storage.test.ts`
 
-- [ ] **Step 1: Substituir o conteúdo de `src/services/storage.test.ts`**
+- [x] **Step 1: Substituir o conteúdo de `src/services/storage.test.ts`**
 
 ```ts
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -3986,7 +3990,7 @@ describe('storage', () => {
 });
 ```
 
-- [ ] **Step 2: Verificar** — Run: `npm test -- src/services/storage.test.ts`
+- [x] **Step 2: Verificar** — Run: `npm test -- src/services/storage.test.ts`
 Expected: PASS
 
 ---
@@ -3996,9 +4000,9 @@ Expected: PASS
 **Files:**
 - Modify: `src/utils/date.test.ts:29-53`
 
-- [ ] **Step 1: Atualizar os testes de `isOverdue`**
+- [x] **Step 1: Atualizar os testes de `isOverdue`**
 
-Substitua o bloco `describe('isOverdue', ...)` (linhas 29-53) por:
+Substitua o bloco `describe('isOverdue', ...)` (linhas 29-54) por:
 
 ```ts
 describe('isOverdue', () => {
@@ -4024,7 +4028,7 @@ describe('isOverdue', () => {
 });
 ```
 
-- [ ] **Step 2: Verificar** — Run: `npm test -- src/utils/date.test.ts`
+- [x] **Step 2: Verificar** — Run: `npm test -- src/utils/date.test.ts`
 Expected: PASS
 
 ---
@@ -4039,7 +4043,7 @@ Expected: PASS
 - Rewrite: `src/components/tasks/TaskKanban.test.tsx`
 - Rewrite: `src/components/tasks/TasksTable.test.tsx`
 
-- [ ] **Step 1: Substituir `src/components/tasks/StatusBadge.test.tsx`**
+- [x] **Step 1: Substituir `src/components/tasks/StatusBadge.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4063,7 +4067,7 @@ describe('StatusBadge', () => {
 });
 ```
 
-- [ ] **Step 2: Substituir `src/components/tasks/cycleActions.test.ts`**
+- [x] **Step 2: Substituir `src/components/tasks/cycleActions.test.ts`**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -4109,7 +4113,7 @@ describe('cycleActionFor', () => {
 });
 ```
 
-- [ ] **Step 3: Substituir `src/components/tasks/CycleStepper.test.tsx`**
+- [x] **Step 3: Substituir `src/components/tasks/CycleStepper.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4135,11 +4139,11 @@ describe('CycleStepper', () => {
 });
 ```
 
-- [ ] **Step 4: Substituir `src/components/tasks/TaskRow.test.tsx`**
+- [x] **Step 4: Substituir `src/components/tasks/TaskRow.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TaskRow from './TaskRow';
@@ -4236,9 +4240,9 @@ describe('TaskRow — ações', () => {
 });
 ```
 
-> Nota: importe `vi` do `vitest` no arquivo (linha 2: `import { beforeEach, describe, expect, it, vi } from 'vitest';`).
 
-- [ ] **Step 5: Substituir `src/components/tasks/TaskKanban.test.tsx`**
+
+- [x] **Step 5: Substituir `src/components/tasks/TaskKanban.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4351,7 +4355,7 @@ describe('TaskKanban', () => {
 })
 ```
 
-- [ ] **Step 6: Substituir `src/components/tasks/TasksTable.test.tsx`**
+- [x] **Step 6: Substituir `src/components/tasks/TasksTable.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4432,7 +4436,7 @@ describe('TasksTable', () => {
 });
 ```
 
-- [ ] **Step 7: Verificar** — Run: `npm test -- src/components/tasks`
+- [x] **Step 7: Verificar** — Run: `npm test -- src/components/tasks`
 Expected: PASS (todos os testes da pasta `tasks`)
 
 ---
@@ -4445,7 +4449,7 @@ Expected: PASS (todos os testes da pasta `tasks`)
 - Rewrite: `src/components/layout/Topbar.test.tsx`
 - Rewrite: `src/components/layout/Sidebar.test.tsx`
 
-- [ ] **Step 1: Substituir `src/components/layout/KPICards.test.tsx`**
+- [x] **Step 1: Substituir `src/components/layout/KPICards.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4565,7 +4569,7 @@ describe('KPICards', () => {
 });
 ```
 
-- [ ] **Step 2: Substituir `src/components/layout/FilterBar.test.tsx`**
+- [x] **Step 2: Substituir `src/components/layout/FilterBar.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4627,7 +4631,7 @@ describe('FilterBar', () => {
 });
 ```
 
-- [ ] **Step 3: Substituir `src/components/layout/Topbar.test.tsx`**
+- [x] **Step 3: Substituir `src/components/layout/Topbar.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4761,7 +4765,7 @@ describe('Topbar — controles do topo', () => {
 });
 ```
 
-- [ ] **Step 4: Substituir `src/components/layout/Sidebar.test.tsx`**
+- [x] **Step 4: Substituir `src/components/layout/Sidebar.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4897,7 +4901,7 @@ describe('Sidebar', () => {
 });
 ```
 
-- [ ] **Step 5: Verificar** — Run: `npm test -- src/components/layout`
+- [x] **Step 5: Verificar** — Run: `npm test -- src/components/layout`
 Expected: PASS
 
 ---
@@ -4910,7 +4914,7 @@ Expected: PASS
 - Rewrite: `src/components/modals/CancelModal.test.tsx`
 - Rewrite: `src/components/sections/SectionTarefas.test.tsx`
 
-- [ ] **Step 1: Substituir `src/components/modals/TaskDetailModal.test.tsx`**
+- [x] **Step 1: Substituir `src/components/modals/TaskDetailModal.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -4964,12 +4968,12 @@ describe('TaskDetailModal', () => {
 });
 ```
 
-- [ ] **Step 2: Substituir `src/components/modals/TaskFormModal.test.tsx`**
+- [x] **Step 2: Substituir `src/components/modals/TaskFormModal.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useApp } from '../../context/AppContext';
 import { renderWithApp } from '../../test/renderWithApp';
@@ -4979,6 +4983,12 @@ function Probe({ id }: { id: string }) {
   const { state } = useApp();
   const task = state.tasks.find((t) => t.id === id);
   return <output data-testid="probe">{task?.titulo}</output>;
+}
+
+function LastProbe() {
+  const { state } = useApp();
+  const task = state.tasks[state.tasks.length - 1];
+  return <output data-testid="probe-last">{task ? `${task.titulo}|${task.status}` : ''}</output>;
 }
 
 beforeEach(() => localStorage.clear());
@@ -5014,17 +5024,21 @@ describe('TaskFormModal', () => {
     renderWithApp(
       <>
         <TaskFormModal open onClose={() => {}} />
-        <Probe id="TA-001" />
+        <LastProbe />
       </>
     );
 
     await user.type(screen.getByLabelText(/Título \*/), 'Nova tarefa pessoal');
     await user.click(screen.getByRole('button', { name: 'Criar tarefa' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-last').textContent).toBe('Nova tarefa pessoal|CAIXA_ENTRADA');
+    });
   });
 });
 ```
 
-- [ ] **Step 3: Substituir `src/components/modals/CancelModal.test.tsx`**
+- [x] **Step 3: Substituir `src/components/modals/CancelModal.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -5065,7 +5079,7 @@ describe('CancelModal', () => {
 });
 ```
 
-- [ ] **Step 4: Substituir `src/components/sections/SectionTarefas.test.tsx`**
+- [x] **Step 4: Substituir `src/components/sections/SectionTarefas.test.tsx`**
 
 ```tsx
 // @vitest-environment jsdom
@@ -5104,28 +5118,28 @@ describe('SectionTarefas', () => {
 });
 ```
 
-- [ ] **Step 5: Verificar** — Run: `npm test -- src/components/modals src/components/sections`
+- [x] **Step 5: Verificar** — Run: `npm test -- src/components/modals src/components/sections`
 Expected: PASS
 
 ---
 
 ### Task 41: Verificação final
 
-- [ ] **Step 1: Rodar a suíte completa**
+- [x] **Step 1: Rodar a suíte completa**
 
 Run: `npm test`
 Expected: todos os testes PASS (nenhum FAIL).
 
-- [ ] **Step 2: Rodar o build de produção**
+- [x] **Step 2: Rodar o build de produção**
 
 Run: `npm run build`
 Expected: PASS (tsc sem erros + build Vite).
 
-- [ ] **Step 3: Verificar que não sobrou nenhuma referência multiusuário**
+- [x] **Step 3: Verificar que não sobrou nenhuma referência multiusuário**
 
 Run:
-```powershell
-rg -n "responsavelId|criadorId|currentUserId|NOME_POR_ID|COLABORADORES|GESTOR|roleOf|proximoPasso|podeReatribuir|TaskRow\.permissions|Visão Geral|Colaboradores|Reassign|Approve|Return|SectionVisaoGeral|SectionColaboradores|colaborador" src
+```bash
+rg -n "responsavelId|criadorId|currentUserId|NOME_POR_ID|COLABORADORES|GESTOR|GESTOR_ID|findUser|roleOf|proximoPasso|podeReatribuir|permissoesDe|podeVer|podeAlterarStatus|podeReabrir|availableTransitions|usuario|paradas|comRetrabalho|TransicaoKind|transicaoKind|SET_CURRENT_USER|SET_SECTION|REASSIGN|TaskRow\.permissions|Visão Geral|Colaboradores|Reassign|Approve|Return|SectionVisaoGeral|SectionColaboradores|colaborador|FINALIZADA|DEVOLVIDA|EM_EXECUCAO|RECEBIDA" src
 ```
 Expected: nenhum resultado (ou apenas comentários doc inócuos). Remover qualquer referência remanescente.
 

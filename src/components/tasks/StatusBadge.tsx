@@ -2,12 +2,10 @@ import type { TaskStatus } from '../../types';
 import { STATUS_LABELS } from '../../utils/status';
 
 const STYLES: Record<TaskStatus, string> = {
-  NOVA: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-  RECEBIDA: 'bg-cyan-50 text-cyan-700 ring-cyan-600/20',
-  EM_EXECUCAO: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  CONCLUIDA: 'bg-violet-50 text-violet-700 ring-violet-600/20',
-  DEVOLVIDA: 'bg-rose-50 text-rose-700 ring-rose-600/20',
-  FINALIZADA: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  CAIXA_ENTRADA: 'bg-blue-50 text-blue-700 ring-blue-600/20',
+  A_FAZER: 'bg-cyan-50 text-cyan-700 ring-cyan-600/20',
+  EM_ANDAMENTO: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  CONCLUIDA: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   CANCELADA: 'bg-slate-200 text-slate-600 ring-slate-500/20',
 };
 

@@ -1,26 +1,12 @@
-import {
-  Copy,
-  Eye,
-  GripVertical,
-  Pencil,
-  Star,
-  Trash2,
-  UserCog,
-} from 'lucide-react';
+import { Copy, Eye, GripVertical, Pencil, Star, Trash2 } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type { Task, TaskStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { roleOf, availableTransitions, podeReatribuir } from '../../utils/status';
-import { contarDevolucoes } from '../../utils/tasks';
-import { pode, podeAlterarStatusPara } from '../../utils/permissions';
-import { findUser, NOME_POR_ID } from '../../data/mockData';
-import Avatar from '../ui/Avatar';
+import { transicoesDisponiveis } from '../../utils/status';
 import StatusBadge from './StatusBadge';
 import PriorityBadge from './PriorityBadge';
 import CycleStepper from './CycleStepper';
 import DueDateCell from './DueDateCell';
-import ProximoPassoBadge from './ProximoPassoBadge';
-import ReworkBadge from './ReworkBadge';
 import { cycleActionFor } from './cycleActions';
 
 interface TaskRowProps {
@@ -48,15 +34,10 @@ export default function TaskRow({
   onDrop,
   onDragEnd,
 }: TaskRowProps) {
-  const { state, dispatch } = useApp();
-  const role = roleOf(state.currentUserId);
-  const responsavel = findUser(task.responsavelId);
-  const can = availableTransitions(task.status, role);
-  const podeGerenciar = pode(state.currentUserId, 'gerenciar_tarefas');
+  const { dispatch } = useApp();
 
   const openDetail = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'detail', taskId: task.id } });
   const openEdit = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'edit', taskId: task.id } });
-  const openReassign = () => dispatch({ type: 'OPEN_MODAL', modal: { type: 'reassign', taskId: task.id } });
 
   const changeStatus = (novoStatus: TaskStatus) => {
     if (novoStatus === 'CONCLUIDA') {
@@ -67,12 +48,7 @@ export default function TaskRow({
       dispatch({ type: 'OPEN_MODAL', modal: { type: 'cancel', taskId: task.id } });
       return;
     }
-    dispatch({
-      type: 'CHANGE_STATUS',
-      taskId: task.id,
-      novoStatus,
-      usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-    });
+    dispatch({ type: 'CHANGE_STATUS', taskId: task.id, novoStatus });
   };
 
   return (
@@ -101,16 +77,8 @@ export default function TaskRow({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-800">{task.titulo}</p>
-            <p className="truncate text-xs text-slate-400">
-              {task.id} · {NOME_POR_ID[task.responsavelId]}
-            </p>
+            <p className="truncate text-xs text-slate-400">{task.id}</p>
           </div>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Avatar nome={responsavel?.nome ?? '?'} cor={responsavel?.cor ?? '#64748b'} size="xs" />
-          <span className="text-sm text-slate-600">{responsavel?.nome.split(' ')[0]}</span>
         </div>
       </td>
       <td className="px-4 py-3">
@@ -120,19 +88,16 @@ export default function TaskRow({
         <DueDateCell task={task} />
       </td>
       <td className="px-4 py-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <StatusBadge status={task.status} />
-          <ReworkBadge qtd={contarDevolucoes(task)} />
-          <ProximoPassoBadge task={task} />
-        </div>
+        <StatusBadge status={task.status} />
       </td>
       <td className="px-4 py-3">
         <CycleStepper status={task.status} compact />
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={openDetail}
+            aria-label="Ver detalhes"
             title="Ver detalhes"
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
@@ -140,6 +105,7 @@ export default function TaskRow({
           </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
+            aria-label={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
             title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
             className={`rounded-lg p-1.5 transition-colors ${
               task.favorita
@@ -149,48 +115,33 @@ export default function TaskRow({
           >
             <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
-          {podeGerenciar && (
-            <>
-              <button
-                onClick={openEdit}
-                title="Editar"
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              {podeGerenciar && podeReatribuir(task.status) && (
-                <button
-                  onClick={openReassign}
-                  title="Alterar responsável"
-                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                >
-                  <UserCog className="h-4 w-4" />
-                </button>
-              )}
-              <button
-                onClick={() =>
-                  dispatch({
-                    type: 'DUPLICATE_TASK',
-                    taskId: task.id,
-                    usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
-                  })
-                }
-                title="Duplicar"
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => onDeleteRequest(task)}
-                title="Excluir"
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </>
-          )}
-          {can.map((target) => {
-            if (!podeAlterarStatusPara(state.currentUserId, task, target)) return null;
+          <button
+            onClick={openEdit}
+            aria-label="Editar"
+            title="Editar"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() =>
+              dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+            }
+            aria-label="Duplicar"
+            title="Duplicar"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onDeleteRequest(task)}
+            aria-label="Excluir"
+            title="Excluir"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          {transicoesDisponiveis(task.status).map((target) => {
             const act = cycleActionFor(task, target);
             if (!act) return null;
             const Icon = act.icon;

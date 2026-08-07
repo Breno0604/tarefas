@@ -15,10 +15,7 @@ function Probe() {
   return (
     <output data-testid="probe">
       {JSON.stringify({
-        section: state.section,
         prazo: state.filters.prazo,
-        modal: state.modal.type,
-        user: state.currentUserId,
         sidebarOpen: state.sidebarOpen,
       })}
     </output>
@@ -35,7 +32,7 @@ function ToggleButton() {
 }
 
 describe('Sidebar', () => {
-  it('renderiza os 3 itens de navegação quando aberto', async () => {
+  it('renderiza apenas a navegação para Tarefas quando aberto', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
@@ -47,12 +44,12 @@ describe('Sidebar', () => {
 
     await user.click(screen.getByTitle('Toggle sidebar'));
 
-    expect(screen.getByRole('button', { name: 'Visão Geral' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tarefas' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Colaboradores' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Visão Geral' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Colaboradores' })).not.toBeInTheDocument();
   });
 
-  it('renderiza os atalhos Atrasadas, Finalizadas e Devolvidas', async () => {
+  it('não exibe seletor de usuário nem lista de colaboradores', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
@@ -64,12 +61,11 @@ describe('Sidebar', () => {
 
     await user.click(screen.getByTitle('Toggle sidebar'));
 
-    expect(screen.getByRole('button', { name: 'Atrasadas' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Finalizadas' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Devolvidas' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /João/ })).not.toBeInTheDocument();
   });
 
-  it('clicar em Atrasadas navega para tarefas e aplica filtro vencidas', async () => {
+  it('clicar em Atrasadas aplica filtro vencidas', async () => {
     const user = userEvent.setup();
     renderWithApp(
       <>
@@ -84,7 +80,6 @@ describe('Sidebar', () => {
 
     await waitFor(() => {
       const probe = screen.getByTestId('probe');
-      expect(probe.textContent).toContain('"section":"tarefas"');
       expect(probe.textContent).toContain('"prazo":"vencidas"');
     });
   });
@@ -107,46 +102,6 @@ describe('Sidebar', () => {
     await user.click(screen.getByTitle('Fechar menu'));
     await waitFor(() => {
       expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":false');
-    });
-  });
-
-  it('user switcher lista ALL_USERS e muda currentUserId', async () => {
-    const user = userEvent.setup();
-    renderWithApp(
-      <>
-        <Sidebar />
-        <ToggleButton />
-        <Probe />
-      </>
-    );
-
-    await user.click(screen.getByTitle('Toggle sidebar'));
-
-    const select = screen.getByRole('combobox');
-    expect(screen.getByRole('option', { name: /Carlos Mendes/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /João Silva/ })).toBeInTheDocument();
-    await user.selectOptions(select, 'joao');
-
-    await waitFor(() => {
-      expect(screen.getByTestId('probe').textContent).toContain('"user":"joao"');
-    });
-  });
-
-  it('clicar em um colaborador abre o modal do colaborador', async () => {
-    const user = userEvent.setup();
-    renderWithApp(
-      <>
-        <Sidebar />
-        <ToggleButton />
-        <Probe />
-      </>
-    );
-
-    await user.click(screen.getByTitle('Toggle sidebar'));
-    await user.click(screen.getByRole('button', { name: /João/ }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('probe').textContent).toContain('"modal":"colaborador"');
     });
   });
 

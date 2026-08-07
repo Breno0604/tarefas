@@ -27,19 +27,15 @@ describe('formatDate / formatDateTime', () => {
 });
 
 describe('isOverdue', () => {
-  it('prazo de ontem e não finalizada = atrasada', () => {
-    expect(isOverdue('2026-08-02T00:00:00', 'EM_EXECUCAO', NOW)).toBe(true);
+  it('prazo de ontem e não concluída = atrasada', () => {
+    expect(isOverdue('2026-08-02T00:00:00', 'EM_ANDAMENTO', NOW)).toBe(true);
   });
 
   it('prazo de hoje não é atrasado', () => {
-    expect(isOverdue('2026-08-03T00:00:00', 'EM_EXECUCAO', NOW)).toBe(false);
+    expect(isOverdue('2026-08-03T00:00:00', 'EM_ANDAMENTO', NOW)).toBe(false);
   });
 
-  it('tarefa finalizada nunca é atrasada', () => {
-    expect(isOverdue('2026-07-01T00:00:00', 'FINALIZADA', NOW)).toBe(false);
-  });
-
-  it('tarefa concluída nunca é atrasada (backlog de aprovação não é atraso de entrega)', () => {
+  it('tarefa concluída nunca é atrasada', () => {
     expect(isOverdue('2026-07-01T00:00:00', 'CONCLUIDA', NOW)).toBe(false);
   });
 
@@ -48,7 +44,7 @@ describe('isOverdue', () => {
   });
 
   it('sem prazo nunca é atrasada', () => {
-    expect(isOverdue(null, 'NOVA', NOW)).toBe(false);
+    expect(isOverdue(null, 'CAIXA_ENTRADA', NOW)).toBe(false);
   });
 });
 

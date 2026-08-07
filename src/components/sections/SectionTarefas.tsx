@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { NOME_POR_ID } from '../../data/mockData';
 import { computeIndicators, filterTasks, hasActiveFilters } from '../../utils/tasks';
-import { tasksVisiveis } from '../../utils/permissions';
 import type { Task } from '../../types';
 import KPICards from '../layout/KPICards';
 import FilterBar from '../layout/FilterBar';
@@ -19,15 +17,11 @@ export default function SectionTarefas() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmState | null>(null);
 
-  const visiveis = useMemo(
-    () => tasksVisiveis(state.tasks, state.currentUserId),
-    [state.tasks, state.currentUserId]
-  );
   const visibleTasks = useMemo(
-    () => filterTasks(visiveis, state.filters, NOME_POR_ID),
-    [visiveis, state.filters]
+    () => filterTasks(state.tasks, state.filters),
+    [state.tasks, state.filters]
   );
-  const indicators = useMemo(() => computeIndicators(visiveis), [visiveis]);
+  const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
   const reorderEnabled = state.filters.sortBy === null && !hasActiveFilters(state.filters);
 
   const confirmComplete = (task: Task) => setConfirm({ task });
@@ -59,7 +53,7 @@ export default function SectionTarefas() {
       <ConfirmDialog
         open={Boolean(confirm)}
         title="Confirmar conclusão"
-        message={`Marcar a tarefa "${confirm?.task.titulo ?? ''}" como concluída? Ela ficará aguardando a análise do gestor.`}
+        message={`Marcar a tarefa "${confirm?.task.titulo ?? ''}" como concluída?`}
         confirmLabel="Concluir"
         onConfirm={() => {
           if (confirm) {
@@ -67,7 +61,6 @@ export default function SectionTarefas() {
               type: 'CHANGE_STATUS',
               taskId: confirm.task.id,
               novoStatus: 'CONCLUIDA',
-              usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
             });
           }
         }}

@@ -33,7 +33,6 @@ export default function HistoryModal({ taskId, onClose }: HistoryModalProps) {
               }`}
             />
             <p className="text-xs font-medium text-slate-400">{formatDateTime(entry.dataHora)}</p>
-            <p className="text-sm font-semibold text-slate-700">{entry.usuario}</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {entry.tipo === 'status' ? (
                 <>

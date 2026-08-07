@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Priority } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { COLABORADORES, NOME_POR_ID } from '../../data/mockData';
 import { PRIORITY_LABELS } from '../../utils/status';
 import { createTask } from '../../utils/tasks';
 import Modal from '../modal/Modal';
@@ -21,14 +20,13 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
 
   const [titulo, setTitulo] = useState(editing?.titulo ?? '');
   const [descricao, setDescricao] = useState(editing?.descricao ?? '');
-  const [responsavelId, setResponsavelId] = useState(editing?.responsavelId ?? COLABORADORES[0].id);
   const [prioridade, setPrioridade] = useState<Priority>(editing?.prioridade ?? 'media');
   const [prazo, setPrazo] = useState(editing?.prazo ?? '');
   const [categoria, setCategoria] = useState(editing?.categoria ?? '');
   const [tags, setTags] = useState(editing?.tags?.join(', ') ?? '');
 
   const isEdit = Boolean(editing);
-  const valid = titulo.trim().length > 0 && responsavelId.trim().length > 0;
+  const valid = titulo.trim().length > 0;
 
   const submit = () => {
     if (!valid) return;
@@ -36,7 +34,6 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
       dispatch({
         type: 'UPDATE_TASK',
         taskId: editing.id,
-        usuario: NOME_POR_ID[state.currentUserId] ?? state.currentUserId,
         changes: {
           titulo: titulo.trim(),
           descricao: descricao.trim(),
@@ -49,23 +46,17 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
     } else {
       dispatch({
         type: 'CREATE_TASK',
-        task: createTask(
-          state.tasks,
-          {
-            titulo: titulo.trim(),
-            descricao: descricao.trim(),
-            responsavelId,
-            criadorId: state.currentUserId,
-            prioridade,
-            prazo: prazo || null,
-            categoria: categoria.trim() || undefined,
-            tags: tags
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean),
-          },
-          NOME_POR_ID[state.currentUserId] ?? state.currentUserId
-        ),
+        task: createTask(state.tasks, {
+          titulo: titulo.trim(),
+          descricao: descricao.trim(),
+          prioridade,
+          prazo: prazo || null,
+          categoria: categoria.trim() || undefined,
+          tags: tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
+        }),
       });
     }
     onClose();
@@ -110,29 +101,15 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
             placeholder="Detalhes da atividade..."
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          {!isEdit && (
-            <div>
-              <label htmlFor="task-responsavel" className="mb-1 block text-sm font-medium text-slate-700">Responsável *</label>
-              <select id="task-responsavel" value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)} className={inputCls}>
-                {COLABORADORES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div>
-            <label htmlFor="task-prioridade" className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
-            <select id="task-prioridade" value={prioridade} onChange={(e) => setPrioridade(e.target.value as Priority)} className={inputCls}>
-              {(Object.keys(PRIORITY_LABELS) as Priority[]).map((p) => (
-                <option key={p} value={p}>
-                  {PRIORITY_LABELS[p]}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label htmlFor="task-prioridade" className="mb-1 block text-sm font-medium text-slate-700">Prioridade</label>
+          <select id="task-prioridade" value={prioridade} onChange={(e) => setPrioridade(e.target.value as Priority)} className={inputCls}>
+            {(Object.keys(PRIORITY_LABELS) as Priority[]).map((p) => (
+              <option key={p} value={p}>
+                {PRIORITY_LABELS[p]}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="task-prazo" className="mb-1 block text-sm font-medium text-slate-700">Prazo</label>
