@@ -28,7 +28,7 @@ const baseState: AppState = {
   ],
   view: 'lista',
   sidebarOpen: false,
-  filters: { search: '', status: [], prioridade: [], prazo: 'todas', favoritas: false, categorias: [], projeto: null, sortBy: null },
+  filters: { search: '', status: [], prioridade: [], prazo: 'todas', favoritas: false, categorias: [], tags: [] },
   kpiCollapsed: false,
   filtersOpen: true,
   modal: { type: 'none' },
@@ -376,13 +376,12 @@ describe('appReducer — controles de interface', () => {
     expect(next.view).toBe('quadro');
   });
 
-  it('RESET_FILTERS limpa filtros e preserva a ordenação', () => {
+  it('RESET_FILTERS limpa os filtros', () => {
     const comFiltros: AppState = {
       ...baseState,
-      filters: { ...baseState.filters, status: ['A_FAZER'], favoritas: true, sortBy: 'titulo' },
+      filters: { ...baseState.filters, status: ['A_FAZER'], favoritas: true },
     };
     const next = appReducer(comFiltros, { type: 'RESET_FILTERS' });
-    expect(next.filters.sortBy).toBe('titulo');
     expect(next.filters.status).toEqual([]);
     expect(next.filters.favoritas).toBe(false);
   });

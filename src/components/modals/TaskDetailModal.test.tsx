@@ -4,6 +4,12 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TaskDetailModal from './TaskDetailModal';
 import { renderWithApp } from '../../test/renderWithApp';
+import { useApp } from '../../context/AppContext';
+
+function ModalProbe() {
+  const { state } = useApp();
+  return <output data-testid="modal-probe">{state.modal.type}</output>;
+}
 
 beforeEach(() => localStorage.clear());
 
@@ -71,5 +77,33 @@ describe('TaskDetailModal', () => {
     await user.click(screen.getByRole('button', { name: 'Adicionar anotação' }));
 
     expect(await screen.findByText('Contexto importante para a reunião')).toBeInTheDocument();
+  });
+
+  it('"Suspender" abre o modal de suspensão', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <TaskDetailModal taskId="TA-005" onClose={() => {}} />
+        <ModalProbe />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Suspender' }));
+
+    expect(screen.getByTestId('modal-probe').textContent).toBe('suspend');
+  });
+
+  it('"Arquivar" abre o modal de arquivamento', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <TaskDetailModal taskId="TA-005" onClose={() => {}} />
+        <ModalProbe />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Arquivar' }));
+
+    expect(screen.getByTestId('modal-probe').textContent).toBe('archive');
   });
 });

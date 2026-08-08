@@ -24,6 +24,12 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
   const [overStatus, setOverStatus] = useState<TaskStatus | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
 
+  // Com filtro de status ativo, exibe apenas as colunas dos status selecionados (na ordem canônica).
+  const visibleColumns =
+    state.filters.status.length > 0
+      ? STATUS_ORDER.filter((s) => state.filters.status.includes(s))
+      : COLUMNS;
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white py-16 text-slate-400 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500">
@@ -48,9 +54,6 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
   };
 
   const canDropOn = (status: TaskStatus): boolean => {
-    // ARQUIVADA exige motivo (ArchiveModal) e SUSPENSA exige data de retorno (SuspendModal):
-    // ambos são feitos por modal, não por drag & drop.
-    if (status === 'ARQUIVADA' || status === 'SUSPENSA') return false;
     if (!dragInfo) return true;
     const dragged = state.tasks.find((t) => t.id === dragInfo.id);
     if (!dragged) return false;
@@ -67,12 +70,20 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
     e.preventDefault();
     setOverStatus(null);
     setDragInfo(null);
-    if (status === 'ARQUIVADA' || status === 'SUSPENSA') return;
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     const dragged = state.tasks.find((t) => t.id === taskId);
     if (!dragged || dragged.status === status) return;
     if (!canTransition(dragged.status, status)) return;
+    // ARQUIVADA exige motivo e SUSPENSA exige data de retorno: abrem modal de confirmação.
+    if (status === 'ARQUIVADA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'archive', taskId } });
+      return;
+    }
+    if (status === 'SUSPENSA') {
+      dispatch({ type: 'OPEN_MODAL', modal: { type: 'suspend', taskId } });
+      return;
+    }
     dispatch({ type: 'CHANGE_STATUS', taskId, novoStatus: status });
   };
 
@@ -83,7 +94,7 @@ export default function TaskKanban({ tasks, totalCount, onConfirmComplete }: Tas
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {COLUMNS.map((status) => {
+      {visibleColumns.map((status) => {
         const columnTasks = tasks.filter((t) => t.status === status);
         const isOver = overStatus === status;
         const allowed = canDropOn(status);

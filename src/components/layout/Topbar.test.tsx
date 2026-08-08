@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import Topbar from './Topbar';
@@ -17,6 +17,7 @@ function StateProbe() {
         filtersOpen: state.filtersOpen,
         favoritas: state.filters.favoritas,
         tema: state.tema,
+        modal: state.modal.type,
       })}
     </output>
   );
@@ -59,6 +60,31 @@ describe('Topbar — campo de busca', () => {
 
     expect(input).toHaveValue('');
     expect(screen.queryByRole('button', { name: 'Limpar busca' })).not.toBeInTheDocument();
+  });
+
+  it('não possui placeholder', () => {
+    renderWithApp(<SearchHarness />);
+    expect(screen.getByRole('textbox')).not.toHaveAttribute('placeholder');
+  });
+
+  it('Esc com termo preenchido limpa a busca', () => {
+    renderWithApp(<SearchHarness initial="relatório" />);
+    const input = screen.getByRole('textbox');
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input).toHaveValue('');
+  });
+
+  it('Esc com busca vazia remove o foco do campo', () => {
+    renderWithApp(<SearchHarness />);
+    const input = screen.getByRole('textbox');
+    input.focus();
+    expect(input).toHaveFocus();
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input).not.toHaveFocus();
   });
 });
 
@@ -143,5 +169,124 @@ describe('Topbar — controles do topo', () => {
     expect(screen.getByRole('button', { name: 'Ativar tema claro' })).toBeInTheDocument();
     expect(JSON.parse(screen.getByTestId('probe').textContent!).tema).toBe('escuro');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('persiste a visualização escolhida no localStorage', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: 'Ver como Quadro' }));
+
+    expect(localStorage.getItem('tarefas.view')).toBe('quadro');
+  });
+
+  it('restaura a visualização salva ao iniciar', () => {
+    localStorage.setItem('tarefas.view', 'quadro');
+    renderWithApp(
+      <>
+        <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />
+        <StateProbe />
+      </>
+    );
+
+    expect(JSON.parse(screen.getByTestId('probe').textContent!).view).toBe('quadro');
+    expect(screen.getByRole('button', { name: 'Ver como Lista' })).toBeInTheDocument();
+  });
+
+  it('abre o modal de atalhos pelo botão', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />
+        <StateProbe />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Atalhos de teclado' }));
+
+    expect(JSON.parse(screen.getByTestId('probe').textContent!).modal).toBe('shortcuts');
+  });
+});
+
+describe('Topbar — indicador de notificações', () => {
+  function fakeNotification(permission: NotificationPermission) {
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission, requestPermission: vi.fn() },
+    });
+  }
+
+  function renderTopbar() {
+    renderWithApp(<Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />);
+  }
+
+  it('com permissão padrão exibe o botão para ativar notificações', () => {
+    fakeNotification('default');
+    renderTopbar();
+    expect(screen.getByRole('button', { name: 'Ativar notificações de lembrete' })).toBeInTheDocument();
+    delete (window as { Notification?: unknown }).Notification;
+  });
+
+  it('com permissão concedida exibe apenas o ícone com título explicativo', () => {
+    fakeNotification('granted');
+    renderTopbar();
+    expect(screen.getByTitle('Notificações de lembrete ativas')).toBeInTheDocument();
+    expect(screen.queryByText('Notificações ativas')).not.toBeInTheDocument();
+    delete (window as { Notification?: unknown }).Notification;
+  });
+});
+
+describe('Topbar — menu "Mais opções"', () => {
+  it('abre o menu com as ações secundárias', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: 'Mais opções' }));
+
+    expect(screen.getByRole('button', { name: 'Tema' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Indicadores' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filtros' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Favoritas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Atalhos' })).toBeInTheDocument();
+  });
+
+  it('a ação "Filtros" do menu alterna filtersOpen', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />
+        <StateProbe />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Mais opções' }));
+    await user.click(screen.getByRole('button', { name: 'Filtros' }));
+
+    expect(JSON.parse(screen.getByTestId('probe').textContent!).filtersOpen).toBe(false);
+  });
+
+  it('a ação "Atalhos" do menu abre o modal de atalhos', async () => {
+    const user = userEvent.setup();
+    renderWithApp(
+      <>
+        <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />
+        <StateProbe />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Mais opções' }));
+    await user.click(screen.getByRole('button', { name: 'Atalhos' }));
+
+    expect(JSON.parse(screen.getByTestId('probe').textContent!).modal).toBe('shortcuts');
+  });
+
+  it('fecha o menu após selecionar uma ação', async () => {
+    const user = userEvent.setup();
+    renderWithApp(<Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: 'Mais opções' }));
+    await user.click(screen.getByRole('button', { name: 'Favoritas' }));
+
+    expect(screen.queryByRole('button', { name: 'Favoritas' })).not.toBeInTheDocument();
   });
 });

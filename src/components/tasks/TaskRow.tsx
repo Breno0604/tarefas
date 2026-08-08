@@ -73,7 +73,7 @@ export default function TaskRow({
       <td className="px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <span
-            title={draggable ? undefined : 'Remova filtros e ordenação para reordenar'}
+            title={draggable ? undefined : 'Remova filtros e busca para reordenar'}
             className="shrink-0"
           >
             <GripVertical

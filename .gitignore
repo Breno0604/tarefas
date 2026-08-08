@@ -10,3 +10,5 @@ coverage/
 # Ferramentas/agentes (estado de sessão local)
 .omo/
 .playwright-mcp/
+.codegraph/
+graphify-out/

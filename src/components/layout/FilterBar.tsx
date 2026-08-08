@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, FilterX } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { hasActiveFilters, progressoProjeto, projetosDe, SEM_PROJETO } from '../../utils/tasks';
+import { hasActiveFilters, SEM_CATEGORIA } from '../../utils/tasks';
 import { PRIORITY_LABELS, STATUS_LABELS } from '../../utils/status';
-import type { Filters, PrazoFilter, Priority, TaskSort, TaskStatus } from '../../types';
+import type { Filters, PrazoFilter, Priority, TaskStatus } from '../../types';
+
+const LIMPAR = '__limpar__';
 
 function MultiSelect<T extends string>({
   label,
@@ -51,6 +53,16 @@ function MultiSelect<T extends string>({
       </button>
       {open && (
         <div className="absolute top-full left-0 z-[60] mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+          <button
+            onClick={() => {
+              onChange([]);
+              setOpen(false);
+            }}
+            className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700"
+          >
+            <span>Limpar</span>
+          </button>
+          <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
           {options.map((opt) => {
             const isSelected = selected.includes(opt.value);
             return (
@@ -89,10 +101,19 @@ export default function FilterBar() {
     value: p,
     label: PRIORITY_LABELS[p],
   }));
-  const categoriaOptions = Array.from(
-    new Set(state.tasks.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
-  ).map((c) => ({ value: c, label: c }));
-  const projetos = projetosDe(state.tasks);
+  const categoriaOptions = [
+    ...Array.from(
+      new Set(state.tasks.map((t) => t.categoria).filter((c): c is string => Boolean(c)))
+    )
+      .sort((a, b) => a.localeCompare(b))
+      .map((c) => ({ value: c, label: c })),
+    { value: SEM_CATEGORIA, label: 'Sem categoria' },
+  ];
+  const tagsOptions = Array.from(
+    new Set(state.tasks.flatMap((t) => t.tags ?? []))
+  )
+    .sort((a, b) => a.localeCompare(b))
+    .map((v) => ({ value: v, label: v }));
 
   const prazoOptions: { value: PrazoFilter; label: string }[] = [
     { value: 'todas', label: 'Todas as datas' },
@@ -102,14 +123,6 @@ export default function FilterBar() {
     { value: 'semPrazo', label: 'Sem prazo' },
   ];
 
-  const sortOptions: { value: TaskSort | null; label: string }[] = [
-    { value: null, label: 'Ordem original' },
-    { value: 'criadaEm', label: 'Data de criação' },
-    { value: 'titulo', label: 'Título' },
-    { value: 'prazo', label: 'Prazo' },
-    { value: 'prioridade', label: 'Prioridade' },
-  ];
-
   const hasFilters = hasActiveFilters(filters);
 
   return (
@@ -117,47 +130,20 @@ export default function FilterBar() {
       <MultiSelect label="Status" options={statusOptions} selected={filters.status} onChange={(v) => update({ status: v })} />
       <MultiSelect label="Prioridade" options={prioridadeOptions} selected={filters.prioridade} onChange={(v) => update({ prioridade: v })} />
       <MultiSelect label="Categoria" options={categoriaOptions} selected={filters.categorias} onChange={(v) => update({ categorias: v })} />
-
-      <select
-        value={filters.projeto ?? ''}
-        onChange={(e) => update({ projeto: e.target.value || null })}
-        title="Projeto"
-        className={selectCls}
-      >
-        <option value="">Todos os projetos</option>
-        <option value={SEM_PROJETO}>Sem projeto</option>
-        {projetos.map((p) => {
-          const prog = progressoProjeto(state.tasks, p);
-          return (
-            <option key={p} value={p}>
-              {p} ({prog.concluidas}/{prog.total})
-            </option>
-          );
-        })}
-      </select>
+      <MultiSelect label="Tags" options={tagsOptions} selected={filters.tags} onChange={(v) => update({ tags: v })} />
 
       <select
         value={filters.prazo}
-        onChange={(e) => update({ prazo: e.target.value as PrazoFilter })}
+        onChange={(e) =>
+          update({ prazo: (e.target.value === LIMPAR ? 'todas' : e.target.value) as PrazoFilter })
+        }
         title="Prazo"
         className={selectCls}
       >
+        <option value={LIMPAR}>Limpar</option>
         {prazoOptions.map((p) => (
           <option key={p.value} value={p.value}>
             {p.label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={filters.sortBy ?? ''}
-        onChange={(e) => update({ sortBy: (e.target.value || null) as TaskSort | null })}
-        title="Ordenar por"
-        className={selectCls}
-      >
-        {sortOptions.map((s) => (
-          <option key={s.value ?? 'null'} value={s.value ?? ''}>
-            {s.label}
           </option>
         ))}
       </select>

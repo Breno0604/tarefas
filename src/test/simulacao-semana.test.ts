@@ -12,7 +12,7 @@ import { TAREFAS } from '../data/mockData';
 import { LocalStorageProvider } from '../services/providers/LocalStorageProvider';
 import { isDueToday, isOverdue } from '../utils/date';
 import type { Task } from '../types';
-import { PRIORITY_RANK, STATUS_LABELS } from '../utils/status';
+import { STATUS_LABELS } from '../utils/status';
 
 /* ══════════════════════════════════════════════════════════════════
    SIMULAÇÃO — 1 SEMANA DE USO (06/08/2026 a 12/08/2026)
@@ -471,12 +471,6 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     const soArquivadas = filterTasks(state.tasks, { ...EMPTY_FILTERS, status: ['ARQUIVADA'] }, now);
     expect(soArquivadas).toHaveLength(6);
     expect(soArquivadas.every((t) => t.status === 'ARQUIVADA')).toBe(true);
-    const ordenadas = filterTasks(state.tasks, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, now);
-    for (let i = 1; i < ordenadas.length; i++) {
-      expect(PRIORITY_RANK[ordenadas[i - 1].prioridade]).toBeLessThanOrEqual(
-        PRIORITY_RANK[ordenadas[i].prioridade]
-      );
-    }
 
     // Pilha de undo limitada a 50
     expect(state.past.length).toBeLessThanOrEqual(50);
@@ -506,6 +500,9 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     linhas.push(timeline(ta001Final));
     linhas.push('', `  HISTÓRICO de TA-059 (${propostaFinal.titulo}) — final: ${STATUS_LABELS[propostaFinal.status]}`);
     linhas.push(timeline(propostaFinal));
+    const ta002Report = state.tasks.find((t) => t.id === 'TA-002')!;
+    linhas.push('', `  HISTÓRICO de TA-002 (${ta002Report.titulo}) — final: ${STATUS_LABELS[ta002Report.status]}`);
+    linhas.push(timeline(ta002Report));
     linhas.push('', '  RESUMO: 5 criadas · 5 concluídas · 2 arquivadas · 1 desarquivada · 1 excluída · 1 duplicada · 1 reaberta · 1 editada · 1 desfeita');
     linhas.push('  Persistência v2: salvo → carregado (round-trip OK) · pilha de undo ≤ 50');
     linhas.push('═'.repeat(74), '');

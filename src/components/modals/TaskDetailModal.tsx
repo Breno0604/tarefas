@@ -71,12 +71,10 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
     }
     if (novoStatus === 'ARQUIVADA') {
       dispatch({ type: 'OPEN_MODAL', modal: { type: 'archive', taskId: task.id } });
-      onClose();
       return;
     }
     if (novoStatus === 'SUSPENSA') {
       dispatch({ type: 'OPEN_MODAL', modal: { type: 'suspend', taskId: task.id } });
-      onClose();
       return;
     }
     changeStatus(novoStatus);

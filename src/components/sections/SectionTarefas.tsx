@@ -22,7 +22,7 @@ export default function SectionTarefas() {
     [state.tasks, state.filters]
   );
   const indicators = useMemo(() => computeIndicators(state.tasks), [state.tasks]);
-  const reorderEnabled = state.filters.sortBy === null && !hasActiveFilters(state.filters);
+  const reorderEnabled = !hasActiveFilters(state.filters);
 
   const confirmComplete = (task: Task) => setConfirm({ task });
 

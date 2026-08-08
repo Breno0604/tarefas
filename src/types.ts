@@ -9,7 +9,6 @@ export type TaskStatus =
 export type Priority = 'baixa' | 'media' | 'alta' | 'critica';
 export type TaskView = 'lista' | 'quadro';
 export type PrazoFilter = 'todas' | 'hoje' | 'vencidas' | 'proximos7' | 'semPrazo';
-export type TaskSort = 'criadaEm' | 'titulo' | 'prazo' | 'prioridade';
 export type Recorrencia = 'diaria' | 'semanal' | 'mensal';
 export type Tema = 'claro' | 'escuro';
 
@@ -65,8 +64,7 @@ export interface Filters {
   prazo: PrazoFilter;
   favoritas: boolean;
   categorias: string[];
-  projeto: string | null; // null = todos; '__sem_projeto__' = sem projeto
-  sortBy: TaskSort | null; // null = ordem original (do seed)
+  tags: string[]; // tags selecionadas (qualquer correspondência)
 }
 
 export type ModalState =
@@ -76,4 +74,5 @@ export type ModalState =
   | { type: 'detail'; taskId: string }
   | { type: 'archive'; taskId: string }
   | { type: 'suspend'; taskId: string }
-  | { type: 'history'; taskId: string };
+  | { type: 'history'; taskId: string }
+  | { type: 'shortcuts' };

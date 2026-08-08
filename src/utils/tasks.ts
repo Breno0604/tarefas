@@ -3,15 +3,13 @@ import type {
   Priority,
   Recorrencia,
   Task,
-  TaskSort,
   TaskStatus,
 } from '../types';
 import { isDueToday, isOverdue, isWithinDays } from './date';
-import { PRIORITY_RANK } from './status';
 import { newHistoryEntry } from './history';
 
-/** Valor do filtro `projeto` que representa tarefas sem projeto. */
-export const SEM_PROJETO = '__sem_projeto__';
+/** Valor do filtro `categorias` que representa tarefas sem categoria. */
+export const SEM_CATEGORIA = '__sem_categoria__';
 
 export const EMPTY_FILTERS: Filters = {
   search: '',
@@ -20,8 +18,7 @@ export const EMPTY_FILTERS: Filters = {
   prazo: 'todas',
   favoritas: false,
   categorias: [],
-  projeto: null,
-  sortBy: null,
+  tags: [],
 };
 
 export function hasActiveFilters(filters: Filters): boolean {
@@ -32,41 +29,43 @@ export function hasActiveFilters(filters: Filters): boolean {
     filters.prazo !== 'todas' ||
     filters.favoritas ||
     filters.categorias.length > 0 ||
-    filters.projeto !== null
+    filters.tags.length > 0
   );
 }
-
-const SORTERS: Record<TaskSort, (a: Task, b: Task) => number> = {
-  criadaEm: (a, b) => a.criadaEm.localeCompare(b.criadaEm),
-  titulo: (a, b) => a.titulo.localeCompare(b.titulo),
-  prazo: (a, b) => (a.prazo ?? '').localeCompare(b.prazo ?? ''),
-  prioridade: (a, b) => PRIORITY_RANK[a.prioridade] - PRIORITY_RANK[b.prioridade],
-};
 
 export function filterTasks(
   tasks: Task[],
   filters: Filters,
   now: Date = new Date()
 ): Task[] {
-  const q = filters.search.trim().toLowerCase();
-  const out = tasks.filter((t) => {
-    if (q) {
-      const hay = `${t.id} ${t.titulo} ${t.descricao}`.toLowerCase();
-      if (!hay.includes(q)) return false;
+  // Busca: termos livres (contra id/título/descrição/tags) + termos "#tag" (contra tags apenas).
+  const tokens = filters.search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tagTokens = tokens.filter((tok) => tok.startsWith('#')).map((tok) => tok.slice(1));
+  const textTokens = tokens.filter((tok) => !tok.startsWith('#'));
+  return tasks.filter((t) => {
+    if (textTokens.length > 0) {
+      const hay = `${t.id} ${t.titulo} ${t.descricao} ${(t.tags ?? []).join(' ')}`.toLowerCase();
+      if (!textTokens.every((tok) => hay.includes(tok))) return false;
+    }
+    if (tagTokens.length > 0) {
+      const tagText = (t.tags ?? []).join(' ').toLowerCase();
+      if (!tagTokens.every((tok) => tagText.includes(tok))) return false;
     }
     if (filters.status.length > 0 && !filters.status.includes(t.status)) return false;
     if (filters.prioridade.length > 0 && !filters.prioridade.includes(t.prioridade))
       return false;
     if (filters.favoritas && !t.favorita) return false;
-    if (
-      filters.categorias.length > 0 &&
-      (!t.categoria || !filters.categorias.includes(t.categoria))
-    )
-      return false;
-    if (filters.projeto === SEM_PROJETO) {
-      if (t.projeto) return false;
-    } else if (filters.projeto && t.projeto !== filters.projeto) {
-      return false;
+    if (filters.categorias.length > 0) {
+      const semCategoria = filters.categorias.includes(SEM_CATEGORIA);
+      const cats = filters.categorias.filter((c) => c !== SEM_CATEGORIA);
+      const passouSemCategoria = semCategoria && !t.categoria;
+      const passouCategoria =
+        cats.length > 0 && typeof t.categoria === 'string' && cats.includes(t.categoria);
+      if (!passouSemCategoria && !passouCategoria) return false;
+    }
+    if (filters.tags.length > 0) {
+      const tagsDaTarefa = t.tags ?? [];
+      if (!tagsDaTarefa.some((tag) => filters.tags.includes(tag))) return false;
     }
     if (filters.prazo === 'hoje' && !isDueToday(t.prazo, now)) return false;
     if (filters.prazo === 'vencidas' && !isOverdue(t.prazo, t.status, now)) return false;
@@ -74,8 +73,6 @@ export function filterTasks(
     if (filters.prazo === 'semPrazo' && t.prazo !== null) return false;
     return true;
   });
-  if (filters.sortBy) return [...out].sort(SORTERS[filters.sortBy]);
-  return out;
 }
 
 export interface Indicators {
@@ -160,18 +157,6 @@ export function projetosDe(tasks: Task[]): string[] {
   return Array.from(new Set(tasks.map((t) => t.projeto).filter((p): p is string => Boolean(p)))).sort(
     (a, b) => a.localeCompare(b)
   );
-}
-
-/** Progresso de conclusão de um projeto (todas as tarefas, incluindo canceladas). */
-export function progressoProjeto(tasks: Task[], projeto: string): {
-  total: number;
-  concluidas: number;
-} {
-  const doProjeto = tasks.filter((t) => t.projeto === projeto);
-  return {
-    total: doProjeto.length,
-    concluidas: doProjeto.filter((t) => t.status === 'CONCLUIDA').length,
-  };
 }
 
 /** Gera o próximo id sequencial (TA-NNN) a partir das tarefas existentes. */

@@ -1,14 +1,30 @@
 // @vitest-environment jsdom
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import TaskKanban from './TaskKanban'
 import { renderWithApp } from '../../test/renderWithApp'
 import { useApp } from '../../context/AppContext'
 import { TAREFAS } from '../../data/mockData'
+import type { TaskStatus } from '../../types'
 
 function Probe({ id }: { id: string }) {
   const { state } = useApp()
   return <output data-testid="probe">{state.tasks.find((t) => t.id === id)?.status}</output>
+}
+
+function ModalProbe() {
+  const { state } = useApp()
+  return <output data-testid="modal-probe">{state.modal.type}</output>
+}
+
+function SetStatusFilter({ status }: { status: TaskStatus[] }) {
+  const { dispatch } = useApp()
+  useEffect(() => {
+    dispatch({ type: 'SET_FILTERS', filters: { status } })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return null
 }
 
 function renderKanban(props: Partial<Parameters<typeof TaskKanban>[0]> = {}) {
@@ -38,6 +54,32 @@ describe('TaskKanban', () => {
   it('renderiza cards de tarefa com títulos', () => {
     renderKanban()
     expect(screen.getByText('Corrigir bug de checkout')).toBeInTheDocument()
+  })
+
+  it('exibe somente as colunas dos status selecionados', () => {
+    renderWithApp(
+      <>
+        <SetStatusFilter status={['A_FAZER', 'EM_ANDAMENTO']} />
+        <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
+      </>
+    )
+
+    expect(screen.getByText('A fazer')).toBeInTheDocument()
+    expect(screen.getByText('Em andamento')).toBeInTheDocument()
+    expect(screen.queryByText('Caixa de entrada')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suspensa')).not.toBeInTheDocument()
+    expect(screen.queryByText('Concluída')).not.toBeInTheDocument()
+    expect(screen.queryByText('Arquivada')).not.toBeInTheDocument()
+  })
+
+  it('exibe todos os status quando nenhum está selecionado', () => {
+    renderKanban()
+    expect(screen.getByText('Caixa de entrada')).toBeInTheDocument()
+    expect(screen.getByText('A fazer')).toBeInTheDocument()
+    expect(screen.getByText('Em andamento')).toBeInTheDocument()
+    expect(screen.getByText('Suspensa')).toBeInTheDocument()
+    expect(screen.getByText('Concluída')).toBeInTheDocument()
+    expect(screen.getByText('Arquivada')).toBeInTheDocument()
   })
 
   it('mostra estado vazio quando não há tarefas e totalCount é zero', () => {
@@ -88,12 +130,13 @@ describe('TaskKanban', () => {
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CAIXA_ENTRADA'))
   })
 
-  it('drop para ARQUIVADA não altera o status (arquivamento exige motivo)', async () => {
+  it('drop para ARQUIVADA abre o modal de arquivamento (sem mudar o status ainda)', async () => {
     const taskId = 'TA-001'
     renderWithApp(
       <>
         <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
         <Probe id={taskId} />
+        <ModalProbe />
       </>
     )
 
@@ -104,15 +147,19 @@ describe('TaskKanban', () => {
     fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
     fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
 
-    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('CAIXA_ENTRADA'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toBe('CAIXA_ENTRADA')
+      expect(screen.getByTestId('modal-probe').textContent).toBe('archive')
+    })
   })
 
-  it('drop para SUSPENSA não altera o status (suspensão exige data de retorno)', async () => {
-    const taskId = 'TA-005' // EM_ANDAMENTO → SUSPENSA é transição válida, mas exige retornoEm
+  it('drop para SUSPENSA abre o modal de suspensão (sem mudar o status ainda)', async () => {
+    const taskId = 'TA-005' // EM_ANDAMENTO → SUSPENSA é transição válida
     renderWithApp(
       <>
         <TaskKanban tasks={TAREFAS} totalCount={TAREFAS.length} onConfirmComplete={() => {}} />
         <Probe id={taskId} />
+        <ModalProbe />
       </>
     )
 
@@ -123,6 +170,9 @@ describe('TaskKanban', () => {
     fireEvent.dragOver(column, { dataTransfer: { dropEffect: 'move' }, preventDefault: vi.fn() })
     fireEvent.drop(column, { dataTransfer: { getData: () => taskId } })
 
-    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('EM_ANDAMENTO'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe').textContent).toBe('EM_ANDAMENTO')
+      expect(screen.getByTestId('modal-probe').textContent).toBe('suspend')
+    })
   })
 })

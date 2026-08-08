@@ -87,7 +87,7 @@ export default function TasksTable({
         {!reorderEnabled && (
           <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
             <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-            Reordenação por arrastar fica disponível sem filtros, busca ou ordenação — use "Limpar" e "Ordem original".
+            Reordenação por arrastar fica disponível sem filtros ou busca — use "Limpar" para limpar os filtros.
           </div>
         )}
         <table className="w-full min-w-[900px] text-left">

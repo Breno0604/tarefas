@@ -7,10 +7,9 @@ import {
   filterTasks,
   hasActiveFilters,
   nextTaskId,
-  progressoProjeto,
   projetosDe,
   proximaOcorrencia,
-  SEM_PROJETO,
+  SEM_CATEGORIA,
   subtarefasProgresso,
 } from './tasks';
 
@@ -73,29 +72,70 @@ describe('filterTasks', () => {
     expect(result[0].id).toBe('TA-SEMPRAZO');
   });
 
-  it('ordena por título', () => {
-    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'titulo' }, NOW);
-    const titulos = result.map((t) => t.titulo);
-    expect([...titulos].sort((a, b) => a.localeCompare(b))).toEqual(titulos);
+  it('filtra por tags (qualquer correspondência)', () => {
+    const comTag = { ...TAREFAS[0], id: 'TA-TAG', tags: ['urgente', 'bug'] };
+    const semTag = { ...TAREFAS[1], id: 'TA-SEMTAG', tags: ['docs'] };
+    const result = filterTasks(
+      [comTag, semTag, TAREFAS[2]],
+      { ...EMPTY_FILTERS, tags: ['urgente', 'docs'] },
+      NOW
+    );
+    expect(result.map((t) => t.id).sort()).toEqual(['TA-SEMTAG', 'TA-TAG']);
   });
 
-  it('ordena por prioridade (crítica primeiro)', () => {
-    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, sortBy: 'prioridade' }, NOW);
-    expect(result[0].prioridade).toBe('critica');
-  });
-
-  it('filtra por projeto específico', () => {
-    const result = filterTasks(TAREFAS, { ...EMPTY_FILTERS, projeto: 'Lançamento 2.0' }, NOW);
-    expect(result.length).toBeGreaterThan(0);
-    expect(result.every((t) => t.projeto === 'Lançamento 2.0')).toBe(true);
-  });
-
-  it('filtra tarefas sem projeto', () => {
-    const comProjeto = { ...TAREFAS[0], id: 'TA-PJ', projeto: 'X' };
-    const semProjeto = { ...TAREFAS[1], id: 'TA-SP' };
-    const result = filterTasks([comProjeto, semProjeto], { ...EMPTY_FILTERS, projeto: SEM_PROJETO }, NOW);
+  it('filtra por categoria "Sem categoria"', () => {
+    const comCategoria = { ...TAREFAS[0], id: 'TA-CAT', categoria: 'Dev' };
+    const semCategoria = { ...TAREFAS[1], id: 'TA-SEMCAT' };
+    const result = filterTasks(
+      [comCategoria, semCategoria],
+      { ...EMPTY_FILTERS, categorias: [SEM_CATEGORIA] },
+      NOW
+    );
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('TA-SP');
+    expect(result[0].id).toBe('TA-SEMCAT');
+  });
+
+  it('combina "Sem categoria" com categorias específicas', () => {
+    const dev = { ...TAREFAS[0], id: 'TA-DEV', categoria: 'Dev' };
+    const semCategoria = { ...TAREFAS[1], id: 'TA-SEMCAT' };
+    const marketing = { ...TAREFAS[2], id: 'TA-MKT', categoria: 'Marketing' };
+    const result = filterTasks(
+      [dev, semCategoria, marketing],
+      { ...EMPTY_FILTERS, categorias: ['Dev', SEM_CATEGORIA] },
+      NOW
+    );
+    expect(result.map((t) => t.id).sort()).toEqual(['TA-DEV', 'TA-SEMCAT']);
+  });
+
+  it('busca por tag via termo livre encontra tarefas com a tag', () => {
+    const comTag = { ...TAREFAS[0], id: 'TA-TAG', tags: ['urgente'] };
+    const result = filterTasks([comTag, TAREFAS[1]], { ...EMPTY_FILTERS, search: 'urgente' }, NOW);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-TAG');
+  });
+
+  it('busca "#tag" corresponde apenas à tag, não ao título', () => {
+    const porTitulo = { ...TAREFAS[0], id: 'TA-TITULO', titulo: 'urgente hoje', tags: [] };
+    const porTag = { ...TAREFAS[1], id: 'TA-TAG', tags: ['urgente'] };
+    const result = filterTasks(
+      [porTitulo, porTag],
+      { ...EMPTY_FILTERS, search: '#urgente' },
+      NOW
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-TAG');
+  });
+
+  it('busca com múltiplos termos exige todos (E)', () => {
+    const completa = { ...TAREFAS[0], id: 'TA-OK', titulo: 'alpha beta' };
+    const parcial = { ...TAREFAS[1], id: 'TA-PAR', titulo: 'alpha' };
+    const result = filterTasks(
+      [completa, parcial],
+      { ...EMPTY_FILTERS, search: 'alpha beta' },
+      NOW
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('TA-OK');
   });
 });
 
@@ -109,13 +149,8 @@ describe('hasActiveFilters', () => {
     expect(hasActiveFilters({ ...EMPTY_FILTERS, status: ['A_FAZER'] })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, favoritas: true })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, categorias: ['Marketing'] })).toBe(true);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, tags: ['bug'] })).toBe(true);
     expect(hasActiveFilters({ ...EMPTY_FILTERS, prazo: 'hoje' })).toBe(true);
-    expect(hasActiveFilters({ ...EMPTY_FILTERS, projeto: 'Lançamento 2.0' })).toBe(true);
-    expect(hasActiveFilters({ ...EMPTY_FILTERS, projeto: SEM_PROJETO })).toBe(true);
-  });
-
-  it('ordenação não conta como filtro', () => {
-    expect(hasActiveFilters({ ...EMPTY_FILTERS, sortBy: 'titulo' })).toBe(false);
   });
 });
 
@@ -250,13 +285,12 @@ describe('subtarefasProgresso / projetos', () => {
     expect(subtarefasProgresso(TAREFAS[0])).toEqual({ feitas: 0, total: 0, pct: 0 });
   });
 
-  it('lista projetos únicos ordenados e progresso por projeto', () => {
+  it('lista projetos únicos ordenados', () => {
     const comProjetos = [
       { ...TAREFAS[0], id: 'TA-A', projeto: 'Zeta' },
       { ...TAREFAS[1], id: 'TA-B', projeto: 'Alpha', status: 'CONCLUIDA' as const },
       { ...TAREFAS[2], id: 'TA-C', projeto: 'Alpha' },
     ];
     expect(projetosDe(comProjetos)).toEqual(['Alpha', 'Zeta']);
-    expect(progressoProjeto(comProjetos, 'Alpha')).toEqual({ total: 2, concluidas: 1 });
   });
 });

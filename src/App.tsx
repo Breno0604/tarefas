@@ -10,6 +10,7 @@ import TaskDetailModal from './components/modals/TaskDetailModal';
 import ArchiveModal from './components/modals/ArchiveModal';
 import SuspendModal from './components/modals/SuspendModal';
 import HistoryModal from './components/modals/HistoryModal';
+import ShortcutsModal from './components/modals/ShortcutsModal';
 
 /** Dispara notificações do navegador para lembretes vencidos ainda não notificados. */
 function useLembretes() {
@@ -41,7 +42,7 @@ function useLembretes() {
   }, [state.tasks, dispatch]);
 }
 
-/** Atalhos: N nova tarefa · / busca · V alternar lista/quadro · Ctrl+Z desfazer. */
+/** Atalhos: N nova tarefa · / ou Ctrl+F busca · V lista/quadro · F favoritas · T tema · G indicadores · ? atalhos · Ctrl+Z desfazer. */
 function useShortcuts() {
   const { state, dispatch } = useApp();
 
@@ -54,10 +55,18 @@ function useShortcuts() {
           alvo.tagName === 'TEXTAREA' ||
           alvo.tagName === 'SELECT' ||
           alvo.isContentEditable);
+      const focusarBusca = () => {
+        const input = document.querySelector<HTMLInputElement>('input[aria-label="Buscar tarefas"]');
+        input?.focus();
+        input?.select();
+      };
       if (e.ctrlKey || e.metaKey) {
         if (e.key.toLowerCase() === 'z') {
           e.preventDefault();
           dispatch({ type: 'UNDO' });
+        } else if (e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          focusarBusca();
         }
         return;
       }
@@ -67,16 +76,22 @@ function useShortcuts() {
         dispatch({ type: 'OPEN_MODAL', modal: { type: 'create' } });
       } else if (k === '/') {
         e.preventDefault();
-        const input = document.querySelector<HTMLInputElement>('input[aria-label="Buscar tarefas"]');
-        input?.focus();
-        input?.select();
+        focusarBusca();
       } else if (k === 'v') {
         dispatch({ type: 'SET_VIEW', view: state.view === 'lista' ? 'quadro' : 'lista' });
+      } else if (k === 'f') {
+        dispatch({ type: 'SET_FILTERS', filters: { favoritas: !state.filters.favoritas } });
+      } else if (k === 't') {
+        dispatch({ type: 'TOGGLE_TEMA' });
+      } else if (k === 'g') {
+        dispatch({ type: 'TOGGLE_KPI_COLLAPSED' });
+      } else if (k === '?') {
+        dispatch({ type: 'OPEN_MODAL', modal: { type: 'shortcuts' } });
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [state.modal, state.view, dispatch]);
+  }, [state.modal, state.view, state.filters.favoritas, state.tema, state.kpiCollapsed, dispatch]);
 }
 
 function Shell() {
@@ -118,6 +133,9 @@ function Shell() {
       )}
       {modal.type === 'history' && (
         <HistoryModal taskId={modal.taskId} onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
+      )}
+      {modal.type === 'shortcuts' && (
+        <ShortcutsModal onClose={() => dispatch({ type: 'CLOSE_MODAL' })} />
       )}
     </div>
   );

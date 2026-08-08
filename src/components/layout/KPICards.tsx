@@ -33,7 +33,7 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
   const openAll = () => openTarefas(dispatch);
 
   const kpis: KpiDef[] = [
-    { key: 'total', label: 'Total de tarefas', icon: ClipboardList, value: indicators.total, color: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300', active: filters.status.length === 0 && filters.prazo === 'todas' && !filters.search.trim() && !filters.favoritas && filters.categorias.length === 0 && !filters.projeto, onClick: openAll },
+    { key: 'total', label: 'Total de tarefas', icon: ClipboardList, value: indicators.total, color: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300', active: filters.status.length === 0 && filters.prazo === 'todas' && !filters.search.trim() && !filters.favoritas && filters.categorias.length === 0, onClick: openAll },
     { key: 'caixaEntrada', label: 'Caixa de entrada', icon: Inbox, value: indicators.caixaEntrada, color: 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400', active: filters.status.includes('CAIXA_ENTRADA'), onClick: () => openWithStatus(['CAIXA_ENTRADA']) },
     { key: 'aFazer', label: 'A fazer', icon: ListTodo, value: indicators.aFazer, color: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400', active: filters.status.includes('A_FAZER'), onClick: () => openWithStatus(['A_FAZER']) },
     { key: 'emAndamento', label: 'Em andamento', icon: PlayCircle, value: indicators.emAndamento, color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400', active: filters.status.includes('EM_ANDAMENTO'), onClick: () => openWithStatus(['EM_ANDAMENTO']) },

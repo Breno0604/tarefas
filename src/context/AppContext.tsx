@@ -31,6 +31,7 @@ const initialState: AppState = {
 
 const KPI_COLLAPSED_KEY = 'kpiCollapsed';
 const TEMA_KEY = 'tarefas.tema';
+const VIEW_KEY = 'tarefas.view';
 
 interface AppContextValue {
   state: AppState;
@@ -43,16 +44,18 @@ function initState(): AppState {
   const saved = loadState();
   const kpiCollapsed = localStorage.getItem(KPI_COLLAPSED_KEY) === '1';
   const tema: AppState['tema'] = localStorage.getItem(TEMA_KEY) === 'escuro' ? 'escuro' : 'claro';
+  const view: AppState['view'] = localStorage.getItem(VIEW_KEY) === 'quadro' ? 'quadro' : 'lista';
   if (saved) {
     // Persiste apenas as tarefas; demais campos são estado de sessão (não persistido).
     return {
       ...initialState,
       kpiCollapsed,
       tema,
+      view,
       tasks: saved.tasks,
     };
   }
-  return { ...initialState, kpiCollapsed, tema };
+  return { ...initialState, kpiCollapsed, tema, view };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -71,6 +74,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(TEMA_KEY, state.tema);
     document.documentElement.classList.toggle('dark', state.tema === 'escuro');
   }, [state.tema]);
+
+  useEffect(() => {
+    localStorage.setItem(VIEW_KEY, state.view);
+  }, [state.view]);
 
   const dispatchWithToast = (action: AppAction) => {
     const next = appReducer(state, action);

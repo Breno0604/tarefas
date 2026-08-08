@@ -25,13 +25,6 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   critica: 'Crítica',
 };
 
-export const PRIORITY_RANK: Record<Priority, number> = {
-  critica: 0,
-  alta: 1,
-  media: 2,
-  baixa: 3,
-};
-
 export const TRANSITIONS: { from: TaskStatus; to: TaskStatus }[] = [
   { from: 'CAIXA_ENTRADA', to: 'A_FAZER' },
   { from: 'A_FAZER', to: 'EM_ANDAMENTO' },

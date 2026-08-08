@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Sidebar from './Sidebar';
 import { renderWithApp } from '../../test/renderWithApp';
@@ -122,7 +122,7 @@ describe('Sidebar', () => {
 
     const backdrop = document.querySelector('.fixed.inset-0.z-40');
     expect(backdrop).toBeInTheDocument();
-    backdrop!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fireEvent.click(backdrop!);
 
     await waitFor(() => {
       expect(screen.getByTestId('probe').textContent).toContain('"sidebarOpen":false');
