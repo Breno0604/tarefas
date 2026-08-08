@@ -28,7 +28,7 @@ export default function HistoryModal({ taskId, onClose }: HistoryModalProps) {
         {sorted.map((entry) => (
           <div key={entry.id} className="relative pb-6 pl-4">
             <span
-              className={`absolute top-1 -left-[21px] h-3 w-3 rounded-full ring-4 ring-white ${
+              className={`absolute top-1 -left-[21px] h-3 w-3 rounded-full ring-4 ring-white dark:ring-slate-800 ${
                 entry.tipo === 'status' ? 'bg-indigo-500' : 'bg-slate-400'
               }`}
             />

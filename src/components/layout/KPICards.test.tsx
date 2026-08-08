@@ -6,6 +6,7 @@ import KPICards from './KPICards';
 import { renderWithApp } from '../../test/renderWithApp';
 import { useApp } from '../../context/AppContext';
 import { computeIndicators } from '../../utils/tasks';
+import { loadState } from '../../services/storage';
 import { TAREFAS } from '../../data/mockData';
 
 beforeEach(() => localStorage.clear());
@@ -61,13 +62,16 @@ describe('KPICards', () => {
     expect(screen.getByRole('button', { name: /Total de tarefas/ })).toBeInTheDocument();
   });
 
-  it('persiste o estado recolhido no localStorage', async () => {
+  it('persiste o estado recolhido', async () => {
     const user = userEvent.setup();
     renderWithApp(<><KPICards indicators={indicators} /><Probe /></>);
 
     await user.click(screen.getByRole('button', { name: 'alternar indicadores' }));
 
-    expect(localStorage.getItem('kpiCollapsed')).toBe('1');
+    await waitFor(async () => {
+      const salvos = await loadState();
+      expect(salvos?.preferencias?.kpiCollapsed).toBe(true);
+    });
   });
 
   it('clicking Caixa de entrada filters status CAIXA_ENTRADA', async () => {

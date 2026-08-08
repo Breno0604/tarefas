@@ -1,20 +1,19 @@
 import { storageProvider } from './index';
 import type { LoadedState } from './StorageProvider';
-export { STORAGE_KEY } from './providers/LocalStorageProvider';
 export type { LoadedState } from './StorageProvider';
 
 /**
- * Facade da persistência: delega para o provider selecionado em `services/index.ts`.
+ * Fachada da persistência: delega para o provider selecionado em `services/index.ts`.
  * Consumidores (AppContext, testes) usam estas funções e não conhecem o provider.
  */
-export function loadState(): LoadedState | null {
+export async function loadState(): Promise<LoadedState | null> {
   return storageProvider.load();
 }
 
-export function saveState(state: LoadedState): void {
-  storageProvider.save(state);
+export async function saveState(state: LoadedState): Promise<void> {
+  await storageProvider.save(state);
 }
 
-export function clearState(): void {
-  storageProvider.clear();
+export async function clearState(): Promise<void> {
+  await storageProvider.clear();
 }

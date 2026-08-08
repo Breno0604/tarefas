@@ -5,11 +5,11 @@ export interface AppState {
   view: TaskView;
   sidebarOpen: boolean;
   filters: Filters;
-  kpiCollapsed: boolean; // indicadores recolhidos (persistido em localStorage)
+  kpiCollapsed: boolean; // indicadores recolhidos (persistido no Supabase)
   filtersOpen: boolean; // barra de filtros visível
   modal: ModalState;
   past: Task[][]; // pilha de estados anteriores (undo), não persistida
-  tema: Tema; // claro | escuro (persistido em localStorage)
+  tema: Tema; // claro | escuro (persistido no Supabase)
 }
 
 export type AppAction =
@@ -43,4 +43,9 @@ export type AppAction =
   | { type: 'REMOVE_ANOTACAO'; taskId: string; anotacaoId: string }
   | { type: 'MARK_LEMBRETE_NOTIFICADO'; taskId: string }
   | { type: 'TOGGLE_TEMA' }
-  | { type: 'UNDO' };
+  | { type: 'UNDO' }
+  | {
+      type: 'HYDRATE';
+      tasks: Task[];
+      preferencias: { tema: Tema; view: TaskView; kpiCollapsed: boolean } | null;
+    };

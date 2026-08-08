@@ -56,7 +56,7 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
     } else {
       dispatch({
         type: 'CREATE_TASK',
-        task: createTask(state.tasks, changes),
+        task: createTask(changes),
       });
     }
     onClose();
@@ -71,14 +71,14 @@ export default function TaskFormModal({ open, taskId, onClose }: TaskFormModalPr
         <>
           <button
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-400/70"
           >
             Cancelar
           </button>
           <button
             onClick={submit}
             disabled={!valid}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-white/70"
           >
             {isEdit ? 'Salvar alterações' : 'Criar tarefa'}
           </button>

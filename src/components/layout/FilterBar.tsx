@@ -37,7 +37,7 @@ function MultiSelect<T extends string>({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${
           selected.length > 0
             ? 'border-indigo-400 text-indigo-700 ring-2 ring-indigo-100 dark:border-indigo-500/60 dark:text-indigo-300 dark:ring-indigo-950/50'
             : 'border-slate-300 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -58,7 +58,7 @@ function MultiSelect<T extends string>({
               onChange([]);
               setOpen(false);
             }}
-            className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700"
+            className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none dark:text-slate-400 dark:hover:bg-slate-700 dark:focus-visible:bg-slate-700"
           >
             <span>Limpar</span>
           </button>
@@ -69,7 +69,7 @@ function MultiSelect<T extends string>({
               <button
                 key={opt.value}
                 onClick={() => toggle(opt.value)}
-                className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="flex w-full items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:bg-slate-700"
               >
                 <span>{opt.label}</span>
                 {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
@@ -83,7 +83,7 @@ function MultiSelect<T extends string>({
 }
 
 const selectCls =
-  'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
+  'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus:border-indigo-400 dark:focus:ring-indigo-900/40';
 
 export default function FilterBar() {
   const { state, dispatch } = useApp();
@@ -151,7 +151,7 @@ export default function FilterBar() {
       {hasFilters && (
         <button
           onClick={() => dispatch({ type: 'RESET_FILTERS' })}
-          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 dark:focus-visible:ring-indigo-400/70"
         >
           <FilterX className="h-4 w-4" />
           Limpar

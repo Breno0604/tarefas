@@ -6,10 +6,9 @@ import {
   computeIndicators,
   EMPTY_FILTERS,
   filterTasks,
-  nextTaskId,
 } from '../utils/tasks';
 import { TAREFAS } from '../data/mockData';
-import { LocalStorageProvider } from '../services/providers/LocalStorageProvider';
+import { MemoryStorageProvider } from '../services/providers/MemoryStorageProvider';
 import { isDueToday, isOverdue } from '../utils/date';
 import type { Task } from '../types';
 import { STATUS_LABELS } from '../utils/status';
@@ -23,7 +22,7 @@ import { STATUS_LABELS } from '../utils/status';
    - concluidaEm (set ao concluir, limpo ao reabrir)
    - undo (pilha `past`, ações fora da pilha) e rejeição de transições inválidas
    - KPIs (computeIndicators) e filtros (filterTasks)
-   - round-trip de persistência (LocalStorageProvider v2)
+   - round-trip de persistência (MemoryStorageProvider)
    ══════════════════════════════════════════════════════════════════ */
 
 const SEMANA = [
@@ -50,21 +49,12 @@ function bootState(): AppState {
   };
 }
 
-function installMockLocalStorage() {
-  const store = new Map<string, string>();
-  (globalThis as Record<string, unknown>).localStorage = {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => void store.set(key, value),
-    removeItem: (key: string) => void store.delete(key),
-  };
-}
-
 function kpi(tasks: Task[], now: Date) {
   return computeIndicators(tasks, now);
 }
 
 function criar(state: AppState, titulo: string, prioridade: Task['prioridade'], prazo: string | null) {
-  const task = createTask(state.tasks, { titulo, descricao: '', prioridade, prazo });
+  const task = createTask({ titulo, descricao: '', prioridade, prazo });
   return { state: appReducer(state, { type: 'CREATE_TASK', task }), task };
 }
 
@@ -98,17 +88,15 @@ function timeline(t: Task): string {
 }
 
 beforeEach(() => {
-  installMockLocalStorage();
   vi.useFakeTimers();
 });
 
 afterEach(() => {
   vi.useRealTimers();
-  delete (globalThis as Record<string, unknown>).localStorage;
 });
 
 describe('simulação de uma semana de uso (app pessoal GTD)', () => {
-  it('dia a dia: cria, conclui, arquiva, desarquiva, edita, duplica, desfaz e persiste — KPIs e histórico consistentes', () => {
+  it('dia a dia: cria, conclui, arquiva, desarquiva, edita, duplica, desfaz e persiste — KPIs e histórico consistentes', async () => {
     const report: string[] = [];
     const kpiLinhas: string[] = [];
 
@@ -155,7 +143,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     let r = criar(state, 'Responder proposta do cliente X', 'alta', '2026-08-07');
     state = r.state;
     const proposta = r.task;
-    expect(proposta.id).toBe('TA-059');
+    expect(proposta.id).toBeTruthy();
     expect(proposta.status).toBe('CAIXA_ENTRADA');
     expect(proposta.historico).toHaveLength(1);
     expect(proposta.historico[0]).toMatchObject({
@@ -168,7 +156,8 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
 
     r = criar(state, 'Agendar revisão trimestral', 'media', '2026-08-15');
     state = r.state;
-    expect(r.task.id).toBe('TA-060');
+    const agendar = r.task;
+    expect(agendar.id).toBeTruthy();
 
     // Triagem: e-mails → A_FAZER → EM_ANDAMENTO
     const pastAntes = state.past.length;
@@ -191,7 +180,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     // Transições inválidas são rejeitadas sem mexer no estado nem na pilha
     const snapshot1 = state.tasks;
     const past1 = state.past.length;
-    expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: 'TA-059', novoStatus: 'CONCLUIDA' }).tasks).toBe(snapshot1);
+    expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: proposta.id, novoStatus: 'CONCLUIDA' }).tasks).toBe(snapshot1);
     expect(appReducer(state, { type: 'CHANGE_STATUS', taskId: 'TA-004', novoStatus: 'ARQUIVADA' }).tasks).toBe(snapshot1); // sem motivo
     expect(appReducer(state, { type: 'UPDATE_TASK', taskId: 'TA-004', changes: { status: 'CONCLUIDA' } }).tasks).toBe(snapshot1); // fora da whitelist
     expect(state.past.length).toBe(past1);
@@ -240,7 +229,8 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     // Nova tarefa + edição de prazo (gera entrada 'info' no histórico)
     r = criar(state, 'Preparar apresentação de status', 'media', '2026-08-10');
     state = r.state;
-    expect(r.task.id).toBe('TA-061');
+    const apresentacao = r.task;
+    expect(apresentacao.id).toBeTruthy();
     state = appReducer(state, { type: 'UPDATE_TASK', taskId: 'TA-004', changes: { prazo: '2026-08-12' } });
     const ta004 = state.tasks.find((t) => t.id === 'TA-004')!;
     expect(ta004.prazo).toBe('2026-08-12');
@@ -265,7 +255,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     kpiLinhas.push(`07/08 sex      | ${JSON.stringify(ind)}`);
     report.push('  • concluiu TA-001 (prazo venceu ontem → Atrasadas caiu ao concluir)');
     report.push('  • bug crítico TA-003 em execução');
-    report.push('  • criou "Preparar apresentação de status" (TA-061, prazo 10/08)');
+    report.push('  • criou "Preparar apresentação de status" (prazo 10/08)');
     report.push('  • editou prazo de TA-004 → histórico ganhou entrada [info] com usuário');
 
     // ── DIA 3 — sáb 08/08 ────────────────────────────────────────────
@@ -279,20 +269,20 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
 
     // Duplicar TA-004 → cópia na caixa de entrada com histórico próprio
     state = appReducer(state, { type: 'DUPLICATE_TASK', taskId: 'TA-004' });
-    const copia = state.tasks.find((t) => t.id === 'TA-062')!;
-    expect(copia).toBeDefined();
+    const copia = state.tasks[state.tasks.length - 1]!;
+    expect(copia.id).not.toBe('TA-004');
     expect(copia.status).toBe('CAIXA_ENTRADA');
     expect(copia.favorita).toBe(false);
     expect(copia.historico).toHaveLength(1);
-    expect(copia.historico[0].observacao).toBe('Tarefa duplicada de TA-004.');
+    expect(copia.historico[0].observacao).toContain('Tarefa duplicada de');
 
     // Favoritar não entra na pilha de undo, mas fica registrado no histórico
     const pastAntesFav = state.past.length;
-    state = appReducer(state, { type: 'TOGGLE_FAVORITE', taskId: 'TA-059' });
+    state = appReducer(state, { type: 'TOGGLE_FAVORITE', taskId: proposta.id });
     expect(state.past.length).toBe(pastAntesFav);
-    const ta059Favoritada = state.tasks.find((t) => t.id === 'TA-059')!;
-    expect(ta059Favoritada.favorita).toBe(true);
-    expect(ta059Favoritada.historico[ta059Favoritada.historico.length - 1]).toMatchObject({
+    const propostaFavoritada = state.tasks.find((t) => t.id === proposta.id)!;
+    expect(propostaFavoritada.favorita).toBe(true);
+    expect(propostaFavoritada.historico[propostaFavoritada.historico.length - 1]).toMatchObject({
       tipo: 'info',
       observacao: 'Tarefa adicionada aos favoritos.',
       usuario: 'Eu',
@@ -320,7 +310,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     });
     kpiLinhas.push(`08/08 sáb      | ${JSON.stringify(ind)}`);
     report.push('  • concluiu o bug crítico TA-003');
-    report.push('  • duplicou TA-004 → TA-062 na caixa de entrada');
+    report.push('  • duplicou TA-004 (cópia na caixa de entrada)');
     report.push('  • favoritou a proposta (não entra no undo, mas fica no histórico)');
     report.push('  • reabriu TA-007 (concluidaEm limpo) e reconcluiu');
 
@@ -330,8 +320,9 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     report.push('── DIA 4 — dom 09/08 ──');
     r = criar(state, 'Organizar fotos da viagem', 'baixa', null);
     state = r.state;
-    expect(r.task.id).toBe('TA-063');
-    expect(r.task.prazo).toBeNull();
+    const fotos = r.task;
+    expect(fotos.id).toBeTruthy();
+    expect(fotos.prazo).toBeNull();
     ind = kpi(state.tasks, now);
     expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 63,
@@ -344,7 +335,7 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
       at: 8,
     });
     kpiLinhas.push(`09/08 dom      | ${JSON.stringify(ind)}`);
-    report.push('  • criou "Organizar fotos da viagem" (TA-063, sem prazo)');
+    report.push('  • criou "Organizar fotos da viagem" (sem prazo)');
 
     // ── DIA 5 — seg 10/08 ────────────────────────────────────────────
     now = SEMANA[4];
@@ -352,27 +343,27 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     report.push('── DIA 5 — seg 10/08 ──');
 
     // Proposta (prazo 07/08) concluída depois de atrasar
-    expect(isOverdue(proposta.prazo, state.tasks.find((t) => t.id === 'TA-059')!.status, now)).toBe(true);
-    state = mover(state, 'TA-059', 'A_FAZER');
-    state = mover(state, 'TA-059', 'EM_ANDAMENTO');
-    state = mover(state, 'TA-059', 'CONCLUIDA');
-    const propostaFim = state.tasks.find((t) => t.id === 'TA-059')!;
+    expect(isOverdue(proposta.prazo, state.tasks.find((t) => t.id === proposta.id)!.status, now)).toBe(true);
+    state = mover(state, proposta.id, 'A_FAZER');
+    state = mover(state, proposta.id, 'EM_ANDAMENTO');
+    state = mover(state, proposta.id, 'CONCLUIDA');
+    const propostaFim = state.tasks.find((t) => t.id === proposta.id)!;
     expect(propostaFim.status).toBe('CONCLUIDA');
     expect(propostaFim.concluidaEm).toMatch(/^2026-08-10T/);
     expect(propostaFim.historico).toHaveLength(5); // criação + favorito + 3 transições
     expect(isOverdue(propostaFim.prazo, propostaFim.status, now)).toBe(false);
 
     // Apresentação: inicia → desfaz (UNDO) → reinicia
-    state = mover(state, 'TA-061', 'A_FAZER');
-    state = mover(state, 'TA-061', 'EM_ANDAMENTO');
+    state = mover(state, apresentacao.id, 'A_FAZER');
+    state = mover(state, apresentacao.id, 'EM_ANDAMENTO');
     const antesUndo = state.tasks;
     const pastAntesUndo = state.past.length;
     state = appReducer(state, { type: 'UNDO' });
     expect(state.past.length).toBe(pastAntesUndo - 1);
-    const ta061 = state.tasks.find((t) => t.id === 'TA-061')!;
+    const ta061 = state.tasks.find((t) => t.id === apresentacao.id)!;
     expect(ta061.status).toBe('A_FAZER');
     expect(state.tasks).not.toBe(antesUndo);
-    state = mover(state, 'TA-061', 'EM_ANDAMENTO');
+    state = mover(state, apresentacao.id, 'EM_ANDAMENTO');
 
     ind = kpi(state.tasks, now);
     expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
@@ -386,17 +377,17 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
       at: 7,
     });
     kpiLinhas.push(`10/08 seg      | ${JSON.stringify(ind)}`);
-    report.push('  • concluiu a proposta atrasada (TA-059)');
-    report.push('  • TA-061: iniciou → Desfazer (voltou a A fazer) → reiniciou');
+    report.push('  • concluiu a proposta atrasada');
+    report.push('  • apresentação: iniciou → Desfazer (voltou a A fazer) → reiniciou');
 
     // ── DIA 6 — ter 11/08 ────────────────────────────────────────────
     now = SEMANA[5];
     vi.setSystemTime(now);
     report.push('── DIA 6 — ter 11/08 ──');
-    state = mover(state, 'TA-063', 'ARQUIVADA', 'Não vou conseguir fazer este mês.');
-    expect(state.tasks.find((t) => t.id === 'TA-063')!.status).toBe('ARQUIVADA');
-    state = mover(state, 'TA-061', 'CONCLUIDA');
-    expect(state.tasks.find((t) => t.id === 'TA-061')!.concluidaEm).toMatch(/^2026-08-11T/);
+    state = mover(state, fotos.id, 'ARQUIVADA', 'Não vou conseguir fazer este mês.');
+    expect(state.tasks.find((t) => t.id === fotos.id)!.status).toBe('ARQUIVADA');
+    state = mover(state, apresentacao.id, 'CONCLUIDA');
+    expect(state.tasks.find((t) => t.id === apresentacao.id)!.concluidaEm).toMatch(/^2026-08-11T/);
     ind = kpi(state.tasks, now);
     expect({ total: ind.total, ce: ind.caixaEntrada, af: ind.aFazer, em: ind.emAndamento, su: ind.suspensas, co: ind.concluidas, ar: ind.arquivadas, at: ind.atrasadas }).toEqual({
       total: 63,
@@ -409,8 +400,8 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
       at: 9,
     });
     kpiLinhas.push(`11/08 ter      | ${JSON.stringify(ind)}`);
-    report.push('  • arquivou TA-063 ("Não vou conseguir fazer este mês.")');
-    report.push('  • concluiu a apresentação (TA-061)');
+    report.push('  • arquivou as fotos ("Não vou conseguir fazer este mês.")');
+    report.push('  • concluiu a apresentação');
 
     // ── DIA 7 — qua 12/08 ────────────────────────────────────────────
     now = SEMANA[6];
@@ -418,18 +409,20 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     report.push('── DIA 7 — qua 12/08 ──');
     r = criar(state, 'Ler relatório de julho', 'media', '2026-08-14');
     state = r.state;
-    expect(r.task.id).toBe('TA-064');
-    expect(nextTaskId(state.tasks)).toBe('TA-065');
+    const relatorio = r.task;
+    expect(relatorio.id).toBeTruthy();
+    // Todos os ids criados na semana são únicos
+    expect(new Set([proposta.id, agendar.id, apresentacao.id, fotos.id, relatorio.id]).size).toBe(5);
 
     // Reordenação manual não entra no undo; excluir tarefa duplicada
     const pastAntesReorder = state.past.length;
-    state = appReducer(state, { type: 'REORDER_TASKS', taskId: 'TA-064', toTaskId: 'TA-001' });
+    state = appReducer(state, { type: 'REORDER_TASKS', taskId: relatorio.id, toTaskId: 'TA-001' });
     expect(state.past.length).toBe(pastAntesReorder);
-    const idx064 = state.tasks.findIndex((t) => t.id === 'TA-064');
+    const idx064 = state.tasks.findIndex((t) => t.id === relatorio.id);
     const idx001 = state.tasks.findIndex((t) => t.id === 'TA-001');
     expect(idx064).toBeLessThan(idx001);
-    state = appReducer(state, { type: 'DELETE_TASK', taskId: 'TA-062' });
-    expect(state.tasks.some((t) => t.id === 'TA-062')).toBe(false);
+    state = appReducer(state, { type: 'DELETE_TASK', taskId: copia.id });
+    expect(state.tasks.some((t) => t.id === copia.id)).toBe(false);
 
     // Desarquivar TA-002 (ARQUIVADA → CAIXA_ENTRADA) — volta para a caixa de entrada
     state = mover(state, 'TA-002', 'CAIXA_ENTRADA');
@@ -460,8 +453,8 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     expect(final.atrasadas).toBe(state.tasks.filter((t) => isOverdue(t.prazo, t.status, now)).length);
     expect(final.atrasadas).toBeGreaterThanOrEqual(1);
     kpiLinhas.push(`12/08 qua      | ${JSON.stringify(final)}`);
-    report.push('  • criou "Ler relatório de julho" (TA-064) e reordenou manualmente');
-    report.push('  • excluiu a duplicada TA-062');
+    report.push('  • criou "Ler relatório de julho" e reordenou manualmente');
+    report.push('  • excluiu a duplicada');
     report.push('  • desarquivou TA-002 (volta à Caixa de entrada, registrado no histórico)');
 
     // Filtros no estado final
@@ -475,14 +468,12 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     // Pilha de undo limitada a 50
     expect(state.past.length).toBeLessThanOrEqual(50);
 
-    // ── Persistência: round-trip LocalStorageProvider v2 ─────────────
-    const provider = new LocalStorageProvider();
-    provider.save({ tasks: state.tasks });
-    const carregado = provider.load();
+    // ── Persistência: round-trip (MemoryStorageProvider) ─────────────
+    const provider = new MemoryStorageProvider();
+    await provider.save({ tasks: state.tasks, preferencias: null });
+    const carregado = await provider.load();
     expect(carregado).not.toBeNull();
     expect(carregado!.tasks).toEqual(state.tasks);
-    provider.clear();
-    expect(provider.load()).toBeNull();
 
     /* ── RELATÓRIO ── */
     const linhas = ['', '═'.repeat(74), '  SIMULAÇÃO — 1 SEMANA (06/08/2026 a 12/08/2026) — app pessoal GTD', '═'.repeat(74)];
@@ -495,16 +486,16 @@ describe('simulação de uma semana de uso (app pessoal GTD)', () => {
     linhas.push('  ' + '─'.repeat(70));
     for (const l of report) linhas.push(`  ${l}`);
     const ta001Final = state.tasks.find((t) => t.id === 'TA-001')!;
-    const propostaFinal = state.tasks.find((t) => t.id === 'TA-059')!;
+    const propostaFinal = state.tasks.find((t) => t.id === proposta.id)!;
     linhas.push('', `  HISTÓRICO de TA-001 (${ta001Final.titulo}) — final: ${STATUS_LABELS[ta001Final.status]}`);
     linhas.push(timeline(ta001Final));
-    linhas.push('', `  HISTÓRICO de TA-059 (${propostaFinal.titulo}) — final: ${STATUS_LABELS[propostaFinal.status]}`);
+    linhas.push('', `  HISTÓRICO da proposta (${propostaFinal.titulo}) — final: ${STATUS_LABELS[propostaFinal.status]}`);
     linhas.push(timeline(propostaFinal));
     const ta002Report = state.tasks.find((t) => t.id === 'TA-002')!;
     linhas.push('', `  HISTÓRICO de TA-002 (${ta002Report.titulo}) — final: ${STATUS_LABELS[ta002Report.status]}`);
     linhas.push(timeline(ta002Report));
     linhas.push('', '  RESUMO: 5 criadas · 5 concluídas · 2 arquivadas · 1 desarquivada · 1 excluída · 1 duplicada · 1 reaberta · 1 editada · 1 desfeita');
-    linhas.push('  Persistência v2: salvo → carregado (round-trip OK) · pilha de undo ≤ 50');
+    linhas.push('  Persistência: salvo → carregado (round-trip OK) · pilha de undo ≤ 50');
     linhas.push('═'.repeat(74), '');
     for (const l of linhas) console.log(l);
   });

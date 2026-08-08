@@ -7,6 +7,7 @@ import {
   Keyboard,
   LayoutGrid,
   LayoutList,
+  LogOut,
   Menu,
   MoreVertical,
   Moon,
@@ -28,7 +29,7 @@ interface TopbarProps {
 }
 
 const iconButton =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200';
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 dark:focus-visible:ring-indigo-400/70';
 
 interface SecondaryAction {
   key: string;
@@ -82,7 +83,7 @@ function OverflowMenu({ actions }: { actions: SecondaryAction[] }) {
                   a.onClick();
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 ${activeText}`}
+                className={`flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none dark:hover:bg-slate-700 dark:focus-visible:bg-slate-700 ${activeText}`}
               >
                 <Icon
                   className={`h-4 w-4 shrink-0 ${a.active && a.fillWhenActive ? 'fill-amber-400' : ''}`}
@@ -98,7 +99,7 @@ function OverflowMenu({ actions }: { actions: SecondaryAction[] }) {
 }
 
 export default function Topbar({ title, search, onSearch, onNewTask }: TopbarProps) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, logout } = useApp();
   const [notifPerm, setNotifPerm] = useState(() =>
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
   );
@@ -196,7 +197,7 @@ export default function Topbar({ title, search, onSearch, onNewTask }: TopbarPro
             onClick={() => onSearch('')}
             aria-label="Limpar busca"
             title="Limpar busca"
-            className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+            className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-500 dark:hover:bg-slate-600/60 dark:hover:text-slate-200 dark:focus-visible:ring-indigo-400/70"
           >
             <X className="h-4 w-4" />
           </button>
@@ -256,10 +257,19 @@ export default function Topbar({ title, search, onSearch, onNewTask }: TopbarPro
         <OverflowMenu actions={secondaryActions} />
 
         <button
+          onClick={() => void logout()}
+          aria-label="Sair da conta"
+          title="Sair da conta"
+          className={iconButton}
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+
+        <button
           onClick={onNewTask}
           aria-label="Nova Tarefa"
           title="Nova Tarefa (N)"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:focus-visible:ring-white/70"
         >
           <Plus className="h-4 w-4" />
         </button>

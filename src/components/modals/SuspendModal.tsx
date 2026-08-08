@@ -35,13 +35,13 @@ export default function SuspendModal({ taskId, onClose }: SuspendModalProps) {
       onClose={onClose}
       footer={
         <>
-          <button onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
+          <button onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-400/70">
             Voltar
           </button>
           <button
             onClick={submit}
             disabled={!valid}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-white/70"
           >
             Suspender tarefa
           </button>
@@ -63,7 +63,7 @@ export default function SuspendModal({ taskId, onClose }: SuspendModalProps) {
               name="retorno"
               checked={tipo === 'semData'}
               onChange={() => setTipo('semData')}
-              className="h-4 w-4 accent-violet-600"
+              className="h-4 w-4 accent-indigo-600"
             />
             Sem prazo definido para retorno
           </label>
@@ -73,7 +73,7 @@ export default function SuspendModal({ taskId, onClose }: SuspendModalProps) {
               name="retorno"
               checked={tipo === 'data'}
               onChange={() => setTipo('data')}
-              className="h-4 w-4 accent-violet-600"
+              className="h-4 w-4 accent-indigo-600"
             />
             Com data definida para retorno
           </label>
@@ -87,7 +87,7 @@ export default function SuspendModal({ taskId, onClose }: SuspendModalProps) {
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-violet-400 dark:focus:ring-violet-900/40"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-900/40"
               />
             </div>
           )}

@@ -64,7 +64,6 @@ export default function TaskCard({
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</p>
           <PriorityBadge prioridade={task.prioridade} />
         </div>
-        <p className="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">{task.id}</p>
         {(task.categoria || task.projeto || (task.tags && task.tags.length > 0)) && (
           <div className="mt-2 flex flex-wrap items-center gap-1">
             {task.categoria && <CategoryTag label={task.categoria} />}
@@ -101,7 +100,7 @@ export default function TaskCard({
             onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
             title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
             aria-label={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
-            className={`rounded-lg p-1.5 transition-colors ${
+            className={`rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${
               task.favorita
                 ? 'text-amber-500'
                 : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500 dark:text-slate-500 dark:hover:bg-amber-950/30'
@@ -114,7 +113,7 @@ export default function TaskCard({
               onClick={() => changeStatus(action.target)}
               title={action.label}
               aria-label={action.label}
-              className={`rounded-lg p-1.5 transition-colors ${action.cls}`}
+              className={`rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${action.cls}`}
             >
               <action.icon className="h-4 w-4" />
             </button>

@@ -461,7 +461,7 @@ describe('appReducer — recorrência', () => {
     expect(ocorrencia.concluidaEm).toBeUndefined();
     expect(ocorrencia.historico[0]).toMatchObject({
       tipo: 'status',
-      observacao: 'Próxima ocorrência (diaria) de TA-001.',
+      observacao: 'Próxima ocorrência (diaria) de "Login".',
     });
     // subtarefas preservadas mas desmarcadas; anotações zeradas
     expect(ocorrencia.subtarefas!.map((s) => s.concluida)).toEqual([false, false]);

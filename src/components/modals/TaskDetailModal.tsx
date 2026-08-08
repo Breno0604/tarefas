@@ -27,10 +27,10 @@ import CategoryTag from '../tasks/CategoryTag';
 import { cycleActionFor } from '../tasks/cycleActions';
 
 const iconButton =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700';
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-400/70';
 
 const dangerIconButton =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 dark:border-rose-800/60 dark:text-rose-400 dark:hover:bg-rose-950/40';
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-300 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 dark:border-rose-800/60 dark:text-rose-400 dark:hover:bg-rose-950/40 dark:focus-visible:ring-rose-400/70';
 
 const inputCls =
   'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-900/40';
@@ -165,7 +165,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 <button
                   key={target}
                   onClick={() => onClickTransicao(target)}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${act.cls}`}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:focus-visible:ring-white/70 ${act.cls}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     <Icon className="h-4 w-4" />
@@ -177,10 +177,9 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
           </>
         }
       >
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{task.id}</span>
               <StatusBadge status={task.status} />
               <PriorityBadge prioridade={task.prioridade} />
               {task.recorrencia && (
@@ -205,7 +204,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
                 title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
                 aria-label={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
-                className={`ml-auto rounded-lg p-1.5 transition-colors ${
+                className={`ml-auto rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${
                   task.favorita
                     ? 'text-amber-500 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-950/40'
                     : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500 dark:hover:bg-amber-950/30'
@@ -214,7 +213,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 <Star className={`h-4 w-4 ${task.favorita ? 'fill-amber-400 text-amber-400' : ''}`} />
               </button>
             </div>
-            <h3 className="mt-2 text-lg font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</h3>
+            <h3 className="mt-2 text-xl font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</h3>
             <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               {task.descricao || 'Sem descrição.'}
             </p>
@@ -303,14 +302,14 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                     <button
                       onClick={() => setEditandoSub({ id: s.id, titulo: s.titulo })}
                       aria-label={`Editar subtarefa: ${s.titulo}`}
-                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-indigo-400"
+                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none dark:text-slate-600 dark:hover:text-indigo-400"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => dispatch({ type: 'REMOVE_SUBTAREFA', taskId: task.id, subtarefaId: s.id })}
                       aria-label={`Remover subtarefa: ${s.titulo}`}
-                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
+                      className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none dark:text-slate-600 dark:hover:text-rose-400"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -338,7 +337,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                 onClick={addSubtarefa}
                 disabled={!novaSubtarefa.trim()}
                 aria-label="Adicionar subtarefa"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-white/70"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -366,14 +365,14 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                       <button
                         onClick={salvarAnotacao}
                         aria-label="Salvar anotação"
-                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 dark:focus-visible:ring-white/70"
                       >
                         <Check className="h-3.5 w-3.5" /> Salvar
                       </button>
                       <button
                         onClick={() => setEditandoNota(null)}
                         aria-label="Cancelar edição de anotação"
-                        className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                        className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 dark:focus-visible:ring-indigo-400/70"
                       >
                         Cancelar
                       </button>
@@ -390,14 +389,14 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
                         <button
                           onClick={() => setEditandoNota({ id: n.id, texto: n.texto })}
                           aria-label="Editar anotação"
-                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-indigo-400"
+                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-indigo-500 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none dark:text-slate-600 dark:hover:text-indigo-400"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => dispatch({ type: 'REMOVE_ANOTACAO', taskId: task.id, anotacaoId: n.id })}
                           aria-label="Remover anotação"
-                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-rose-400"
+                          className="rounded p-1 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none dark:text-slate-600 dark:hover:text-rose-400"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -419,7 +418,7 @@ export default function TaskDetailModal({ taskId, onClose }: TaskDetailModalProp
               <button
                 onClick={addAnotacao}
                 disabled={!novaAnotacao.trim()}
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-white/70"
               >
                 Adicionar anotação
               </button>

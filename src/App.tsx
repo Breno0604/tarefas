@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { formatLocalMinute } from './utils/date';
 import { ToastProvider } from './context/ToastContext';
+import LoginScreen from './components/LoginScreen';
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
 import SectionTarefas from './components/sections/SectionTarefas';
@@ -141,11 +142,54 @@ function Shell() {
   );
 }
 
+function TelaCarregando() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="flex flex-col items-center gap-3 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+        <p className="text-sm">Carregando suas tarefas...</p>
+      </div>
+    </div>
+  );
+}
+
+function TelaErro({ mensagem, onTentarNovamente }: { mensagem: string; onTentarNovamente: () => void }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+        <p className="text-sm text-slate-600">{mensagem}</p>
+        <button
+          onClick={onTentarNovamente}
+          className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Portão de entrada: decide entre login, carregamento, erro e a aplicação. */
+function Gate() {
+  const { boot, login, tentarNovamente } = useApp();
+
+  if (boot.status === 'auth-carregando' || boot.status === 'carregando') {
+    return <TelaCarregando />;
+  }
+  if (boot.status === 'nao-autenticado') {
+    return <LoginScreen onLogin={login} />;
+  }
+  if (boot.status === 'erro') {
+    return <TelaErro mensagem={boot.mensagem} onTentarNovamente={tentarNovamente} />;
+  }
+  return <Shell />;
+}
+
 export default function App() {
   return (
     <ToastProvider>
       <AppProvider>
-        <Shell />
+        <Gate />
       </AppProvider>
     </ToastProvider>
   );

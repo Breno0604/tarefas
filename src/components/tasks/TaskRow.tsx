@@ -10,6 +10,9 @@ import CycleStepper from './CycleStepper';
 import DueDateCell from './DueDateCell';
 import { cycleActionFor } from './cycleActions';
 
+const iconAction =
+  'rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200 dark:focus-visible:ring-indigo-400/70';
+
 interface TaskRowProps {
   task: Task;
   onConfirmComplete: (task: Task) => void;
@@ -85,7 +88,6 @@ export default function TaskRow({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{task.titulo}</p>
-            <p className="truncate text-xs text-slate-400 dark:text-slate-500">{task.id}</p>
             {hasMeta && (
               <div className="mt-1 flex flex-wrap items-center gap-1">
                 {progresso.total > 0 && (
@@ -132,7 +134,7 @@ export default function TaskRow({
             onClick={openDetail}
             aria-label="Ver detalhes"
             title="Ver detalhes"
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            className={iconAction}
           >
             <Eye className="h-4 w-4" />
           </button>
@@ -140,7 +142,7 @@ export default function TaskRow({
             onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })}
             aria-label={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
             title={task.favorita ? 'Remover dos favoritos' : 'Favoritar'}
-            className={`rounded-lg p-1.5 transition-colors ${
+            className={`rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${
               task.favorita
                 ? 'text-amber-500'
                 : 'text-slate-400 hover:bg-amber-50 hover:text-amber-500 dark:text-slate-500 dark:hover:bg-amber-950/30'
@@ -152,7 +154,7 @@ export default function TaskRow({
             onClick={openEdit}
             aria-label="Editar"
             title="Editar"
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            className={iconAction}
           >
             <Pencil className="h-4 w-4" />
           </button>
@@ -162,7 +164,7 @@ export default function TaskRow({
             }
             aria-label="Duplicar"
             title="Duplicar"
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            className={iconAction}
           >
             <Copy className="h-4 w-4" />
           </button>
@@ -170,7 +172,7 @@ export default function TaskRow({
             onClick={() => onDeleteRequest(task)}
             aria-label="Excluir"
             title="Excluir"
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 dark:text-slate-500 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 dark:focus-visible:ring-rose-400/70"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -183,7 +185,7 @@ export default function TaskRow({
                 key={target}
                 onClick={() => changeStatus(target)}
                 title={act.label}
-                className={`rounded-lg p-1.5 transition-colors ${act.cls}`}
+                className={`rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 ${act.cls}`}
               >
                 <Icon className="h-4 w-4" />
               </button>

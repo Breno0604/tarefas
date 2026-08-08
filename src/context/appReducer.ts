@@ -2,7 +2,7 @@ import type { Anotacao, Subtarefa, Task } from '../types';
 import { canTransition } from '../utils/status';
 import { newHistoryEntry } from '../utils/history';
 import { formatDate } from '../utils/date';
-import { EMPTY_FILTERS, nextTaskId, proximaOcorrencia } from '../utils/tasks';
+import { EMPTY_FILTERS, novoId, proximaOcorrencia } from '../utils/tasks';
 import type { AppAction, AppState } from './types';
 
 /** Todos os campos editáveis geram entrada de histórico (sem exceções por status). */
@@ -222,7 +222,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
         // Gera a próxima ocorrência da tarefa recorrente.
         const ocorrencia: Task = {
           ...task,
-          id: nextTaskId(state.tasks),
+          id: novoId(),
           status: 'CAIXA_ENTRADA',
           prazo: proximaOcorrencia(task.prazo, task.recorrencia),
           criadaEm: agora,
@@ -238,7 +238,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
               null,
               'CAIXA_ENTRADA',
               'status',
-              `Próxima ocorrência (${task.recorrencia}) de ${task.id}.`
+              `Próxima ocorrência (${task.recorrencia}) de "${task.titulo}".`
             ),
           ],
         };
@@ -261,7 +261,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
       const agora = new Date().toISOString();
       const copy: Task = {
         ...task,
-        id: nextTaskId(state.tasks),
+        id: novoId(),
         status: 'CAIXA_ENTRADA',
         favorita: false,
         criadaEm: agora,
@@ -270,7 +270,7 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
         lembrete: null,
         lembreteNotificado: false,
         retornoEm: null,
-        historico: [newHistoryEntry(null, 'CAIXA_ENTRADA', 'status', `Tarefa duplicada de ${task.id}.`)],
+        historico: [newHistoryEntry(null, 'CAIXA_ENTRADA', 'status', `Tarefa duplicada de "${task.titulo}".`)],
       };
       return { ...state, tasks: [...state.tasks, copy] };
     }
@@ -516,6 +516,16 @@ function appReducerCore(state: AppState, action: AppAction): AppState {
         ),
       };
     }
+    case 'HYDRATE':
+      // Carrega o estado vindo do Supabase (não entra na pilha de undo).
+      return {
+        ...state,
+        tasks: action.tasks,
+        tema: action.preferencias?.tema ?? state.tema,
+        view: action.preferencias?.view ?? state.view,
+        kpiCollapsed: action.preferencias?.kpiCollapsed ?? state.kpiCollapsed,
+        past: [],
+      };
     default:
       return state;
   }
@@ -529,6 +539,7 @@ const NO_UNDO: ReadonlySet<AppAction['type']> = new Set([
   'REORDER_TASKS',
   'TOGGLE_SUBTAREFA',
   'MARK_LEMBRETE_NOTIFICADO',
+  'HYDRATE',
 ]);
 
 /**

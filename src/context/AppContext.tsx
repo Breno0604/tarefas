@@ -4,12 +4,16 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   type Dispatch,
   type ReactNode,
 } from 'react';
-import { TAREFAS } from '../data/mockData';
 import { EMPTY_FILTERS } from '../utils/tasks';
 import { loadState, saveState } from '../services/storage';
+import { storageProvider } from '../services/index';
+import { getSupabaseClient } from '../services/supabaseClient';
+import { loginPorUsuario, sair } from '../services/auth';
 import { useToast } from './ToastContext';
 import { appReducer } from './appReducer';
 import { toastMessage } from './toastMessage';
@@ -17,8 +21,15 @@ import type { AppAction, AppState } from './types';
 
 export type { AppAction, AppState } from './types';
 
+export type Boot =
+  | { status: 'auth-carregando' }
+  | { status: 'nao-autenticado' }
+  | { status: 'carregando' }
+  | { status: 'pronto' }
+  | { status: 'erro'; mensagem: string };
+
 const initialState: AppState = {
-  tasks: TAREFAS,
+  tasks: [],
   view: 'lista',
   sidebarOpen: false,
   filters: EMPTY_FILTERS,
@@ -29,55 +40,120 @@ const initialState: AppState = {
   tema: 'claro',
 };
 
-const KPI_COLLAPSED_KEY = 'kpiCollapsed';
-const TEMA_KEY = 'tarefas.tema';
-const VIEW_KEY = 'tarefas.view';
-
 interface AppContextValue {
   state: AppState;
   dispatch: Dispatch<AppAction>;
+  boot: Boot;
+  login: (usuario: string, senha: string) => Promise<void>;
+  logout: () => Promise<void>;
+  tentarNovamente: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+/**
+ * Estado inicial do reducer. Providers síncronos (apenas testes) já entregam
+ * os dados aqui; o Supabase carrega de forma assíncrona logo após o login.
+ */
 function initState(): AppState {
-  const saved = loadState();
-  const kpiCollapsed = localStorage.getItem(KPI_COLLAPSED_KEY) === '1';
-  const tema: AppState['tema'] = localStorage.getItem(TEMA_KEY) === 'escuro' ? 'escuro' : 'claro';
-  const view: AppState['view'] = localStorage.getItem(VIEW_KEY) === 'quadro' ? 'quadro' : 'lista';
-  if (saved) {
-    // Persiste apenas as tarefas; demais campos são estado de sessão (não persistido).
-    return {
-      ...initialState,
-      kpiCollapsed,
-      tema,
-      view,
-      tasks: saved.tasks,
-    };
-  }
-  return { ...initialState, kpiCollapsed, tema, view };
+  const salvos = storageProvider.loadSync?.() ?? null;
+  if (!salvos) return initialState;
+  return {
+    ...initialState,
+    tasks: salvos.tasks,
+    tema: salvos.preferencias?.tema ?? initialState.tema,
+    view: salvos.preferencias?.view ?? initialState.view,
+    kpiCollapsed: salvos.preferencias?.kpiCollapsed ?? initialState.kpiCollapsed,
+  };
 }
+
+const bootInicial: Boot = storageProvider.loadSync
+  ? { status: 'pronto' }
+  : { status: 'auth-carregando' };
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState, initState);
+  const [boot, setBoot] = useState<Boot>(bootInicial);
   const toast = useToast();
+  const bootPronto = useRef(storageProvider.loadSync !== undefined);
+  const jaSincronizou = useRef(false);
+  const filaGravacoes = useRef<Promise<void>>(Promise.resolve());
 
+  // Autenticação: acompanha a sessão do Supabase (só quando há login).
   useEffect(() => {
-    saveState({ tasks: state.tasks });
-  }, [state.tasks]);
+    if (!storageProvider.requiresAuth) return;
+    let ativo = true;
+    const client = getSupabaseClient();
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((_event, session) => {
+      if (!ativo) return;
+      setBoot((atual) => {
+        if (session) return atual.status === 'pronto' ? atual : { status: 'carregando' };
+        return { status: 'nao-autenticado' };
+      });
+    });
+    client.auth.getSession().then(({ data }) => {
+      if (!ativo) return;
+      setBoot(data.session ? { status: 'carregando' } : { status: 'nao-autenticado' });
+    });
+    return () => {
+      ativo = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
+  // Carregamento dos dados (tarefas + preferências) quando há sessão.
   useEffect(() => {
-    localStorage.setItem(KPI_COLLAPSED_KEY, state.kpiCollapsed ? '1' : '0');
-  }, [state.kpiCollapsed]);
+    if (boot.status !== 'carregando') return;
+    let ativo = true;
+    loadState()
+      .then((salvos) => {
+        if (!ativo) return;
+        dispatch({
+          type: 'HYDRATE',
+          tasks: salvos?.tasks ?? [],
+          preferencias: salvos?.preferencias ?? null,
+        });
+        bootPronto.current = true;
+        setBoot({ status: 'pronto' });
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setBoot({
+          status: 'erro',
+          mensagem:
+            'Não foi possível carregar seus dados. Verifique sua conexão e tente novamente.',
+        });
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [boot.status]);
 
+  // Sincronização com o Supabase a cada mudança de dados/preferências.
   useEffect(() => {
-    localStorage.setItem(TEMA_KEY, state.tema);
+    if (!bootPronto.current) return;
+    if (!jaSincronizou.current) {
+      jaSincronizou.current = true;
+      return; // ignora a primeira execução (logo após o carregamento)
+    }
+    filaGravacoes.current = filaGravacoes.current
+      .then(() =>
+        saveState({
+          tasks: state.tasks,
+          preferencias: { tema: state.tema, view: state.view, kpiCollapsed: state.kpiCollapsed },
+        })
+      )
+      .catch(() => {
+        toast.error('Não foi possível salvar no Supabase. Verifique sua conexão.');
+      });
+  }, [state.tasks, state.tema, state.view, state.kpiCollapsed, toast]);
+
+  // Aplica o tema ao <html> (classe dark) sempre que ele muda.
+  useEffect(() => {
     document.documentElement.classList.toggle('dark', state.tema === 'escuro');
   }, [state.tema]);
-
-  useEffect(() => {
-    localStorage.setItem(VIEW_KEY, state.view);
-  }, [state.view]);
 
   const dispatchWithToast = (action: AppAction) => {
     const next = appReducer(state, action);
@@ -92,7 +168,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = useMemo(() => ({ state, dispatch: dispatchWithToast }), [state]);
+  const login = useMemo(
+    () => async (usuario: string, senha: string) => {
+      await loginPorUsuario(usuario, senha);
+    },
+    []
+  );
+
+  const logout = useMemo(
+    () => async () => {
+      await sair();
+    },
+    []
+  );
+
+  const tentarNovamente = useMemo(
+    () => () => {
+      setBoot({ status: 'carregando' });
+    },
+    []
+  );
+
+  const value = useMemo(
+    () => ({ state, dispatch: dispatchWithToast, boot, login, logout, tentarNovamente }),
+    [state, boot, login, logout, tentarNovamente]
+  );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

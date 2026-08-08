@@ -73,7 +73,7 @@ export default function Modal({ open, title, onClose, children, footer, size = '
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:hover:bg-slate-700 dark:hover:text-slate-300 dark:focus-visible:ring-indigo-400/70"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />

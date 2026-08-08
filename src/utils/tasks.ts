@@ -159,13 +159,12 @@ export function projetosDe(tasks: Task[]): string[] {
   );
 }
 
-/** Gera o próximo id sequencial (TA-NNN) a partir das tarefas existentes. */
-export function nextTaskId(tasks: Task[]): string {
-  const maxNum = tasks.reduce((max, t) => {
-    const n = Number(t.id.replace(/\D/g, ''));
-    return Number.isFinite(n) ? Math.max(max, n) : max;
-  }, 0);
-  return `TA-${String(maxNum + 1).padStart(3, '0')}`;
+/** Gera um id único (UUID) para novas tarefas. */
+export function novoId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `t-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export interface NewTaskInput {
@@ -181,13 +180,13 @@ export interface NewTaskInput {
 }
 
 /**
- * Monta uma tarefa CAIXA_ENTRADA pronta para CREATE_TASK: id sequencial, timestamps
+ * Monta uma tarefa CAIXA_ENTRADA pronta para CREATE_TASK: id único (UUID), timestamps
  * e entrada de histórico de criação. Usado pelo TaskFormModal.
  */
-export function createTask(tasks: Task[], input: NewTaskInput): Task {
+export function createTask(input: NewTaskInput): Task {
   const agora = new Date().toISOString();
   return {
-    id: nextTaskId(tasks),
+    id: novoId(),
     titulo: input.titulo,
     descricao: input.descricao,
     prioridade: input.prioridade,

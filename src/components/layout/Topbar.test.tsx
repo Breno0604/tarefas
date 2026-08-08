@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import Topbar from './Topbar';
 import { renderWithApp } from '../../test/renderWithApp';
 import { useApp } from '../../context/AppContext';
+import { loadState, saveState } from '../../services/storage';
 
 function StateProbe() {
   const { state } = useApp();
@@ -171,17 +172,24 @@ describe('Topbar — controles do topo', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
-  it('persiste a visualização escolhida no localStorage', async () => {
+  it('persiste a visualização escolhida', async () => {
     const user = userEvent.setup();
     renderWithApp(<Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />);
 
     await user.click(screen.getByRole('button', { name: 'Ver como Quadro' }));
 
-    expect(localStorage.getItem('tarefas.view')).toBe('quadro');
+    await waitFor(async () => {
+      const salvos = await loadState();
+      expect(salvos?.preferencias?.view).toBe('quadro');
+    });
   });
 
-  it('restaura a visualização salva ao iniciar', () => {
-    localStorage.setItem('tarefas.view', 'quadro');
+  it('restaura a visualização salva ao iniciar', async () => {
+    const atuais = await loadState();
+    await saveState({
+      tasks: atuais?.tasks ?? [],
+      preferencias: { tema: 'claro', view: 'quadro', kpiCollapsed: false },
+    });
     renderWithApp(
       <>
         <Topbar title="Tarefas" search="" onSearch={() => {}} onNewTask={() => {}} />

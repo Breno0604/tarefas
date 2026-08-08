@@ -30,6 +30,7 @@ Mapeamento do `Task` (src/types.ts) para colunas SQL:
 |---|---|---|---|
 | `id` | `id` | `uuid` | PK, default `gen_random_uuid()` |
 | (novo) | `usuario_id` | `uuid` | NOT NULL, dono da tarefa (RLS) |
+| (novo) | `posicao` | `integer` | NOT NULL, default `0` — ordem manual da lista |
 | `titulo` | `titulo` | `text` | NOT NULL, `CHECK (length(trim(titulo)) > 0)` |
 | `descricao` | `descricao` | `text` | NOT NULL, default `''` |
 | `prioridade` | `prioridade` | `text` | NOT NULL, default `'media'`, CHECK enum |
@@ -73,6 +74,7 @@ Mapeamento do `Task` (src/types.ts) para colunas SQL:
 - CHECK enums: `prioridade`, `status`, `recorrencia`, `tema`, `view`.
 - CHECK: `titulo` não vazio.
 - Índices: PK em `id` (automático) + índice em `usuario_id`.
+- `posicao`: usado para preservar a ordem manual da lista (reordenação por arrastar).
 - Sem índices em status/prioridade/tags (filtragem é client-side sobre o conjunto completo).
 - Sem UNIQUE além da PK.
 

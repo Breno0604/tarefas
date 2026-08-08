@@ -34,7 +34,7 @@ export default function Sidebar() {
           </div>
           <button
             onClick={close}
-            className="ml-auto rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="ml-auto rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/50"
             title="Fechar menu"
           >
             <X className="h-5 w-5" />
@@ -48,7 +48,7 @@ export default function Sidebar() {
               openTarefas(dispatch);
               if (open) close();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors bg-indigo-500/20"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors bg-indigo-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/50"
           >
             <ListChecks className="h-5 w-5 shrink-0" />
             <span className="truncate">Tarefas</span>
@@ -62,7 +62,7 @@ export default function Sidebar() {
               openTarefas(dispatch, { prazo: 'vencidas' });
               if (open) close();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/50"
           >
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <span className="truncate">Atrasadas</span>
@@ -70,7 +70,7 @@ export default function Sidebar() {
         </nav>
 
         <div className="border-t border-slate-800 p-3">
-          <p className="text-xs text-slate-500">App pessoal — usuário único</p>
+          <p className="text-xs text-slate-500">Feito para uso pessoal</p>
         </div>
       </aside>
     </>

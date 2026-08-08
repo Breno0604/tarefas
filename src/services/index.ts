@@ -1,13 +1,9 @@
-import { LocalStorageProvider } from './providers/LocalStorageProvider';
-import { FutureApiProvider } from './providers/FutureApiProvider';
+import { SupabaseProvider } from './providers/SupabaseProvider';
 import type { StorageProvider } from './StorageProvider';
 
 /**
- * Ponto único de seleção do provider de persistência.
- * Trocar o destino (localStorage → API) = mudar esta env var; nada mais muda.
+ * Ponto único do provider de persistência.
+ * Em produção o destino é sempre o Supabase (fonte oficial dos dados).
+ * Em testes, `src/test/setup.ts` substitui este módulo por um provider em memória.
  */
-const useApi = import.meta.env.VITE_STORAGE_PROVIDER === 'api';
-
-export const storageProvider: StorageProvider = useApi
-  ? new FutureApiProvider()
-  : new LocalStorageProvider();
+export const storageProvider: StorageProvider = new SupabaseProvider();

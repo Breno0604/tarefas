@@ -1,17 +1,28 @@
-import type { Task } from '../types';
+import type { Task, TaskView, Tema } from '../types';
+
+export interface Preferencias {
+  tema: Tema;
+  view: TaskView;
+  kpiCollapsed: boolean;
+}
 
 export interface LoadedState {
   tasks: Task[];
+  preferencias: Preferencias | null;
 }
 
 /**
- * Contrato de persistência do app: quem salva/carrega as tarefas.
- * Trocar o destino (localStorage → API) = trocar o provider selecionado
- * em `services/index.ts` (env var VITE_STORAGE_PROVIDER), sem tocar no AppContext.
+ * Contrato de persistência do app. O provider padrão é o Supabase
+ * (fonte oficial dos dados, 100% online). Providers síncronos usados
+ * apenas em testes podem implementar `loadSync`/`saveSync` para boot
+ * imediato e sem autenticação.
  */
 export interface StorageProvider {
-  /** Retorna o estado salvo ou null quando não há dados/válidos (fallback para o seed). */
-  load(): LoadedState | null;
-  save(state: LoadedState): void;
-  clear(): void;
+  /** Indica se o provider exige autenticação (Supabase) antes de carregar dados. */
+  requiresAuth: boolean;
+  load(): Promise<LoadedState | null>;
+  save(state: LoadedState): Promise<void>;
+  clear(): Promise<void>;
+  /** Carregamento síncrono opcional — implementado apenas por providers de teste. */
+  loadSync?(): LoadedState | null;
 }

@@ -6,7 +6,7 @@ import {
   EMPTY_FILTERS,
   filterTasks,
   hasActiveFilters,
-  nextTaskId,
+  novoId,
   projetosDe,
   proximaOcorrencia,
   SEM_CATEGORIA,
@@ -192,22 +192,16 @@ describe('computeIndicators', () => {
   });
 });
 
-describe('nextTaskId / createTask', () => {
-  it('gera o próximo id sequencial a partir do seed', () => {
-    const maxNum = TAREFAS.reduce(
-      (max, t) => Math.max(max, Number(t.id.replace(/\D/g, ''))),
-      0
-    );
-    expect(nextTaskId(TAREFAS)).toBe(`TA-${String(maxNum + 1).padStart(3, '0')}`);
+describe('novoId / createTask', () => {
+  it('gera ids únicos (UUID) e nunca repete', () => {
+    const a = novoId();
+    const b = novoId();
+    expect(a).not.toBe(b);
+    expect(a.length).toBeGreaterThan(10);
   });
 
-  it('considera ids não numéricos sem quebrar', () => {
-    const lista = [{ ...TAREFAS[0], id: 'X' }, { ...TAREFAS[1], id: 'TA-099' }];
-    expect(nextTaskId(lista)).toBe('TA-100');
-  });
-
-  it('gera id sequencial, status CAIXA_ENTRADA e entrada de histórico de criação', () => {
-    const task = createTask(TAREFAS, {
+  it('gera status CAIXA_ENTRADA e entrada de histórico de criação', () => {
+    const task = createTask({
       titulo: 'Nova tarefa',
       descricao: 'desc',
       prioridade: 'alta',
@@ -226,7 +220,7 @@ describe('nextTaskId / createTask', () => {
   });
 
   it('omite categoria vazia e tags vazias', () => {
-    const task = createTask(TAREFAS, {
+    const task = createTask({
       titulo: 'X',
       descricao: '',
       prioridade: 'media',
@@ -239,7 +233,7 @@ describe('nextTaskId / createTask', () => {
   });
 
   it('preserva categoria e tags quando preenchidos', () => {
-    const task = createTask(TAREFAS, {
+    const task = createTask({
       titulo: 'X',
       descricao: '',
       prioridade: 'media',

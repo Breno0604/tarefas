@@ -54,7 +54,7 @@ export default function KPICards({ indicators }: { indicators: Indicators }) {
               <button
                 key={kpi.key}
                 onClick={kpi.onClick}
-                className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md dark:bg-slate-800 ${
+                className={`flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:bg-slate-800 ${
                   kpi.active
                     ? 'border-indigo-400 ring-2 ring-indigo-100 dark:border-indigo-500 dark:ring-indigo-950/60'
                     : 'border-slate-200 dark:border-slate-700'

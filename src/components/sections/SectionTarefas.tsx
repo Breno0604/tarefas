@@ -28,7 +28,7 @@ export default function SectionTarefas() {
 
   return (
     <>
-      <div className="mb-5 space-y-4">
+      <div className="mb-6 space-y-4">
         <KPICards indicators={indicators} />
         {state.filtersOpen && <FilterBar />}
       </div>

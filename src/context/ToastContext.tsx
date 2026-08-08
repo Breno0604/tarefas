@@ -96,14 +96,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     t.action?.onClick();
                     remove(t.id);
                   }}
-                  className="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/40"
+                  className="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-900/40 dark:focus-visible:ring-indigo-400/70"
                 >
                   {t.action.label}
                 </button>
               )}
               <button
                 onClick={() => remove(t.id)}
-                className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-300"
+                className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:hover:text-slate-300 dark:focus-visible:ring-indigo-400/70"
                 aria-label="Fechar notificação"
               >
                 <X className="h-4 w-4" />
