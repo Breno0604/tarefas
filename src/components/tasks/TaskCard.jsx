@@ -1,0 +1,180 @@
+import React, { useRef, useState } from 'react'
+import { MessageSquare, ListChecks, MoreHorizontal, Clock, Star } from 'lucide-react'
+import { Avatar, Tag as TagChip, DueDateBadge } from '../ui/Badge'
+import Dropdown from '../ui/Dropdown'
+import ConfirmDialog from '../ui/ConfirmDialog'
+import TaskPreview from './TaskPreview'
+import { useContextMenu } from '../ui/ContextMenu'
+import { buildTaskMenu } from './taskMenu'
+import { PRIORITY } from '../../lib/constants'
+import { useCan, useCanModifyTask } from '../../store/store'
+
+const PRIORITY_BAR = {
+  urgent: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-blue-500',
+  low: 'bg-slate-300 dark:bg-slate-600'
+}
+
+export default function TaskCard({
+  task,
+  assignee,
+  project,
+  commentCount,
+  onChange,
+  onOpen,
+  onEdit,
+  onDelete,
+  onToggleFavorite,
+  onDuplicate,
+  onApprove,
+  onCancel,
+  draggable = true,
+  onDragStart
+}) {
+  const { show } = useContextMenu()
+  const [confirm, setConfirm] = useState(false)
+  const [preview, setPreview] = useState(null)
+  const cardRef = useRef(null)
+  const hideTimer = useRef(null)
+  const can = useCan()
+  const canModify = useCanModifyTask()
+  const canEditThis = can('edit_tasks') && canModify(task)
+
+  const menu = buildTaskMenu(task, {
+    onOpen,
+    onEdit,
+    onDelete: () => setConfirm(true),
+    onChange: (patch) => onChange(patch, task.id),
+    onFavorite: onToggleFavorite,
+    onDuplicate,
+    onApprove: onApprove ? () => onApprove(task) : undefined,
+    onCancel: onCancel ? () => onCancel(task) : undefined,
+    allowEdit: canEditThis,
+    allowDelete: can('delete_tasks') && canModify(task),
+    allowCreate: can('create_tasks')
+  })
+
+  const queuePreview = () => {
+    if (!window.matchMedia('(hover: hover)').matches) return
+    clearTimeout(hideTimer.current)
+    hideTimer.current = setTimeout(() => {
+      const rect = cardRef.current?.getBoundingClientRect()
+      if (rect) setPreview(rect)
+    }, 400)
+  }
+  const cancelPreview = () => {
+    clearTimeout(hideTimer.current)
+  }
+
+  return (
+    <>
+      <div
+        ref={cardRef}
+        draggable={draggable}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', task.id)
+          onDragStart?.(task.id)
+        }}
+        onMouseEnter={queuePreview}
+        onMouseLeave={cancelPreview}
+        onContextMenu={(e) => show(e, menu)}
+        className="group cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div className={`h-1 w-full ${PRIORITY_BAR[task.priority]}`} />
+        <div className="p-3">
+          <div className="flex items-start gap-1.5">
+            <button
+              onClick={onOpen}
+              className="flex-1 text-left text-sm font-semibold leading-snug text-slate-800 transition group-hover:text-brand-700 dark:text-slate-100 dark:group-hover:text-brand-300"
+            >
+              {task.title}
+            </button>
+            <button
+              onClick={onToggleFavorite}
+              className={`mt-0.5 shrink-0 rounded-md p-1 transition ${
+                task.favorite
+                  ? 'text-amber-400 hover:text-amber-500'
+                  : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500 sm:opacity-0 sm:group-hover:opacity-100 dark:text-slate-600 dark:hover:bg-slate-800'
+              }`}
+              aria-label={task.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            >
+              <Star size={14} fill={task.favorite ? 'currentColor' : 'none'} />
+            </button>
+            <Dropdown
+              align="right"
+              trigger={
+                <button
+                  className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-slate-800"
+                  aria-label="Ações da tarefa"
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              }
+              items={menu}
+            />
+          </div>
+
+          {task.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {task.tags.slice(0, 3).map((t) => (
+                <TagChip key={t}>{t}</TagChip>
+              ))}
+            </div>
+          )}
+
+          {task.subtasks.length > 0 && (
+            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+              <ListChecks size={12} />
+              {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between">
+            <Avatar user={assignee} size="sm" />
+            <div className="flex items-center gap-2.5">
+              {task.estimatedHours > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                  <Clock size={11} />
+                  {task.estimatedHours}h
+                </span>
+              )}
+              {commentCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                  <MessageSquare size={11} />
+                  {commentCount}
+                </span>
+              )}
+              <DueDateBadge dueDate={task.dueDate} status={task.status} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {preview && (
+        <TaskPreview
+          task={task}
+          anchorRect={preview}
+          assignee={assignee}
+          project={project}
+          commentCount={commentCount}
+          onClose={() => setPreview(null)}
+          onOpen={onOpen}
+          onEdit={onEdit}
+          onToggleFavorite={onToggleFavorite}
+        />
+      )}
+
+      <ConfirmDialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        onConfirm={() => {
+          setConfirm(false)
+          onDelete()
+        }}
+        title="Excluir tarefa"
+        message={`Excluir "${task.title}"? Você poderá desfazer em seguida.`}
+      />
+    </>
+  )
+}
