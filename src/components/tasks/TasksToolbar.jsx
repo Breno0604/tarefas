@@ -1,11 +1,5 @@
 import React from 'react'
 import {
-  Search,
-  X,
-  Star,
-  UserCheck,
-  Bookmark,
-  Plus,
   ListFilter,
   ArrowDownWideNarrow,
   FilterX
@@ -53,92 +47,18 @@ const toggleButtonCls = (active) =>
 
 export default function TasksToolbar({ f, searchRef, openSaveFilter }) {
   const {
-    query,
-    setQuery,
     filters,
     setFilters,
     toggleFilter,
     clearFilters,
     activeFilterCount,
-    myTasks,
-    setMyTasks,
-    favoritesOnly,
-    setFavoritesOnly,
-    savedFilters,
-    applySavedFilter,
     sortKey,
-    setSortKey
+    setSortKey,
+    query
   } = f
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-[220px] flex-1">
-        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          ref={searchRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Pesquisar por título, descrição ou tag..."
-          className="input-base pl-9 pr-8"
-        />
-        {query && (
-          <button
-            onClick={() => setQuery('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
-            aria-label="Limpar busca"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
-
-      <button onClick={() => setMyTasks((v) => !v)} className={toggleButtonCls(myTasks)}>
-        <UserCheck size={14} />
-        Atribuídas a mim
-      </button>
-
-      <button
-        onClick={() => setFavoritesOnly((v) => !v)}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
-          favoritesOnly
-            ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300'
-            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'
-        }`}
-      >
-        <Star size={14} fill={favoritesOnly ? 'currentColor' : 'none'} />
-        Favoritas
-      </button>
-
-      <Dropdown
-        align="right"
-        trigger={
-          <button className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600">
-            <Bookmark size={14} />
-            Filtros salvos
-            {savedFilters.length > 0 && (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-1 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                {savedFilters.length}
-              </span>
-            )}
-          </button>
-        }
-        items={[
-          ...(savedFilters.length
-            ? savedFilters.map((f2) => ({
-                label: f2.name,
-                icon: Bookmark,
-                onClick: () => applySavedFilter(f2)
-              }))
-            : [{ label: 'Nenhum filtro salvo', disabled: true }]),
-          { type: 'divider' },
-          {
-            label: 'Salvar filtros atuais',
-            icon: Plus,
-            onClick: openSaveFilter
-          }
-        ]}
-      />
-
       <FilterDropdown
         label="Status"
         icon={ListFilter}

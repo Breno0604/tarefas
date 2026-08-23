@@ -15,7 +15,9 @@ export default function TaskPreview({
   onClose,
   onOpen,
   onEdit,
-  onToggleFavorite
+  onToggleFavorite,
+  onPointerEnter,
+  onPointerLeave
 }) {
   const ref = useRef(null)
   useDismissable(ref, onClose)
@@ -38,6 +40,8 @@ export default function TaskPreview({
       ref={ref}
       className="fixed z-[75] w-[300px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900"
       style={{ left, top }}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
     >
       <div className="border-b border-slate-100 p-3.5 dark:border-slate-800">
         <div className="flex items-start gap-2">

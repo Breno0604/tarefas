@@ -36,6 +36,7 @@ export default function TaskCard({
   const [confirm, setConfirm] = useState(false)
   const [preview, setPreview] = useState(null)
   const cardRef = useRef(null)
+  const showTimer = useRef(null)
   const hideTimer = useRef(null)
   const can = useCan()
   const canModify = useCanModifyTask()
@@ -58,12 +59,19 @@ export default function TaskCard({
   const queuePreview = () => {
     if (!window.matchMedia('(hover: hover)').matches) return
     clearTimeout(hideTimer.current)
-    hideTimer.current = setTimeout(() => {
+    clearTimeout(showTimer.current)
+    showTimer.current = setTimeout(() => {
       const rect = cardRef.current?.getBoundingClientRect()
       if (rect) setPreview(rect)
-    }, 400)
+    }, 2000)
   }
   const cancelPreview = () => {
+    clearTimeout(showTimer.current)
+    hideTimer.current = setTimeout(() => {
+      setPreview(null)
+    }, 500)
+  }
+  const keepPreview = () => {
     clearTimeout(hideTimer.current)
   }
 
@@ -162,6 +170,11 @@ export default function TaskCard({
           onOpen={onOpen}
           onEdit={onEdit}
           onToggleFavorite={onToggleFavorite}
+          onPointerEnter={keepPreview}
+          onPointerLeave={() => {
+            clearTimeout(hideTimer.current)
+            hideTimer.current = setTimeout(() => setPreview(null), 500)
+          }}
         />
       )}
 

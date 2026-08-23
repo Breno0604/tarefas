@@ -126,7 +126,7 @@ export const ACCESS_LEVELS = {
   },
   viewer: {
     key: 'viewer',
-    label: 'Somente leitura',
+    label: 'Visitante',
     rank: 0,
     hex: '#94a3b8',
     badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'

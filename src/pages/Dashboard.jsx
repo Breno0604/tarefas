@@ -215,21 +215,50 @@ export default function Dashboard() {
         />
       </div>
 
-      {metrics.unassignedCount > 0 && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            <span className="font-bold">{metrics.unassignedCount} tarefa(s) sem responsável.</span>{' '}
-            Atribua um responsável para que entrem no fluxo da equipe.
-            <button
-              onClick={() => navigate('/tarefas?view=kanban')}
-              className="ml-2 font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950 dark:text-amber-100 dark:hover:text-white"
-            >
-              Ver tarefas
-            </button>
-          </p>
-        </div>
-      )}
+      {isManager && metrics.unassignedCount > 0 && (() => {
+        const unassigned = scopedTasks.filter(
+          (t) => !t.assigneeId && t.status !== 'done' && t.status !== 'cancelled'
+        )
+        return (
+          <div className="card-base p-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-500" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                  {metrics.unassignedCount} tarefa(s) sem responsável
+                </p>
+                <p className="mt-0.5 text-xs text-amber-600/80 dark:text-amber-400/80">
+                  Atribua um responsável para que entrem no fluxo da equipe.
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {unassigned.slice(0, 5).map((t) => (
+                    <li key={t.id}>
+                      <button
+                        onClick={() => navigate(`/tarefas?task=${t.id}`)}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                      >
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                        <span className="flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {t.title}
+                        </span>
+                        <StatusBadge status={t.status} size="sm" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {unassigned.length > 5 && (
+                  <button
+                    onClick={() => navigate('/tarefas?view=kanban')}
+                    className="mt-2 text-xs font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
+                  >
+                    Ver todas ({unassigned.length})
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="card-base p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

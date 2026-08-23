@@ -10,8 +10,6 @@ import {
   LogOut,
   User as UserIcon,
   SlidersHorizontal,
-  Maximize2,
-  Minimize2,
   Keyboard,
   Shield,
   ShieldCheck
@@ -54,9 +52,7 @@ export default function AppLayout() {
   const [quickOpen, setQuickOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [focusMode, setFocusMode] = useState(
-    () => localStorage.getItem('taskflow-focus-mode') === '1'
-  )
+
 
   const can = (perm) => (activeProfile?.permissions || []).includes(perm)
 
@@ -75,13 +71,6 @@ export default function AppLayout() {
     )
   }
 
-  const toggleFocus = () => {
-    setFocusMode((v) => {
-      localStorage.setItem('taskflow-focus-mode', v ? '0' : '1')
-      return !v
-    })
-  }
-
   useEffect(() => {
     const onKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -98,9 +87,9 @@ export default function AppLayout() {
         } else {
           toast.info('Seu perfil atual não tem permissão para criar tarefas')
         }
-      } else if (key === 'f') {
+      } else if (key === 'd') {
         e.preventDefault()
-        toggleFocus()
+        dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })
       } else if (key === '/') {
         if (location.pathname !== '/tarefas') {
           e.preventDefault()
@@ -113,7 +102,7 @@ export default function AppLayout() {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [location.pathname, activeProfile])
+  }, [location.pathname, activeProfile, state.theme])
 
   useEffect(() => {
     setNotifOpen(false)
@@ -136,21 +125,17 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      {!focusMode && (
-        <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-      )}
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-      <div className={focusMode ? 'lg:pl-0' : 'lg:pl-64'}>
+      <div className="lg:pl-64">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 sm:px-6">
-          {!focusMode && (
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden dark:text-slate-400 dark:hover:bg-slate-800"
-              aria-label="Abrir menu"
-            >
-              <Menu size={20} />
-            </button>
-          )}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            aria-label="Abrir menu"
+          >
+            <Menu size={20} />
+          </button>
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-bold text-slate-900 dark:text-white sm:text-lg">
@@ -179,57 +164,20 @@ export default function AppLayout() {
             <Search size={18} />
           </button>
 
-          <Tooltip content={focusMode ? 'Sair do modo foco (F)' : 'Modo foco (F)'}>
-            <button
-              onClick={toggleFocus}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
-                focusMode
-                  ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
-              }`}
-              aria-label={focusMode ? 'Sair do modo foco' : 'Ativar modo foco'}
-            >
-              {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Atalhos de teclado (?)">
-            <button
-              onClick={() => setShortcutsOpen(true)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              aria-label="Atalhos de teclado"
-            >
-              <Keyboard size={18} />
-            </button>
-          </Tooltip>
-
-          <Tooltip content={state.theme === 'dark' ? 'Modo claro' : 'Modo escuro'}>
-            <button
-              onClick={() => dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              aria-label="Alternar tema"
-            >
-              {state.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          </Tooltip>
-
           <NotificationsPanel open={notifOpen} onOpenChange={setNotifOpen} />
 
           <Dropdown
             align="right"
             triggerClassName="w-72"
             trigger={
-              <button
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
-                aria-label="Perfil de acesso"
-              >
-                <Shield size={14} className="text-brand-500" />
-                <span className="hidden max-w-[110px] truncate lg:block">{activeProfile?.name}</span>
-                <span className="hidden rounded-full px-1.5 py-0.5 text-[10px] font-bold sm:inline-flex" style={{ backgroundColor: `${ACCESS_LEVELS[activeProfile?.level]?.hex || '#94a3b8'}1f`, color: ACCESS_LEVELS[activeProfile?.level]?.hex }}>
-                  {ACCESS_LEVELS[activeProfile?.level]?.label}
-                </span>
-                <ChevronDown size={13} className="text-slate-400" />
-              </button>
+              <Tooltip content={activeProfile?.name}>
+                <button
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+                  aria-label="Perfil de acesso"
+                >
+                  <Shield size={16} className="text-brand-500" />
+                </button>
+              </Tooltip>
             }
             items={[
               { label: 'Perfil de acesso ativo', type: 'label' },
@@ -261,22 +209,13 @@ export default function AppLayout() {
           />
 
           {can('create_tasks') ? (
-            <Button icon={Plus} onClick={() => setQuickOpen(true)} className="hidden sm:inline-flex">
-              Nova tarefa
-            </Button>
+            <Tooltip content="Nova tarefa (N)">
+              <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} />
+            </Tooltip>
           ) : (
             <Tooltip content="Seu perfil não permite criar tarefas">
-              <span className="hidden sm:inline-flex">
-                <Button icon={Plus} disabled className="sm:inline-flex">
-                  Nova tarefa
-                </Button>
-              </span>
+              <Button iconOnly icon={Plus} disabled />
             </Tooltip>
-          )}
-          {can('create_tasks') ? (
-            <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} className="sm:hidden" />
-          ) : (
-            <Button iconOnly icon={Plus} disabled className="sm:hidden" />
           )}
 
           <Dropdown

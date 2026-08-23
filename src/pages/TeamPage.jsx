@@ -7,6 +7,7 @@ import { Avatar, AvatarStack } from '../components/ui/Badge'
 import { ROLE_BADGE } from '../lib/constants'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
+import Drawer from '../components/ui/Drawer'
 import ProgressBar from '../components/ui/ProgressBar'
 import Tooltip from '../components/ui/Tooltip'
 import { isOverdue } from '../lib/format'
@@ -230,12 +231,12 @@ export default function TeamPage() {
         </div>
       </Modal>
 
-      <Modal
+      <Drawer
         open={Boolean(selectedMember)}
         onClose={() => setSelected(null)}
         title={selectedMember?.name}
-        description={`${selectedMember?.role} · ${selectedMember?.email}`}
-        size="lg"
+        subtitle={`${selectedMember?.role} · ${selectedMember?.email}`}
+        width="max-w-xl"
         footer={
           <Button variant="secondary" onClick={() => setSelected(null)}>
             Fechar
@@ -337,7 +338,7 @@ export default function TeamPage() {
             </div>
           </div>
         )}
-      </Modal>
+      </Drawer>
     </div>
   )
 }

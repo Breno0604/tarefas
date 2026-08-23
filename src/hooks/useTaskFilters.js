@@ -114,16 +114,8 @@ export function useTaskFilters(view) {
 
   const visible = useMemo(() => {
     if (isManager) return state.tasks
-    const myProjects = new Set(
-      state.projects
-        .filter((p) => p.members.includes(state.currentUserId))
-        .map((p) => p.id)
-    )
-    return state.tasks.filter((t) => {
-      if (!t.projectId) return t.assigneeId === state.currentUserId
-      return myProjects.has(t.projectId) || t.assigneeId === state.currentUserId
-    })
-  }, [state.tasks, state.projects, state.currentUserId, isManager])
+    return state.tasks.filter((t) => t.assigneeId === state.currentUserId)
+  }, [state.tasks, state.currentUserId, isManager])
 
   const filtered = useMemo(() => {
     let list = visible

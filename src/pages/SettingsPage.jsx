@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon } from 'lucide-react'
+import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard } from 'lucide-react'
 import { useStore, useCurrentUser } from '../store/store'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
@@ -12,6 +12,7 @@ const TABS = [
   { key: 'profile', label: 'Perfil', icon: User },
   { key: 'preferences', label: 'Preferências', icon: SlidersHorizontal },
   { key: 'appearance', label: 'Aparência', icon: Palette },
+  { key: 'shortcuts', label: 'Atalhos', icon: Keyboard },
   { key: 'notifications', label: 'Notificações', icon: Bell },
   { key: 'general', label: 'Geral', icon: Database }
 ]
@@ -267,6 +268,29 @@ export default function SettingsPage() {
             <div className="mt-4 flex justify-end">
               <Button variant="secondary" onClick={() => toast.success('Preferências de notificação salvas')}>Salvar</Button>
             </div>
+          </SectionCard>
+        )}
+
+        {tab === 'shortcuts' && (
+          <SectionCard title="Atalhos de teclado" description="Navegue e gerencie tarefas mais rápido.">
+            <ul className="space-y-2.5">
+              {[
+                ['Ctrl + K', 'Abrir a paleta de comandos'],
+                ['N', 'Nova tarefa'],
+                ['D', 'Alternar tema claro/escuro'],
+                ['/', 'Buscar tarefas'],
+                ['1 – 4', 'Alternar visão (Lista, Kanban, Tabela, Calendário)'],
+                ['?', 'Mostrar estes atalhos'],
+                ['Esc', 'Fechar janelas abertas']
+              ].map(([keys, label]) => (
+                <li key={keys} className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>
+                  <kbd className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {keys}
+                  </kbd>
+                </li>
+              ))}
+            </ul>
           </SectionCard>
         )}
 

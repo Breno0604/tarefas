@@ -1,19 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  Plus,
   SlidersHorizontal,
   LayoutList,
   Columns3,
   Table2,
-  CalendarDays
+  CalendarDays,
+  ChevronDown,
+  Filter,
+  Search,
+  X,
+  Star,
+  Bookmark,
+  Plus
 } from 'lucide-react'
 import { useStore, useCan } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
-import { SegmentedControl } from '../components/ui/Tabs'
+import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
+import Tooltip from '../components/ui/Tooltip'
 import EmptyState from '../components/ui/EmptyState'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Pagination from '../components/ui/Pagination'
@@ -51,6 +58,7 @@ export default function TasksPage() {
   const [saveFilterOpen, setSaveFilterOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [loading, setLoading] = useState(true)
+  const [filtersVisible, setFiltersVisible] = useState(true)
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 500)
@@ -236,28 +244,109 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          value={view}
-          onChange={setView}
-          options={[
-            { key: 'list', label: 'Lista', icon: LayoutList },
-            { key: 'kanban', label: 'Kanban', icon: Columns3 },
-            { key: 'table', label: 'Tabela', icon: Table2 },
-            { key: 'calendar', label: 'Calendário', icon: CalendarDays }
+      <div className="flex flex-wrap items-center gap-2">
+        <Dropdown
+          trigger={
+            <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600">
+              {view === 'list' && <LayoutList size={16} />}
+              {view === 'kanban' && <Columns3 size={16} />}
+              {view === 'table' && <Table2 size={16} />}
+              {view === 'calendar' && <CalendarDays size={16} />}
+              {view === 'list' && 'Lista'}
+              {view === 'kanban' && 'Kanban'}
+              {view === 'table' && 'Tabela'}
+              {view === 'calendar' && 'Calendário'}
+              <ChevronDown size={14} className="text-slate-400" />
+            </button>
+          }
+          items={[
+            { key: 'list', label: 'Lista', icon: LayoutList, active: view === 'list', onClick: () => setView('list') },
+            { key: 'kanban', label: 'Kanban', icon: Columns3, active: view === 'kanban', onClick: () => setView('kanban') },
+            { key: 'table', label: 'Tabela', icon: Table2, active: view === 'table', onClick: () => setView('table') },
+            { key: 'calendar', label: 'Calendário', icon: CalendarDays, active: view === 'calendar', onClick: () => setView('calendar') }
           ]}
         />
-        {can('create_tasks') && (
-          <Button icon={Plus} onClick={() => openCreate()}>
-            Nova tarefa
-          </Button>
-        )}
+
+        <Tooltip content={filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}>
+          <button
+            onClick={() => setFiltersVisible((v) => !v)}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+              !filtersVisible && f.activeFilterCount > 0
+                ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300'
+                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600'
+            }`}
+            aria-label={filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}
+          >
+            <Filter size={16} />
+          </button>
+        </Tooltip>
+
+        <div className="relative min-w-[180px] flex-1 sm:min-w-[220px]">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            ref={searchRef}
+            value={f.query}
+            onChange={(e) => f.setQuery(e.target.value)}
+            placeholder="Pesquisar..."
+            className="input-base h-9 pl-9 pr-8 text-sm"
+          />
+          {f.query && (
+            <button
+              onClick={() => f.setQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
+              aria-label="Limpar busca"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={() => f.setFavoritesOnly((v) => !v)}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+            f.favoritesOnly
+              ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300'
+              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'
+          }`}
+          aria-label="Favoritas"
+        >
+          <Star size={14} fill={f.favoritesOnly ? 'currentColor' : 'none'} />
+        </button>
+
+        <Dropdown
+          align="right"
+          trigger={
+            <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600" aria-label="Filtros salvos">
+              <Bookmark size={14} />
+            </button>
+          }
+          items={[
+            ...(f.savedFilters.length
+              ? f.savedFilters.map((f2) => ({
+                  label: f2.name,
+                  icon: Bookmark,
+                  onClick: () => f.applySavedFilter(f2)
+                }))
+              : [{ label: 'Nenhum filtro salvo', disabled: true }]),
+            { type: 'divider' },
+            {
+              label: 'Salvar filtros atuais',
+              icon: Plus,
+              onClick: () => {
+                setSaveName('')
+                setSaveFilterOpen(true)
+              }
+            }
+          ]}
+        />
       </div>
 
-      <TasksToolbar f={toolbarData} searchRef={searchRef} openSaveFilter={() => {
-        setSaveName('')
-        setSaveFilterOpen(true)
-      }} />
+      {filtersVisible && (
+        <TasksToolbar f={toolbarData} searchRef={searchRef} openSaveFilter={() => {
+          setSaveName('')
+          setSaveFilterOpen(true)
+        }} />
+      )}
 
       <ActiveFiltersBar activeFilters={f.activeFilters} onRemove={removeActiveFilter} />
 

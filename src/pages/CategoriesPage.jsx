@@ -6,8 +6,10 @@ import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
+import Drawer from '../components/ui/Drawer'
 import EmptyState from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Inputs'
+import { formatDay, isOverdue } from '../lib/format'
 
 const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#f43f5e', '#10b981', '#64748b']
 
@@ -16,6 +18,7 @@ export default function CategoriesPage() {
   const toast = useToast()
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState(null)
   const [form, setForm] = useState({ name: '', color: COLORS[0] })
 
   const stats = useMemo(() => {
@@ -51,7 +54,7 @@ export default function CategoriesPage() {
             return (
               <button
                 key={c.id}
-                onClick={() => navigate('/tarefas')}
+                onClick={() => setSelectedId(c.id)}
                 className="card-base group p-5 text-left transition hover:-translate-y-0.5 hover:shadow-popover"
               >
                 <div className="flex items-start justify-between">
@@ -87,6 +90,88 @@ export default function CategoriesPage() {
           })}
         </div>
       )}
+
+      <Drawer
+        open={Boolean(selectedId)}
+        onClose={() => setSelectedId(null)}
+        title={state.categories.find((c) => c.id === selectedId)?.name}
+        subtitle={`${stats[selectedId]?.total || 0} tarefas nesta categoria`}
+        width="max-w-xl"
+        footer={
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSelectedId(null)
+              navigate(`/tarefas?category=${selectedId}`)
+            }}
+          >
+            Ver tarefas desta categoria
+          </Button>
+        }
+      >
+        {selectedId && (() => {
+          const cat = state.categories.find((c) => c.id === selectedId)
+          const catTasks = state.tasks
+            .filter((t) => t.categoryId === selectedId)
+            .sort((a, b) => {
+              if (!a.dueDate) return 1
+              if (!b.dueDate) return -1
+              return new Date(a.dueDate) - new Date(b.dueDate)
+            })
+          return (
+            <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${cat?.color}1f` }}>
+                  <Tags size={22} style={{ color: cat?.color }} />
+                </span>
+                <div className="grid flex-1 grid-cols-3 gap-3">
+                  <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
+                    <p className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{stats[selectedId]?.total || 0}</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Tarefas</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
+                    <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{stats[selectedId]?.byStatus?.done || 0}</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Concluídas</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
+                    <p className="text-lg font-extrabold text-red-600 dark:text-red-400">{catTasks.filter((t) => isOverdue(t.dueDate, t.status)).length}</p>
+                    <p className="text-[11px] font-semibold text-slate-400">Atrasadas</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  Tarefas ({catTasks.length})
+                </p>
+                {catTasks.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400 dark:border-slate-700">
+                    Nenhuma tarefa nesta categoria ainda.
+                  </p>
+                ) : (
+                  <ul className="space-y-1">
+                    {catTasks.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          onClick={() => {
+                            setSelectedId(null)
+                            navigate(`/tarefas?task=${t.id}`)
+                          }}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        >
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: isOverdue(t.dueDate, t.status) ? '#ef4444' : '#94a3b8' }} />
+                          <span className="flex-1 truncate font-medium text-slate-700 dark:text-slate-200">{t.title}</span>
+                          <span className="text-xs font-semibold text-slate-400">{t.status === 'done' ? '✓' : t.dueDate ? formatDay(t.dueDate) : ''}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+      </Drawer>
 
       <Modal
         open={createOpen}
