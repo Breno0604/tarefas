@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Menu,
@@ -24,7 +24,7 @@ import Modal from '../ui/Modal'
 import { Avatar } from '../ui/Badge'
 import { useStore, useCurrentUser, useActiveProfile } from '../../store/store'
 import { useToast } from '../../store/toast'
-import { ACCESS_LEVELS, ACCESS_TYPES } from '../../lib/constants'
+import { ACCESS_LEVELS } from '../../lib/constants'
 import { PageSkeleton } from '../ui/Skeleton'
 
 const TITLES = {
@@ -70,6 +70,9 @@ export default function AppLayout() {
     )
   }
 
+  const themeRef = useRef(state.theme)
+  themeRef.current = state.theme
+
   useEffect(() => {
     const onKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -88,7 +91,7 @@ export default function AppLayout() {
         }
       } else if (key === 'd') {
         e.preventDefault()
-        dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })
+        dispatch({ type: 'SET_THEME', theme: themeRef.current === 'dark' ? 'light' : 'dark' })
       } else if (key === '/') {
         if (location.pathname !== '/tarefas') {
           e.preventDefault()
@@ -101,7 +104,7 @@ export default function AppLayout() {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [location.pathname, activeProfile, state.theme])
+  }, [location.pathname, activeProfile])
 
   useEffect(() => {
     setNotifOpen(false)
@@ -296,7 +299,7 @@ export default function AppLayout() {
             ['N', 'Nova tarefa'],
             ['D', 'Alternar tema claro/escuro'],
             ['/', 'Buscar tarefas'],
-            ['1 – 4', 'Alternar visão (Lista, Kanban, Tabela, Calendário)'],
+            ['1 – 4', 'Alternar visão (somente na página de Tarefas)'],
             ['?', 'Mostrar estes atalhos'],
             ['Esc', 'Fechar janelas abertas']
           ].map(([keys, label]) => (

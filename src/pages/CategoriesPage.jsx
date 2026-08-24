@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Tags, ListTodo } from 'lucide-react'
+import { Plus, Tags } from 'lucide-react'
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { MessageSquare, ListChecks, MoreHorizontal, Clock, Star } from 'lucide-react'
 import { Avatar, Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import Dropdown from '../ui/Dropdown'
@@ -41,6 +41,13 @@ export default function TaskCard({
   const can = useCan()
   const canModify = useCanModifyTask()
   const canEditThis = can('edit_tasks') && canModify(task)
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(showTimer.current)
+      clearTimeout(hideTimer.current)
+    }
+  }, [])
 
   const menu = buildTaskMenu(task, {
     onOpen,

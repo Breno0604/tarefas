@@ -38,14 +38,7 @@ function FilterDropdown({ label, icon: Icon, activeCount, items, onClear }) {
   )
 }
 
-const toggleButtonCls = (active) =>
-  `inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
-    active
-      ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300'
-      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'
-  }`
-
-export default function TasksToolbar({ f, searchRef, openSaveFilter }) {
+export default function TasksToolbar({ f, openSaveFilter }) {
   const {
     filters,
     setFilters,

@@ -61,7 +61,6 @@ export function useTaskFilters(view) {
     project: [],
     category: []
   })
-  const [myTasks, setMyTasks] = useState(false)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [savedFilters, setSavedFilters] = useState(() => {
     try {
@@ -90,7 +89,7 @@ export function useTaskFilters(view) {
   useEffect(() => {
     setPage(1)
     setSelected(new Set())
-  }, [query, filters, view, myTasks, favoritesOnly])
+  }, [query, filters, view, favoritesOnly])
 
   const toggleFilter = (dim, key) => {
     setFilters((f) => {
@@ -103,13 +102,11 @@ export function useTaskFilters(view) {
   const clearFilters = () => {
     setFilters({ status: [], priority: [], assignee: [], project: [], category: [] })
     setQuery('')
-    setMyTasks(false)
     setFavoritesOnly(false)
   }
 
   const activeFilterCount =
     Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) +
-    (myTasks ? 1 : 0) +
     (favoritesOnly ? 1 : 0)
 
   const visible = useMemo(() => {
@@ -135,7 +132,6 @@ export function useTaskFilters(view) {
     if (filters.project.length)
       list = list.filter((t) => filters.project.includes(t.projectId || 'none'))
     if (filters.category.length) list = list.filter((t) => filters.category.includes(t.categoryId))
-    if (myTasks) list = list.filter((t) => t.assigneeId === state.currentUserId)
     if (favoritesOnly) list = list.filter((t) => t.favorite)
 
     const sorted = [...list]
@@ -143,7 +139,7 @@ export function useTaskFilters(view) {
     const sortDir = dir || SORT_DEFAULT_DIR[base] || 'asc'
     sorted.sort((a, b) => compareTasks(base, sortDir, a, b))
     return sorted
-  }, [visible, state.currentUserId, query, filters, sortKey, myTasks, favoritesOnly])
+  }, [visible, state.currentUserId, query, filters, sortKey, favoritesOnly])
 
   const pageTasks = useMemo(
     () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -152,7 +148,6 @@ export function useTaskFilters(view) {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
 
   const activeFilters = [
-    ...(myTasks ? [{ dim: 'mine', key: 'mine', label: 'Atribuídas a mim' }] : []),
     ...(favoritesOnly ? [{ dim: 'fav', key: 'fav', label: 'Favoritas' }] : []),
     ...filters.status.map((k) => ({ dim: 'status', key: k, label: STATUS[k].label })),
     ...filters.priority.map((k) => ({ dim: 'priority', key: k, label: PRIORITY[k].label })),
@@ -181,7 +176,6 @@ export function useTaskFilters(view) {
       name: trimmed,
       query,
       filters,
-      myTasks,
       favoritesOnly
     }
     setSavedFilters((list) => [...list, preset])
@@ -192,7 +186,6 @@ export function useTaskFilters(view) {
     setFilters(
       preset.filters || { status: [], priority: [], assignee: [], project: [], category: [] }
     )
-    setMyTasks(Boolean(preset.myTasks))
     setFavoritesOnly(Boolean(preset.favoritesOnly))
     setPage(1)
   }
@@ -209,8 +202,6 @@ export function useTaskFilters(view) {
     toggleFilter,
     clearFilters,
     activeFilterCount,
-    myTasks,
-    setMyTasks,
     favoritesOnly,
     setFavoritesOnly,
     sortKey,
