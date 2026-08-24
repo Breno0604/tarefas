@@ -319,9 +319,11 @@ export default function SettingsPage() {
         open={confirmReset}
         onClose={() => setConfirmReset(false)}
         onConfirm={() => {
-          dispatch({ type: 'RESET' })
-          toast.success('Dados de demonstração restaurados')
           setConfirmReset(false)
+          try {
+            dispatch({ type: 'RESET' })
+            toast.success('Dados de demonstração restaurados')
+          } catch (e) { console.error('Reset failed:', e) }
         }}
         title="Restaurar dados"
         message="Todos os dados atuais serão substituídos pelos dados fictícios iniciais. Deseja continuar?"

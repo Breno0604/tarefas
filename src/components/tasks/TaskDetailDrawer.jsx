@@ -517,9 +517,11 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => {
-          deleteTaskWithUndo({ dispatch, toast, task, actorId })
           setConfirmDelete(false)
-          onClose()
+          try {
+            deleteTaskWithUndo({ dispatch, toast, task, actorId })
+            onClose()
+          } catch (e) { console.error('Delete failed:', e) }
         }}
         title="Excluir tarefa"
         message={`Tem certeza que deseja excluir "${task.title}"?`}

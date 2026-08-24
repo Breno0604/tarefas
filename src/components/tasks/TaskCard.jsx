@@ -192,7 +192,7 @@ export default function TaskCard({
         onClose={() => setConfirm(false)}
         onConfirm={() => {
           setConfirm(false)
-          onDelete()
+          try { onDelete() } catch (e) { console.error('Delete failed:', e) }
         }}
         title="Excluir tarefa"
         message={`Excluir "${task.title}"? Você poderá desfazer em seguida.`}

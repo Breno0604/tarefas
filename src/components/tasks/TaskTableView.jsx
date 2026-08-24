@@ -194,8 +194,8 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
         open={Boolean(confirm)}
         onClose={() => setConfirm(null)}
         onConfirm={() => {
-          if (confirm) onDeleteTask(confirm)
           setConfirm(null)
+          try { if (confirm) onDeleteTask(confirm) } catch (e) { console.error('Delete failed:', e) }
         }}
         title="Excluir tarefa"
         message={`Excluir "${confirm?.title}"? Você poderá desfazer em seguida.`}
