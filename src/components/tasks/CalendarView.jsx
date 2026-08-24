@@ -10,7 +10,7 @@ const WEEKDAYS_MONDAY = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
   const { state } = useStore()
   const today = startOfDay(new Date())
-  const firstDay = localStorage.getItem('taskflow-first-day') === 'monday' ? 1 : 0
+  const firstDay = state.appearance?.firstDay === 'monday' ? 1 : 0
   const [monthOffset, setMonthOffset] = useState(0)
 
   const monthDate = useMemo(

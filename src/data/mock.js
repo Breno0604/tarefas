@@ -15,9 +15,9 @@ export const CURRENT_USER_ID = 'u1'
 export const CURRENT_PROFILE_ID = 'pr1'
 
 export const USERS = [
-  { id: 'u1', name: 'Ana Souza', role: 'Gerente de Projetos', email: 'ana.souza@taskflow.dev', color: '#6366f1', online: true, active: true, profileIds: ['pr1', 'pr2'] },
-  { id: 'u2', name: 'Bruno Lima', role: 'Desenvolvedor Frontend', email: 'bruno.lima@taskflow.dev', color: '#0ea5e9', online: true, active: true, profileIds: ['pr3'] },
-  { id: 'u3', name: 'Carla Mendes', role: 'Desenvolvedora Backend', email: 'carla.mendes@taskflow.dev', color: '#8b5cf6', online: false, active: true, profileIds: ['pr3'] },
+  { id: 'u1', name: 'Ana Souza', role: 'Gerente de Projetos', email: 'ana.souza@taskflow.dev', color: '#6366f1', online: true, active: true, profileIds: ['pr1', 'pr2'], bio: 'Gestão de projetos e priorização do roadmap. Apaixonada por organizar times de alta performance.' },
+  { id: 'u2', name: 'Bruno Lima', role: 'Desenvolvedor Frontend', email: 'bruno.lima@taskflow.dev', color: '#0ea5e9', online: true, active: true, profileIds: ['pr3'], bio: '' },
+  { id: 'u3', name: 'Carla Mendes', role: 'Desenvolvedora Backend', email: 'carla.mendes@taskflow.dev', color: '#8b5cf6', online: false, active: true, profileIds: ['pr3'], bio: '' },
   { id: 'u4', name: 'Diego Rocha', role: 'Designer UX/UI', email: 'diego.rocha@taskflow.dev', color: '#ec4899', online: true, active: true, profileIds: ['pr3'] },
   { id: 'u5', name: 'Elisa Cardoso', role: 'Analista de QA', email: 'elisa.cardoso@taskflow.dev', color: '#10b981', online: false, active: true, profileIds: ['pr3', 'pr5'] },
   { id: 'u6', name: 'Felipe Alves', role: 'Desenvolvedor Fullstack', email: 'felipe.alves@taskflow.dev', color: '#f59e0b', online: true, active: true, profileIds: ['pr3'] },

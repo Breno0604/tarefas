@@ -5,6 +5,7 @@ import { STATUS, PRIORITY, KANBAN_COLUMNS, PRIORITY_ORDER } from '../lib/constan
 
 const PAGE_SIZE = 10
 const SAVED_FILTERS_KEY = 'taskflow-saved-filters'
+const TASK_FILTERS_KEY = 'taskflow-task-filters'
 
 const parseSortKey = (key) => {
   const m = /^(.+?)(_(asc|desc))?$/.exec(key || '')
@@ -53,15 +54,22 @@ export function useTaskFilters(view) {
   const [searchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
 
-  const [query, setQuery] = useState('')
-  const [filters, setFilters] = useState({
+  const [savedState] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(TASK_FILTERS_KEY) || '{}')
+    } catch {
+      return {}
+    }
+  })
+  const [query, setQuery] = useState(savedState.query || '')
+  const [filters, setFilters] = useState(savedState.filters || {
     status: [],
     priority: [],
     assignee: [],
     project: [],
     category: []
   })
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [favoritesOnly, setFavoritesOnly] = useState(savedState.favoritesOnly || false)
   const [savedFilters, setSavedFilters] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(SAVED_FILTERS_KEY) || '[]')
@@ -69,9 +77,9 @@ export function useTaskFilters(view) {
       return []
     }
   })
-  const [sortKey, setSortKey] = useState('dueDate')
+  const [sortKey, setSortKey] = useState(savedState.sortKey || 'dueDate')
   const [selected, setSelected] = useState(new Set())
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(savedState.page || 1)
 
   useEffect(() => {
     if (!projectParam) return
@@ -85,6 +93,14 @@ export function useTaskFilters(view) {
   useEffect(() => {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(savedFilters))
   }, [savedFilters])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TASK_FILTERS_KEY, JSON.stringify({ query, filters, favoritesOnly, sortKey, page }))
+    } catch {
+      // ignore
+    }
+  }, [query, filters, favoritesOnly, sortKey, page])
 
   useEffect(() => {
     setPage(1)

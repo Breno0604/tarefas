@@ -38,9 +38,37 @@ function loadPersistedState() {
   }
 }
 
+const DEFAULT_PREFS = {
+  emailWeekly: true,
+  emailMentions: true,
+  soundAlerts: false,
+  compactMode: false,
+  autoAssign: true
+}
+
+const DEFAULT_NOTIF_PREFS = {
+  assignments: true,
+  mentions: true,
+  dueDates: true,
+  statusChanges: true,
+  comments: true,
+  digests: false
+}
+
+const DEFAULT_APPEARANCE = {
+  language: 'pt-BR',
+  timezone: 'America/Sao_Paulo',
+  firstDay: localStorage.getItem('taskflow-first-day') || 'sunday'
+}
+
 const initialState = () => {
   const persisted = loadPersistedState()
-  if (persisted) return persisted
+  if (persisted) return {
+    ...persisted,
+    prefs: { ...DEFAULT_PREFS, ...(persisted.prefs || {}) },
+    notifPrefs: { ...DEFAULT_NOTIF_PREFS, ...(persisted.notifPrefs || {}) },
+    appearance: { ...DEFAULT_APPEARANCE, ...(persisted.appearance || {}) }
+  }
   return {
     ...MOCK_STATE,
     currentUserId: CURRENT_USER_ID,
@@ -48,7 +76,10 @@ const initialState = () => {
     theme: localStorage.getItem('taskflow-theme') || 'light',
     booted: false,
     trash: [],
-    persistedActivitySeq: MOCK_STATE.activities.length
+    persistedActivitySeq: MOCK_STATE.activities.length,
+    prefs: { ...DEFAULT_PREFS },
+    notifPrefs: { ...DEFAULT_NOTIF_PREFS },
+    appearance: { ...DEFAULT_APPEARANCE }
   }
 }
 
@@ -294,6 +325,15 @@ function reducer(state, action) {
     case 'SET_THEME': {
       return { ...state, theme: action.theme }
     }
+    case 'UPDATE_PREFS': {
+      return { ...state, prefs: { ...(state.prefs || {}), ...action.prefs } }
+    }
+    case 'UPDATE_NOTIF_PREFS': {
+      return { ...state, notifPrefs: { ...(state.notifPrefs || {}), ...action.notifPrefs } }
+    }
+    case 'UPDATE_APPEARANCE': {
+      return { ...state, appearance: { ...(state.appearance || {}), ...action.appearance } }
+    }
     case 'CREATE_TASK': {
       if (!profileCan(state, 'create_tasks')) return state
       const validationErrors = validateTaskPayload(action.task)
@@ -312,7 +352,7 @@ function reducer(state, action) {
         estimatedHours: Number(action.task.estimatedHours) || 0,
         progress: 0,
         tags: action.task.tags || [],
-        subtasks: [],
+        subtasks: action.task.subtasks || [],
         favorite: Boolean(action.task.favorite)
       }
       const acts = [
@@ -765,7 +805,8 @@ function reducer(state, action) {
         role: action.role || 'Desenvolvedor Frontend',
         email: action.email || '',
         color: action.color || AVATAR_COLORS[state.users.length % AVATAR_COLORS.length],
-        online: true
+        online: true,
+        active: true
       }
       const acts = [
         activityEntry(state, {

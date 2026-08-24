@@ -35,28 +35,28 @@ export default function SettingsPage() {
     bio: me?.bio || 'Gestão de projetos e priorização do roadmap. Apaixonada por organizar times de alta performance.'
   })
 
-  const [prefs, setPrefs] = useState({
+  const prefs = state.prefs || {
     emailWeekly: true,
     emailMentions: true,
     soundAlerts: false,
     compactMode: false,
     autoAssign: true
-  })
+  }
 
-  const [notifPrefs, setNotifPrefs] = useState({
+  const notifPrefs = state.notifPrefs || {
     assignments: true,
     mentions: true,
     dueDates: true,
     statusChanges: true,
     comments: true,
     digests: false
-  })
+  }
 
-  const [appearance, setAppearance] = useState(() => ({
+  const appearance = state.appearance || {
     language: 'pt-BR',
     timezone: 'America/Sao_Paulo',
-    firstDay: localStorage.getItem('taskflow-first-day') || 'sunday'
-  }))
+    firstDay: 'sunday'
+  }
 
   const saveProfile = () => {
     dispatch({
@@ -67,6 +67,7 @@ export default function SettingsPage() {
   }
 
   const saveAppearance = () => {
+    dispatch({ type: 'UPDATE_APPEARANCE', appearance })
     localStorage.setItem('taskflow-first-day', appearance.firstDay)
     toast.success('Configurações salvas')
   }
@@ -143,7 +144,7 @@ export default function SettingsPage() {
                   label="Receber resumo semanal por e-mail"
                   description="Um resumo das tarefas e prazos toda segunda-feira."
                   checked={prefs.emailWeekly}
-                  onChange={(v) => setPrefs((p) => ({ ...p, emailWeekly: v }))}
+                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { emailWeekly: v } })}
                 />
               </div>
               <div className="py-3.5">
@@ -151,7 +152,7 @@ export default function SettingsPage() {
                   label="Atribuir tarefas automaticamente"
                   description="Ao criar uma tarefa sem responsável, sugerir o membro com menor carga."
                   checked={prefs.autoAssign}
-                  onChange={(v) => setPrefs((p) => ({ ...p, autoAssign: v }))}
+                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { autoAssign: v } })}
                 />
               </div>
               <div className="py-3.5">
@@ -159,7 +160,7 @@ export default function SettingsPage() {
                   label="Sons de notificação"
                   description="Reproduzir um som ao receber novas notificações."
                   checked={prefs.soundAlerts}
-                  onChange={(v) => setPrefs((p) => ({ ...p, soundAlerts: v }))}
+                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { soundAlerts: v } })}
                 />
               </div>
               <div className="py-3.5">
@@ -168,7 +169,7 @@ export default function SettingsPage() {
                   description="Reduz espaçamentos e densifica as listas de tarefas."
                   checked={prefs.compactMode}
                   onChange={(v) => {
-                    setPrefs((p) => ({ ...p, compactMode: v }))
+                    dispatch({ type: 'UPDATE_PREFS', prefs: { compactMode: v } })
                     toast.info(v ? 'Modo compacto ativado (protótipo)' : 'Modo compacto desativado')
                   }}
                 />
@@ -260,7 +261,7 @@ export default function SettingsPage() {
                     label={item.label}
                     description={item.desc}
                     checked={notifPrefs[item.key]}
-                    onChange={(v) => setNotifPrefs((p) => ({ ...p, [item.key]: v }))}
+                    onChange={(v) => dispatch({ type: 'UPDATE_NOTIF_PREFS', notifPrefs: { [item.key]: v } })}
                   />
                 </div>
               ))}
