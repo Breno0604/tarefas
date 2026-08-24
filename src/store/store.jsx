@@ -214,6 +214,21 @@ function mentionTargets(state, text, fromUserId) {
     .map((u) => u.id)
 }
 
+function validateTaskPayload(task) {
+  const errors = []
+  if (!task || typeof task !== 'object') return ['Payload inválido']
+  if (task.title !== undefined && (!task.title || !String(task.title).trim())) {
+    errors.push('Título é obrigatório')
+  }
+  if (task.estimatedHours !== undefined && (isNaN(task.estimatedHours) || Number(task.estimatedHours) < 0)) {
+    errors.push('Horas estimadas deve ser um número não negativo')
+  }
+  if (task.dueDate && isNaN(new Date(task.dueDate).getTime())) {
+    errors.push('Data de vencimento inválida')
+  }
+  return errors
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'BOOT': {
@@ -281,6 +296,8 @@ function reducer(state, action) {
     }
     case 'CREATE_TASK': {
       if (!profileCan(state, 'create_tasks')) return state
+      const validationErrors = validateTaskPayload(action.task)
+      if (validationErrors.length > 0) return state
       const task = {
         id: `t-${Date.now()}-${nextSeq()}`,
         title: action.task.title,
@@ -327,6 +344,10 @@ function reducer(state, action) {
     }
     case 'UPDATE_TASK': {
       if (!profileCan(state, 'edit_tasks')) return state
+      if (action.patch) {
+        const patchErrors = validateTaskPayload(action.patch)
+        if (patchErrors.length > 0) return state
+      }
       const idx = state.tasks.findIndex((t) => t.id === action.taskId)
       if (idx === -1) return state
       const old = state.tasks[idx]

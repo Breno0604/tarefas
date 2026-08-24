@@ -133,7 +133,7 @@ export function DueDateBadge({ dueDate, status, className = '' }) {
       : 'text-slate-500 dark:text-slate-400'
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${textColor} ${className}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${isDone ? 'bg-slate-300' : overdue ? 'bg-red-500' : 'bg-slate-400'}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${isDone ? 'bg-slate-300 dark:bg-slate-500' : overdue ? 'bg-red-500' : 'bg-slate-400'}`} />
       {formatDay(dueDate)}
     </span>
   )

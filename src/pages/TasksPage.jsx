@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   SlidersHorizontal,
@@ -18,6 +18,7 @@ import { useStore, useCan } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
+import { useDebounce } from '../hooks/useDebounce'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
 import Tooltip from '../components/ui/Tooltip'
@@ -48,6 +49,13 @@ export default function TasksPage() {
   const [view, setView] = useState('list')
 
   const f = useTaskFilters(view)
+
+  // Debounced search: local input value updates instantly, filters update after 300ms
+  const [searchInput, setSearchInput] = useState(f.query)
+  const debouncedSearch = useDebounce(searchInput, 300)
+  useEffect(() => {
+    f.setQuery(debouncedSearch)
+  }, [debouncedSearch])
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -287,14 +295,14 @@ export default function TasksPage() {
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             ref={searchRef}
-            value={f.query}
-            onChange={(e) => f.setQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Pesquisar..."
             className="input-base h-9 pl-9 pr-8 text-sm"
           />
-          {f.query && (
+          {searchInput && (
             <button
-              onClick={() => f.setQuery('')}
+              onClick={() => { setSearchInput(''); f.setQuery('') }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
               aria-label="Limpar busca"
             >

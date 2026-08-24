@@ -1,18 +1,7 @@
-import React, { useMemo } from 'react'
+import React, { Suspense, lazy, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid
-} from 'recharts'
 import { ListTodo, CheckCircle2, AlertTriangle, Timer, ArrowRight, Plus, Star, CalendarClock } from 'lucide-react'
+const DashboardCharts = lazy(() => import('../components/DashboardCharts'))
 import { useStore, useIsManager } from '../store/store'
 import { STATUS, PRIORITY } from '../lib/constants'
 import { formatDay, isOverdue, startOfDay, endOfDay } from '../lib/format'
@@ -20,14 +9,6 @@ import { StatusBadge, Avatar } from '../components/ui/Badge'
 import ActivityFeed from '../components/ActivityFeed'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
-
-const chartTooltipStyle = {
-  borderRadius: 12,
-  border: '1px solid #e2e8f0',
-  fontSize: 12,
-  fontFamily: 'Inter, sans-serif',
-  background: '#fff'
-}
 
 function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp }) {
   return (
@@ -348,26 +329,9 @@ export default function Dashboard() {
             <div className="card-base p-5">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Tarefas por status</h3>
               <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      strokeWidth={0}
-                    >
-                      {statusData.map((s) => (
-                        <Cell key={s.name} fill={s.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={chartTooltipStyle} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" /></div>}>
+                  <DashboardCharts.StatusPieChart data={statusData} />
+                </Suspense>
               </div>
               <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
                 {statusData.map((s) => (
@@ -382,19 +346,9 @@ export default function Dashboard() {
             <div className="card-base p-5">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Tarefas por prioridade</h3>
               <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={priorityData} margin={{ top: 16, right: 8, left: -28, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
-                    <Bar dataKey="value" name="Tarefas" radius={[6, 6, 0, 0]} maxBarSize={44}>
-                      {priorityData.map((p) => (
-                        <Cell key={p.name} fill={p.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" /></div>}>
+                  <DashboardCharts.PriorityBarChart data={priorityData} />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -407,16 +361,9 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="mt-4 h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={workloadData} margin={{ top: 8, right: 8, left: -28, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
-                  <Bar dataKey="ativas" name="Ativas" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="concluídas" name="Concluídas" stackId="a" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" /></div>}>
+                <DashboardCharts.WorkloadBarChart data={workloadData} />
+              </Suspense>
             </div>
           </div>
 

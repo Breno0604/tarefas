@@ -26,6 +26,7 @@ import { useStore, useCurrentUser, useActiveProfile } from '../../store/store'
 import { useToast } from '../../store/toast'
 import { ACCESS_LEVELS } from '../../lib/constants'
 import { PageSkeleton } from '../ui/Skeleton'
+import Breadcrumb from '../ui/Breadcrumb'
 
 const TITLES = {
   '/': { title: 'Dashboard', subtitle: 'Visão geral das tarefas e da equipe' },
@@ -279,6 +280,7 @@ export default function AppLayout() {
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+          <Breadcrumb />
           <Outlet />
         </main>
       </div>

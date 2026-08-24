@@ -58,7 +58,7 @@ export const STATUS = {
     label: 'Cancelada',
     hex: '#94a3b8',
     badge:
-      'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+      'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300',
     dot: 'bg-slate-400',
     bar: 'bg-slate-400'
   }
