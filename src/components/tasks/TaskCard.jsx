@@ -60,10 +60,12 @@ export default function TaskCard({
     if (!window.matchMedia('(hover: hover)').matches) return
     clearTimeout(hideTimer.current)
     clearTimeout(showTimer.current)
-    showTimer.current = setTimeout(() => {
-      const rect = cardRef.current?.getBoundingClientRect()
-      if (rect) setPreview(rect)
-    }, 2000)
+    if (!preview) {
+      showTimer.current = setTimeout(() => {
+        const rect = cardRef.current?.getBoundingClientRect()
+        if (rect) setPreview(rect)
+      }, 2000)
+    }
   }
   const cancelPreview = () => {
     clearTimeout(showTimer.current)

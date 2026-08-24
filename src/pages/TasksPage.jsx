@@ -247,15 +247,17 @@ export default function TasksPage() {
       <div className="flex flex-wrap items-center gap-2">
         <Dropdown
           trigger={
-            <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600">
+            <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:px-3 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600">
               {view === 'list' && <LayoutList size={16} />}
               {view === 'kanban' && <Columns3 size={16} />}
               {view === 'table' && <Table2 size={16} />}
               {view === 'calendar' && <CalendarDays size={16} />}
-              {view === 'list' && 'Lista'}
-              {view === 'kanban' && 'Kanban'}
-              {view === 'table' && 'Tabela'}
-              {view === 'calendar' && 'Calendário'}
+              <span className="hidden sm:inline">
+                {view === 'list' && 'Lista'}
+                {view === 'kanban' && 'Kanban'}
+                {view === 'table' && 'Tabela'}
+                {view === 'calendar' && 'Calendário'}
+              </span>
               <ChevronDown size={14} className="text-slate-400" />
             </button>
           }
@@ -281,7 +283,7 @@ export default function TasksPage() {
           </button>
         </Tooltip>
 
-        <div className="relative min-w-[180px] flex-1 sm:min-w-[220px]">
+        <div className="relative min-w-0 flex-1">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             ref={searchRef}
