@@ -10,6 +10,9 @@
     @apply bg-surface-secondary text-slate-800 dark:bg-slate-950 dark:text-slate-200;
     font-feature-settings: 'cv02', 'cv03', 'cv04';
   }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-400/50 ring-offset-2 ring-offset-white dark:ring-brand-400/30 dark:ring-offset-slate-900;
+  }
   * {
     scrollbar-width: thin;
     scrollbar-color: rgb(148 163 184 / 0.4) transparent;
@@ -29,7 +32,7 @@
 
 @layer components {
   .input-base {
-    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-brand-500 dark:focus:ring-brand-500/20;
+    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus-visible:ring-0 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-brand-500;
   }
   .label-base {
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400;

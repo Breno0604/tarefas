@@ -247,7 +247,7 @@ export default function TasksPage() {
       <div className="flex flex-wrap items-center gap-2">
         <Dropdown
           trigger={
-            <button className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:px-3 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600">
+            <button aria-label="Alterar visualização" className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:px-3 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600">
               {view === 'list' && <LayoutList size={16} />}
               {view === 'kanban' && <Columns3 size={16} />}
               {view === 'table' && <Table2 size={16} />}

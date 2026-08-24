@@ -8,12 +8,13 @@ import Dropdown from '../ui/Dropdown'
 import Button from '../ui/Button'
 import { STATUS, PRIORITY, SORT_OPTIONS } from '../../lib/constants'
 
-function FilterDropdown({ label, icon: Icon, activeCount, items, onClear }) {
+function FilterDropdown({ label, icon: Icon, activeCount, items, onClear, ariaLabel }) {
   return (
     <Dropdown
       align="right"
       trigger={
         <button
+          aria-label={ariaLabel || `Filtrar por ${label}`}
           className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
             activeCount > 0
               ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300'
@@ -132,7 +133,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
       <Dropdown
         align="right"
         trigger={
-          <button className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600">
+          <button aria-label="Ordenar tarefas" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600">
             <ArrowDownWideNarrow size={14} />
             Ordenar
           </button>

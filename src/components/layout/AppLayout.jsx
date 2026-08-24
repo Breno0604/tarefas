@@ -212,18 +212,18 @@ export default function AppLayout() {
 
           {can('create_tasks') ? (
             <Tooltip content="Nova tarefa (N)">
-              <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} />
+              <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} aria-label="Nova tarefa" />
             </Tooltip>
           ) : (
             <Tooltip content="Seu perfil não permite criar tarefas">
-              <Button iconOnly icon={Plus} disabled />
+              <Button iconOnly icon={Plus} disabled aria-label="Nova tarefa (sem permissão)" />
             </Tooltip>
           )}
 
           <Dropdown
             align="right"
             trigger={
-              <button className="flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button className="flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Menu do usuário">
                 <Avatar user={me} size="md" showStatus />
                 <ChevronDown size={14} className="hidden text-slate-400 sm:block" />
               </button>

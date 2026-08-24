@@ -141,7 +141,7 @@ export default function TaskCard({
           )}
 
           {task.subtasks.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500" aria-label={`${task.subtasks.filter((s) => s.done).length} de ${task.subtasks.length} subtarefas concluídas`}>
               <ListChecks size={12} />
               {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
             </div>
@@ -151,7 +151,7 @@ export default function TaskCard({
             <Avatar user={assignee} size="sm" />
             <div className="flex items-center gap-2.5">
               {task.estimatedHours > 0 && (
-                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500" aria-label={`${task.estimatedHours} horas estimadas`}>
                   <Clock size={11} />
                   {task.estimatedHours}h
                 </span>
