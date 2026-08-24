@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { Search, CornerDownLeft, ListTodo, Users, FolderKanban, Tags, Settings, Activity, LayoutDashboard, FileText, ShieldCheck } from 'lucide-react'
-import { useStore, useCan } from '../../store/store'
+import { useStore, useCan, useIsManager } from '../../store/store'
 import { StatusBadge } from '../ui/Badge'
 
 const PAGE_ACTIONS = [
@@ -19,6 +19,7 @@ const PAGE_ACTIONS = [
 export default function CommandPalette({ open, onClose }) {
   const { state } = useStore()
   const can = useCan()
+  const isManager = useIsManager()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -45,7 +46,10 @@ export default function CommandPalette({ open, onClose }) {
     const q = query.trim().toLowerCase()
     const pages = PAGE_ACTIONS.filter((p) => !p.perm || can(p.perm))
     if (!q) return { tasks: [], users: [], projects: [], pages }
-    const tasks = state.tasks
+    const visibleTasks = isManager
+      ? state.tasks
+      : state.tasks.filter((t) => t.assigneeId === state.currentUserId)
+    const tasks = visibleTasks
       .filter(
         (t) =>
           t.title.toLowerCase().includes(q) ||

@@ -115,6 +115,20 @@ export default function Dashboard() {
 
   const recentActivities = useMemo(() => state.activities.slice(0, 7), [state.activities])
 
+  const activityByDay = useMemo(() => {
+    const now = new Date()
+    const days = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const key = d.toISOString().slice(0, 10)
+      const label = d.toLocaleDateString('pt-BR', { weekday: 'short' })
+      const count = state.activities.filter((a) => a.createdAt.slice(0, 10) === key).length
+      days.push({ name: label, value: count, color: count > 0 ? '#6366f1' : '#e2e8f0' })
+    }
+    return days
+  }, [state.activities])
+
   const myOpenTasks = useMemo(
     () =>
       scopedTasks
@@ -512,6 +526,13 @@ export default function Dashboard() {
             </div>
             <div className="mt-3">
               <ActivityFeed items={recentActivities} compact />
+            </div>
+          </div>
+
+          <div className="card-base p-5">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Atividade da semana</h3>
+            <div className="mt-3 h-32">
+              <DashboardCharts.PriorityBarChart data={activityByDay} />
             </div>
           </div>
 

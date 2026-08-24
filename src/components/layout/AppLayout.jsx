@@ -95,6 +95,9 @@ export default function AppLayout() {
       } else if (key === '?') {
         e.preventDefault()
         setShortcutsOpen(true)
+      } else if (key === 'f' && location.pathname === '/tarefas') {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('taskflow:toggle-favorites'))
       }
     }
     document.addEventListener('keydown', onKey)
@@ -297,6 +300,7 @@ export default function AppLayout() {
             ['/', 'Buscar tarefas'],
             ['1 – 4', 'Alternar visão (somente na página de Tarefas)'],
             ['?', 'Mostrar estes atalhos'],
+            ['F', 'Favoritas (na página de Tarefas)'],
             ['Esc', 'Fechar janelas abertas']
           ].map(([keys, label]) => (
             <li key={keys} className="flex items-center justify-between gap-4">

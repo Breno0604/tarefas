@@ -32,6 +32,7 @@ import { useStore, useTaskById, useTaskComments, useCurrentUser, useCan, useCanR
 import { STATUS, PRIORITY } from '../../lib/constants'
 import { formatDate, formatRelative } from '../../lib/format'
 import { useToast } from '../../store/toast'
+import { deleteTaskWithUndo } from '../../lib/utils'
 import EmptyState from '../ui/EmptyState'
 
 function MetaRow({ icon: Icon, label, value, children }) {
@@ -516,15 +517,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => {
-          dispatch({ type: 'DELETE_TASK', taskId: task.id, actorId })
-          toast.push(`"${task.title}" excluída`, 'success', {
-            duration: 6000,
-            action: {
-              label: 'Desfazer',
-              onClick: () =>
-                dispatch({ type: 'RESTORE_TASK', taskId: task.id, actorId })
-            }
-          })
+          deleteTaskWithUndo({ dispatch, toast, task, actorId })
           setConfirmDelete(false)
           onClose()
         }}

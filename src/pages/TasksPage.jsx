@@ -19,7 +19,7 @@ import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
 import { useDebounce } from '../hooks/useDebounce'
-import { isTypingTarget } from '../lib/utils'
+import { isTypingTarget, deleteTaskWithUndo, bulkDeleteWithUndo } from '../lib/utils'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
 import Tooltip from '../components/ui/Tooltip'
@@ -100,7 +100,12 @@ export default function TasksPage() {
       }
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    const onToggleFav = () => f.setFavoritesOnly((v) => !v)
+    window.addEventListener('taskflow:toggle-favorites', onToggleFav)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      window.removeEventListener('taskflow:toggle-favorites', onToggleFav)
+    }
   }, [])
 
   const openTask = (id) => setSearchParams({ task: id })
@@ -152,15 +157,7 @@ export default function TasksPage() {
       toast.error('Seu perfil não tem permissão para excluir tarefas.')
       return
     }
-    dispatch({ type: 'DELETE_TASK', taskId: task.id, actorId: state.currentUserId })
-    toast.push(`"${task.title}" excluída`, 'success', {
-      duration: 6000,
-      action: {
-        label: 'Desfazer',
-        onClick: () =>
-          dispatch({ type: 'RESTORE_TASK', taskId: task.id, actorId: state.currentUserId })
-      }
-    })
+    deleteTaskWithUndo({ dispatch, toast, task, actorId: state.currentUserId })
   }
   const toggleFavorite = (task) => {
     dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })
@@ -232,18 +229,7 @@ export default function TasksPage() {
       toast.error('Seu perfil não tem permissão para excluir tarefas.')
       return
     }
-    const ids = Array.from(f.selected)
-    ids.forEach((id) =>
-      dispatch({ type: 'DELETE_TASK', taskId: id, actorId: state.currentUserId })
-    )
-    toast.push(`${ids.length} tarefa(s) excluída(s)`, 'success', {
-      duration: 6000,
-      action: {
-        label: 'Desfazer',
-        onClick: () =>
-          dispatch({ type: 'RESTORE_TASK', taskIds: ids, actorId: state.currentUserId })
-      }
-    })
+    bulkDeleteWithUndo({ dispatch, toast, taskIds: Array.from(f.selected), actorId: state.currentUserId })
     f.setSelected(new Set())
     setBulkDelete(false)
   }
