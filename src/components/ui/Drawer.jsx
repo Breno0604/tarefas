@@ -10,10 +10,11 @@ export default function Drawer({
   subtitle,
   children,
   footer,
-  width = 'max-w-2xl'
+  width = 'max-w-2xl',
+  disableDismiss = false
 }) {
   const ref = useRef(null)
-  useDismissable(ref, () => onClose?.(), open)
+  useDismissable(ref, () => onClose?.(), open && !disableDismiss)
 
   useEffect(() => {
     if (!open) return

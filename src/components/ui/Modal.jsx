@@ -33,7 +33,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 py-10 backdrop-blur-sm animate-fade-in sm:items-center sm:py-8"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 py-10 backdrop-blur-sm animate-fade-in sm:items-center sm:py-8"
       onMouseDown={(e) => {
         if (closeOnOverlay && e.target === e.currentTarget) onClose?.()
       }}

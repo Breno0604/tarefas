@@ -109,6 +109,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         onClose={onClose}
         title="Detalhes da tarefa"
         subtitle={`Criada em ${formatDate(task.createdAt)}`}
+        disableDismiss={confirmDelete || reasonOpen !== null}
         footer={
           <>
             {canDelete && (
