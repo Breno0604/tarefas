@@ -1,7 +1,5 @@
 import React from 'react'
 import {
-  ListFilter,
-  ArrowDownWideNarrow,
   FilterX,
   CircleDot,
   Flag,
@@ -11,7 +9,8 @@ import {
 } from 'lucide-react'
 import Dropdown from '../ui/Dropdown'
 import Button from '../ui/Button'
-import { STATUS, PRIORITY, SORT_OPTIONS } from '../../lib/constants'
+import { useIsManager } from '../../store/store'
+import { STATUS, PRIORITY } from '../../lib/constants'
 
 function FilterDropdown({ label, icon: Icon, activeCount, items, onClear, ariaLabel }) {
   return (
@@ -45,14 +44,13 @@ function FilterDropdown({ label, icon: Icon, activeCount, items, onClear, ariaLa
 }
 
 export default function TasksToolbar({ f, openSaveFilter }) {
+  const isManager = useIsManager()
   const {
     filters,
     setFilters,
     toggleFilter,
     clearFilters,
     activeFilterCount,
-    sortKey,
-    setSortKey,
     query
   } = f
 
@@ -82,26 +80,28 @@ export default function TasksToolbar({ f, openSaveFilter }) {
           onClick: () => toggleFilter('priority', p.key)
         }))}
       />
-      <FilterDropdown
-        label="Responsável"
-        icon={UserRound}
-        activeCount={filters.assignee.length}
-        onClear={() => setFilters((f) => ({ ...f, assignee: [] }))}
-        items={[
-          ...f.users.map((u) => ({
-            label: u.name,
-            active: filters.assignee.includes(u.id),
-            keepOpen: true,
-            onClick: () => toggleFilter('assignee', u.id)
-          })),
-          {
-            label: 'Não atribuída',
-            active: filters.assignee.includes('none'),
-            keepOpen: true,
-            onClick: () => toggleFilter('assignee', 'none')
-          }
-        ]}
-      />
+      {isManager && (
+        <FilterDropdown
+          label="Responsável"
+          icon={UserRound}
+          activeCount={filters.assignee.length}
+          onClear={() => setFilters((f) => ({ ...f, assignee: [] }))}
+          items={[
+            ...f.users.map((u) => ({
+              label: u.name,
+              active: filters.assignee.includes(u.id),
+              keepOpen: true,
+              onClick: () => toggleFilter('assignee', u.id)
+            })),
+            {
+              label: 'Não atribuída',
+              active: filters.assignee.includes('none'),
+              keepOpen: true,
+              onClick: () => toggleFilter('assignee', 'none')
+            }
+          ]}
+        />
+      )}
       <FilterDropdown
         label="Projeto"
         icon={FolderKanban}
@@ -132,21 +132,6 @@ export default function TasksToolbar({ f, openSaveFilter }) {
           active: filters.category.includes(c.id),
           keepOpen: true,
           onClick: () => toggleFilter('category', c.id)
-        }))}
-      />
-
-      <Dropdown
-        align="right"
-        trigger={
-          <button aria-label="Ordenar tarefas" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600">
-            <ArrowDownWideNarrow size={14} />
-            Ordenar
-          </button>
-        }
-        items={SORT_OPTIONS.map((o) => ({
-          label: o.label,
-          active: sortKey === o.key,
-          onClick: () => setSortKey(o.key)
         }))}
       />
 
