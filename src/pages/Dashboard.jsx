@@ -16,7 +16,7 @@ import { ListTodo, CheckCircle2, AlertTriangle, Timer, ArrowRight, Plus, Star, C
 import { useStore, useIsManager } from '../store/store'
 import { STATUS, PRIORITY } from '../lib/constants'
 import { formatDay, isOverdue, startOfDay, endOfDay } from '../lib/format'
-import { StatusBadge, PriorityBadge, Avatar } from '../components/ui/Badge'
+import { StatusBadge, Avatar } from '../components/ui/Badge'
 import ActivityFeed from '../components/ActivityFeed'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'

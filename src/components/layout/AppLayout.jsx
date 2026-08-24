@@ -10,7 +10,6 @@ import {
   LogOut,
   User as UserIcon,
   SlidersHorizontal,
-  Keyboard,
   Shield,
   ShieldCheck
 } from 'lucide-react'
@@ -295,9 +294,9 @@ export default function AppLayout() {
           {[
             ['Ctrl + K', 'Abrir a paleta de comandos'],
             ['N', 'Nova tarefa'],
+            ['D', 'Alternar tema claro/escuro'],
             ['/', 'Buscar tarefas'],
             ['1 – 4', 'Alternar visão (Lista, Kanban, Tabela, Calendário)'],
-            ['F', 'Ativar / sair do modo foco'],
             ['?', 'Mostrar estes atalhos'],
             ['Esc', 'Fechar janelas abertas']
           ].map(([keys, label]) => (
