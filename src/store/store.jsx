@@ -214,7 +214,7 @@ function mentionTargets(state, text, fromUserId) {
     .map((u) => u.id)
 }
 
-function validateTaskPayload(task) {
+export function validateTaskPayload(task) {
   const errors = []
   if (!task || typeof task !== 'object') return ['Payload inválido']
   if (task.title !== undefined && (!task.title || !String(task.title).trim())) {
@@ -568,6 +568,7 @@ function reducer(state, action) {
       }
     }
     case 'TOGGLE_FAVORITE': {
+      if (!profileCan(state, 'view_tasks')) return state
       return {
         ...state,
         tasks: state.tasks.map((t) =>
@@ -917,7 +918,7 @@ export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
 
   useEffect(() => {
-    const t = setTimeout(() => dispatch({ type: 'BOOT' }), 650)
+    const t = setTimeout(() => dispatch({ type: 'BOOT' }), 200)
     return () => clearTimeout(t)
   }, [])
 

@@ -40,18 +40,9 @@ export default function Dashboard() {
 
   const scopedTasks = useMemo(() => {
     if (isManager) return state.tasks
-    const myProjects = new Set(
-      state.projects
-        .filter((p) => p.members.includes(meId))
-        .map((p) => p.id)
-    )
-    return state.tasks.filter(
-      (t) =>
-        !t.projectId
-          ? t.assigneeId === meId
-          : myProjects.has(t.projectId) || t.assigneeId === meId
-    )
-  }, [state.tasks, state.projects, meId, isManager])
+    // Non-managers only see tasks assigned to them (same rule as useTaskFilters)
+    return state.tasks.filter((t) => t.assigneeId === meId)
+  }, [state.tasks, meId, isManager])
 
   const metrics = useMemo(() => {
     const total = scopedTasks.length

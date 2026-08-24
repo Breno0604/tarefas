@@ -14,11 +14,12 @@ import {
   Bookmark,
   Plus
 } from 'lucide-react'
-import { useStore, useCan } from '../store/store'
+import { useStore, useCan, validateTaskPayload } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
 import { useDebounce } from '../hooks/useDebounce'
+import { isTypingTarget } from '../lib/utils'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
 import Tooltip from '../components/ui/Tooltip'
@@ -26,9 +27,9 @@ import EmptyState from '../components/ui/EmptyState'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Pagination from '../components/ui/Pagination'
 import TaskListItem from '../components/tasks/TaskListItem'
-import TaskTableView from '../components/tasks/TaskTableView'
-import KanbanView from '../components/tasks/KanbanView'
-import CalendarView from '../components/tasks/CalendarView'
+const TaskTableView = React.lazy(() => import('../components/tasks/TaskTableView'))
+const KanbanView = React.lazy(() => import('../components/tasks/KanbanView'))
+const CalendarView = React.lazy(() => import('../components/tasks/CalendarView'))
 import TaskFormModal from '../components/tasks/TaskFormModal'
 import TaskDetailDrawer from '../components/tasks/TaskDetailDrawer'
 import TasksToolbar from '../components/tasks/TasksToolbar'
@@ -79,15 +80,8 @@ export default function TasksPage() {
   }, [viewParam])
 
   useEffect(() => {
-    const isTyping = (e) => {
-      const el = e.target
-      return (
-        el &&
-        (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
-      )
-    }
     const onKey = (e) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e)) return
+      if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e)) return
       if (e.key === '/') {
         e.preventDefault()
         searchRef.current?.focus()
@@ -140,6 +134,16 @@ export default function TasksPage() {
       toast.error('Seu perfil não tem permissão para editar tarefas.')
       return
     }
+    const task = state.tasks.find((t) => t.id === taskId)
+    if (!task) {
+      toast.error('Tarefa não encontrada.')
+      return
+    }
+    const validationErrors = validateTaskPayload(patch)
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0])
+      return
+    }
     dispatch({ type: 'UPDATE_TASK', taskId, patch, actorId: state.currentUserId })
     toast.success('Tarefa atualizada')
   }
@@ -171,6 +175,10 @@ export default function TasksPage() {
     toast.success('Tarefa duplicada')
   }
   const approveTask = (task) => {
+    if (!can('edit_tasks')) {
+      toast.error('Seu perfil não tem permissão para aprovar tarefas.')
+      return
+    }
     dispatch({ type: 'APPROVE_TASK', taskId: task.id, actorId: state.currentUserId })
     toast.success('Tarefa aprovada e concluída')
   }
@@ -204,8 +212,7 @@ export default function TasksPage() {
     toast.info(`Filtro "${preset.name}" aplicado`)
   }
   const removeActiveFilter = (af) => {
-    if (af.dim === 'mine') f.setMyTasks(false)
-    else if (af.dim === 'fav') f.setFavoritesOnly(false)
+    if (af.dim === 'fav') f.setFavoritesOnly(false)
     else f.toggleFilter(af.dim, af.key)
   }
 
@@ -352,7 +359,7 @@ export default function TasksPage() {
       </div>
 
       {filtersVisible && (
-        <TasksToolbar f={toolbarData} searchRef={searchRef} openSaveFilter={() => {
+        <TasksToolbar f={toolbarData} openSaveFilter={() => {
           setSaveName('')
           setSaveFilterOpen(true)
         }} />
@@ -436,7 +443,7 @@ export default function TasksPage() {
           )}
 
           {view === 'table' && (
-            <>
+            <React.Suspense fallback={<div className="card-base p-8 text-center text-sm text-slate-400">Carregando...</div>}>
               <TaskTableView
                 tasks={f.pageTasks}
                 selected={f.selected}
@@ -470,10 +477,11 @@ export default function TasksPage() {
                 pageSize={PAGE_SIZE}
                 onChange={f.setPage}
               />
-            </>
+            </React.Suspense>
           )}
 
           {view === 'kanban' && (
+            <React.Suspense fallback={<div className="card-base p-8 text-center text-sm text-slate-400">Carregando...</div>}>
             <KanbanView
               tasks={f.filtered}
               onOpenTask={openTask}
@@ -485,10 +493,13 @@ export default function TasksPage() {
               onApproveTask={approveTask}
               onCancelTask={requestCancel}
             />
+            </React.Suspense>
           )}
 
           {view === 'calendar' && (
+            <React.Suspense fallback={<div className="card-base p-8 text-center text-sm text-slate-400">Carregando...</div>}>
             <CalendarView tasks={f.filtered} onOpenTask={openTask} onNewTask={openCreate} />
+            </React.Suspense>
           )}
         </>
       )}

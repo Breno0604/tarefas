@@ -19,14 +19,21 @@ export default function Breadcrumb() {
 
   if (pathnames.length === 0) return null
 
-  const items = [
-    { label: 'Início', to: '/', icon: Home },
-    ...pathnames.map((segment, index) => {
-      const to = '/' + pathnames.slice(0, index + 1).join('/')
-      const label = ROUTE_LABELS[to] || segment.charAt(0).toUpperCase() + segment.slice(1)
-      return { label, to }
-    })
-  ]
+  // Only show home link for nested routes (2+ segments)
+  const items = pathnames.length > 1
+    ? [
+        { label: 'Início', to: '/', icon: Home },
+        ...pathnames.map((segment, index) => {
+          const to = '/' + pathnames.slice(0, index + 1).join('/')
+          const label = ROUTE_LABELS[to] || segment.charAt(0).toUpperCase() + segment.slice(1)
+          return { label, to }
+        })
+      ]
+    : pathnames.map((segment, index) => {
+        const to = '/' + pathnames.slice(0, index + 1).join('/')
+        const label = ROUTE_LABELS[to] || segment.charAt(0).toUpperCase() + segment.slice(1)
+        return { label, to }
+      })
 
   return (
     <nav aria-label="Breadcrumb" className="mb-4">

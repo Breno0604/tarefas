@@ -21,10 +21,12 @@ import Button from '../ui/Button'
 import Dropdown from '../ui/Dropdown'
 import Tooltip from '../ui/Tooltip'
 import Modal from '../ui/Modal'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { Avatar } from '../ui/Badge'
 import { useStore, useCurrentUser, useActiveProfile } from '../../store/store'
 import { useToast } from '../../store/toast'
 import { ACCESS_LEVELS } from '../../lib/constants'
+import { isTypingTarget } from '../../lib/utils'
 import { PageSkeleton } from '../ui/Skeleton'
 import Breadcrumb from '../ui/Breadcrumb'
 
@@ -62,14 +64,6 @@ export default function AppLayout() {
   const switchableUsers = state.users.filter(
     (u) => u.active !== false && u.id !== state.currentUserId
   )
-
-  const isTypingTarget = (e) => {
-    const el = e.target
-    return (
-      el &&
-      (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
-    )
-  }
 
   const themeRef = useRef(state.theme)
   themeRef.current = state.theme
@@ -315,31 +309,18 @@ export default function AppLayout() {
         </ul>
       </Modal>
 
-      {confirmLogout && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in" onClick={() => setConfirmLogout(false)} />
-          <div className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Sair da conta?</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Este é um protótipo sem autenticação — sua sessão simulada continuará ativa.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setConfirmLogout(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  toast.info('Sessão simulada encerrada (protótipo sem backend)')
-                  setConfirmLogout(false)
-                }}
-              >
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={() => {
+          toast.info('Sessão simulada encerrada (protótipo sem backend)')
+          setConfirmLogout(false)
+        }}
+        title="Sair da conta?"
+        message="Este é um protótipo sem autenticação — sua sessão simulada continuará ativa."
+        confirmLabel="Sair"
+        confirmVariant="danger"
+      />
     </div>
   )
 }

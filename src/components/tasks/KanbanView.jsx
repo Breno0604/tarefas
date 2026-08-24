@@ -16,7 +16,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, Columns3, UserRound, Flag } from 'lucide-react'
 import { STATUS, KANBAN_COLUMNS, PRIORITY, PRIORITY_ORDER } from '../../lib/constants'
-import { useStore, useCan, useCanModifyTask } from '../../store/store'
+import { useStore, useCan, useCanModifyTask, validateTaskPayload } from '../../store/store'
 import TaskCard from './TaskCard'
 import { useToast } from '../../store/toast'
 import { SegmentedControl } from '../ui/Tabs'
@@ -169,14 +169,17 @@ export default function KanbanView({
     return map
   }, [tasks, columns, groupBy])
 
+  const columnMap = useMemo(() => {
+    const map = {}
+    Object.entries(tasksByColumn).forEach(([colKey, colTasks]) => {
+      colTasks.forEach((t) => { map[t.id] = colKey })
+    })
+    return map
+  }, [tasksByColumn])
+
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null
 
-  const findColumn = (taskId) => {
-    for (const [colKey, colTasks] of Object.entries(tasksByColumn)) {
-      if (colTasks.some((t) => t.id === taskId)) return colKey
-    }
-    return null
-  }
+  const findColumn = (taskId) => columnMap[taskId] || null
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id)
@@ -231,10 +234,17 @@ export default function KanbanView({
       return
     }
 
+    const patch = col.patch()
+    const validationErrors = validateTaskPayload(patch)
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0])
+      return
+    }
+
     dispatch({
       type: 'UPDATE_TASK',
       taskId: active.id,
-      patch: col.patch(),
+      patch,
       actorId: state.currentUserId
     })
     toast.success(`Tarefa movida para ${col.label}`)

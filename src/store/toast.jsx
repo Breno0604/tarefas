@@ -6,21 +6,9 @@ const ToastContext = createContext(null)
 let tid = 0
 
 const TYPES = {
-  success: {
-    icon: CheckCircle2,
-    iconClass: 'text-emerald-500',
-    bar: 'bg-emerald-500'
-  },
-  error: {
-    icon: AlertTriangle,
-    iconClass: 'text-red-500',
-    bar: 'bg-red-500'
-  },
-  info: {
-    icon: Info,
-    iconClass: 'text-brand-500',
-    bar: 'bg-brand-500'
-  }
+  success: { icon: CheckCircle2, iconClass: 'text-emerald-500' },
+  error: { icon: AlertTriangle, iconClass: 'text-red-500' },
+  info: { icon: Info, iconClass: 'text-brand-500' }
 }
 
 function ToastItem({ toast, onRemove }) {

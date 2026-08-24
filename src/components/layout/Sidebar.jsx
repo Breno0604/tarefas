@@ -90,7 +90,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
             const inner = ({ isActive }) => (
               <>
                 {isActive && !restricted && (
-                  <span className="absolute -left-3 h-5 w-1 rounded-r bg-brand-600 dark:bg-brand-400" />
+                  <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 -translate-x-1.5 rounded-r bg-brand-600 dark:bg-brand-400" />
                 )}
                 <Icon
                   size={18}
