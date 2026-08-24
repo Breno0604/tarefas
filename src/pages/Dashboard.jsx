@@ -1,7 +1,7 @@
-import React, { Suspense, lazy, useMemo } from 'react'
+import React, { Suspense, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ListTodo, CheckCircle2, AlertTriangle, Timer, ArrowRight, Plus, Star, CalendarClock } from 'lucide-react'
-const DashboardCharts = lazy(() => import('../components/DashboardCharts'))
+import * as DashboardCharts from '../components/DashboardCharts'
 import { useStore, useIsManager } from '../store/store'
 import { STATUS, PRIORITY } from '../lib/constants'
 import { formatDay, isOverdue, startOfDay, endOfDay } from '../lib/format'
@@ -12,12 +12,12 @@ import EmptyState from '../components/ui/EmptyState'
 
 function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp }) {
   return (
-    <div className="card-base flex items-start gap-4 p-5">
+    <div className="card-base flex items-start gap-4 p-5 cursor-default">
       <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}>
         <Icon size={20} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
           {label}
         </p>
         <p className="mt-0.5 text-2xl font-extrabold text-slate-900 dark:text-white">{value}</p>
@@ -275,8 +275,7 @@ export default function Dashboard() {
               compact
             />
           </div>
-        ) : (
-          <ul className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+        ) : (              <ul className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
             {today.agenda.map((t) => {
               const project = state.projects.find((p) => p.id === t.projectId)
               const overdue = isOverdue(t.dueDate, t.status)
@@ -284,7 +283,7 @@ export default function Dashboard() {
                 <li key={t.id}>
                   <button
                     onClick={() => navigate(`/tarefas?task=${t.id}`)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:border-slate-200 hover:shadow-sm dark:border-slate-800 dark:hover:border-slate-700"
+                    className="flex w-full items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -478,7 +477,7 @@ export default function Dashboard() {
                     <li key={t.id}>
                       <button
                         onClick={() => navigate(`/tarefas?task=${t.id}`)}
-                        className="flex w-full items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:border-slate-200 hover:shadow-sm dark:border-slate-800 dark:hover:border-slate-700"
+                        className="flex w-full items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">

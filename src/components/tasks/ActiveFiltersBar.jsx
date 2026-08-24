@@ -9,7 +9,7 @@ export default function ActiveFiltersBar({ activeFilters, onRemove }) {
       {activeFilters.map((af) => (
         <span
           key={`${af.dim}-${af.key}`}
-          className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
+          className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 animate-scale-in dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
         >
           {af.label}
           <button

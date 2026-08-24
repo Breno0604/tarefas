@@ -127,15 +127,15 @@ export default function CategoriesPage() {
                 <div className="grid flex-1 grid-cols-3 gap-3">
                   <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
                     <p className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{stats[selectedId]?.total || 0}</p>
-                    <p className="text-[11px] font-semibold text-slate-400">Tarefas</p>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Tarefas</p>
                   </div>
                   <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
                     <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{stats[selectedId]?.byStatus?.done || 0}</p>
-                    <p className="text-[11px] font-semibold text-slate-400">Concluídas</p>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Concluídas</p>
                   </div>
                   <div className="rounded-lg bg-slate-50 p-3 text-center dark:bg-slate-800/60">
                     <p className="text-lg font-extrabold text-red-600 dark:text-red-400">{catTasks.filter((t) => isOverdue(t.dueDate, t.status)).length}</p>
-                    <p className="text-[11px] font-semibold text-slate-400">Atrasadas</p>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Atrasadas</p>
                   </div>
                 </div>
               </div>

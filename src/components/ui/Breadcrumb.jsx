@@ -19,6 +19,9 @@ export default function Breadcrumb() {
 
   if (pathnames.length === 0) return null
 
+  // Don't show breadcrumb on level-1 routes (title is in the header)
+  if (pathnames.length === 1) return null
+
   // Only show home link for nested routes (2+ segments)
   const items = pathnames.length > 1
     ? [

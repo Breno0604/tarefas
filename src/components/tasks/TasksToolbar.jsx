@@ -2,7 +2,12 @@ import React from 'react'
 import {
   ListFilter,
   ArrowDownWideNarrow,
-  FilterX
+  FilterX,
+  CircleDot,
+  Flag,
+  UserRound,
+  FolderKanban,
+  Tags
 } from 'lucide-react'
 import Dropdown from '../ui/Dropdown'
 import Button from '../ui/Button'
@@ -55,7 +60,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
     <div className="flex flex-wrap items-center gap-2">
       <FilterDropdown
         label="Status"
-        icon={ListFilter}
+        icon={CircleDot}
         activeCount={filters.status.length}
         onClear={() => setFilters((f) => ({ ...f, status: [] }))}
         items={Object.values(STATUS).map((s) => ({
@@ -67,7 +72,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
       />
       <FilterDropdown
         label="Prioridade"
-        icon={ListFilter}
+        icon={Flag}
         activeCount={filters.priority.length}
         onClear={() => setFilters((f) => ({ ...f, priority: [] }))}
         items={Object.values(PRIORITY).map((p) => ({
@@ -79,7 +84,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
       />
       <FilterDropdown
         label="Responsável"
-        icon={ListFilter}
+        icon={UserRound}
         activeCount={filters.assignee.length}
         onClear={() => setFilters((f) => ({ ...f, assignee: [] }))}
         items={[
@@ -99,7 +104,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
       />
       <FilterDropdown
         label="Projeto"
-        icon={ListFilter}
+        icon={FolderKanban}
         activeCount={filters.project.length}
         onClear={() => setFilters((f) => ({ ...f, project: [] }))}
         items={[
@@ -119,7 +124,7 @@ export default function TasksToolbar({ f, openSaveFilter }) {
       />
       <FilterDropdown
         label="Categoria"
-        icon={ListFilter}
+        icon={Tags}
         activeCount={filters.category.length}
         onClear={() => setFilters((f) => ({ ...f, category: [] }))}
         items={f.categories.map((c) => ({

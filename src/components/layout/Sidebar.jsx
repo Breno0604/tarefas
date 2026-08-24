@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -34,6 +34,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
   const navigate = useNavigate()
   const me = state.users.find((u) => u.id === state.currentUserId)
   const openTasks = state.tasks.filter((t) => t.status !== 'done').length
+  const completion = useMemo(() => {
+    const total = state.tasks.length
+    if (!total) return 0
+    const done = state.tasks.filter((t) => t.status === 'done').length
+    return Math.round((done / total) * 100)
+  }, [state.tasks])
 
   const can = (perm) => (activeProfile?.permissions || []).includes(perm)
 
@@ -144,10 +150,10 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       <div className="mt-auto p-3">
         <div className="rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 p-4 text-white">
-          <p className="text-xs font-bold">Sua equipe</p>
-          <p className="mt-0.5 text-[11px] opacity-80">Produtividade +12% este mês</p>
+          <p className="text-xs font-bold">Progresso da equipe</p>
+          <p className="mt-0.5 text-[11px] opacity-80">{completion}% das tarefas concluídas</p>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
-            <div className="h-full w-[72%] rounded-full bg-white" />
+            <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${completion}%` }} />
           </div>
         </div>
         <button

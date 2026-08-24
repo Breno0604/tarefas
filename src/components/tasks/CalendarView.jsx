@@ -113,7 +113,7 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
           ))}
         </div>
 
-        <div className="grid grid-cols-7">
+        <div key={monthOffset} className="grid grid-cols-7 animate-fade-in">
           {grid.map((d, i) => {
             const key = d ? d.toDateString() : `empty-${i}`
             const dayTasks = d ? tasksByDay[d.toDateString()] || [] : []

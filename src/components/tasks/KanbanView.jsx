@@ -47,9 +47,9 @@ function SortableTaskCard({ task, ...props }) {
   )
 }
 
-function KanbanColumn({ column, tasks, isOver, children }) {
+function KanbanColumn({ column, tasks, isOver, cancelled, children }) {
   return (
-    <div className="flex w-72 shrink-0 flex-col">
+    <div className={`flex w-72 shrink-0 flex-col${cancelled ? ' opacity-50' : ''}`}>
       <div className="mb-3 flex items-center gap-2 px-1">
         {column.colorStyle ? (
           <span className="h-2.5 w-2.5 rounded-full" style={column.colorStyle} />
@@ -273,6 +273,7 @@ export default function KanbanView({
               column={col}
               tasks={tasksByColumn[col.key] || []}
               isOver={overColumn === col.key}
+              cancelled={col.key === 'cancelled'}
             >
               {(tasksByColumn[col.key] || []).map((t) => (
                 <SortableTaskCard

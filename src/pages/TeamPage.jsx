@@ -40,21 +40,21 @@ function MemberCard({ user, stats, onOpen }) {
             <Clock3 size={13} className="text-sky-500" />
             {stats.open}
           </p>
-          <p className="text-[10px] font-semibold text-slate-400">Abertas</p>
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Abertas</p>
         </div>
         <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800/60">
           <p className="flex items-center justify-center gap-1 text-sm font-extrabold text-slate-800 dark:text-slate-100">
             <CheckCircle2 size={13} className="text-emerald-500" />
             {stats.done}
           </p>
-          <p className="text-[10px] font-semibold text-slate-400">Concluídas</p>
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Concluídas</p>
         </div>
         <div className="rounded-lg bg-slate-50 px-2 py-2 text-center dark:bg-slate-800/60">
           <p className="flex items-center justify-center gap-1 text-sm font-extrabold text-red-600 dark:text-red-400">
             <AlertTriangle size={13} />
             {stats.overdue}
           </p>
-          <p className="text-[10px] font-semibold text-slate-400">Atrasadas</p>
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">Atrasadas</p>
         </div>
       </div>
 

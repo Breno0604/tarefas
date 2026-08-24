@@ -165,7 +165,7 @@ export default function AppLayout() {
 
           <Dropdown
             align="right"
-            triggerClassName="w-72"
+            triggerClassName="w-[min(288px,80vw)]"
             trigger={
               <Tooltip content={activeProfile?.name}>
                 <button
@@ -319,7 +319,6 @@ export default function AppLayout() {
         title="Sair da conta?"
         message="Este é um protótipo sem autenticação — sua sessão simulada continuará ativa."
         confirmLabel="Sair"
-        confirmVariant="danger"
       />
     </div>
   )

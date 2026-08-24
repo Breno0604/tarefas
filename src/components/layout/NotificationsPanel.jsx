@@ -5,6 +5,7 @@ import { useStore } from '../../store/store'
 import { formatRelative } from '../../lib/format'
 import Tooltip from '../ui/Tooltip'
 import { useDismissable } from '../../hooks/useDismissable'
+import EmptyState from '../ui/EmptyState'
 
 const TYPE_ICON = {
   assign: { icon: UserPlus, cls: 'bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300' },
@@ -82,12 +83,7 @@ export default function NotificationsPanel({ open, onOpenChange }) {
 
           <div className="max-h-[380px] overflow-y-auto">
             {notifs.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <Bell size={24} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Nenhuma notificação
-                </p>
-              </div>
+              <EmptyState icon={Bell} title="Nenhuma notificação" compact />
             ) : (
               notifs.map((n) => {
                 const cfg = TYPE_ICON[n.type] || TYPE_ICON.status

@@ -40,7 +40,7 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
   const someSelected = tasks.some((t) => selected.has(t.id))
 
   return (
-    <div className="card-base overflow-hidden">
+    <div className="card-base overflow-hidden relative">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
           <thead>
@@ -188,6 +188,7 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
           </tbody>
         </table>
       </div>
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-slate-900 sm:hidden" />
 
       <ConfirmDialog
         open={Boolean(confirm)}
