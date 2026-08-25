@@ -177,3 +177,9 @@
 
 # Smoke test build artifacts
 /.smoke/dist/
+
+# Test runner artifacts (screenshots, traces, reports)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
