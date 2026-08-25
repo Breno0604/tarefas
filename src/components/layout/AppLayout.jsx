@@ -6,64 +6,38 @@ import {
   Plus,
   Sun,
   Moon,
-  ChevronDown,
-  LogOut,
-  User as UserIcon,
-  SlidersHorizontal,
-  Shield,
-  ShieldCheck
+  Settings as SettingsIcon
 } from 'lucide-react'
 import Sidebar from './Sidebar'
 import NotificationsPanel from './NotificationsPanel'
 import CommandPalette from './CommandPalette'
 import TaskFormModal from '../tasks/TaskFormModal'
 import Button from '../ui/Button'
-import Dropdown from '../ui/Dropdown'
 import Tooltip from '../ui/Tooltip'
 import Modal from '../ui/Modal'
-import ConfirmDialog from '../ui/ConfirmDialog'
-import { Avatar } from '../ui/Badge'
-import { useStore, useCurrentUser, useActiveProfile } from '../../store/store'
-import { useToast } from '../../store/toast'
-import { ACCESS_LEVELS } from '../../lib/constants'
+import { useStore } from '../../store/store'
 import { isTypingTarget } from '../../lib/utils'
 import { PageSkeleton } from '../ui/Skeleton'
 import Breadcrumb from '../ui/Breadcrumb'
 
 const TITLES = {
-  '/': { title: 'Dashboard', subtitle: 'Visão geral das tarefas e da equipe' },
-  '/tarefas': { title: 'Tarefas', subtitle: 'Gerencie e organize todas as tarefas' },
-  '/equipe': { title: 'Equipe', subtitle: 'Membros e distribuição de trabalho' },
-  '/projetos': { title: 'Projetos', subtitle: 'Acompanhe o progresso dos projetos' },
+  '/': { title: 'Dashboard', subtitle: 'Sua visão do dia' },
+  '/tarefas': { title: 'Tarefas', subtitle: 'Organize tudo o que você precisa fazer' },
+  '/projetos': { title: 'Projetos', subtitle: 'Acompanhe o progresso dos seus projetos' },
   '/categorias': { title: 'Categorias', subtitle: 'Organize tarefas por categoria' },
-  '/atividades': { title: 'Atividades', subtitle: 'Histórico de ações da equipe' },
-  '/configuracoes': { title: 'Configurações', subtitle: 'Preferências do sistema' },
-  '/perfis': { title: 'Perfis de acesso', subtitle: 'Controle permissões e níveis de acesso' }
+  '/atividades': { title: 'Atividades', subtitle: 'Seu histórico recente' },
+  '/configuracoes': { title: 'Configurações', subtitle: 'Preferências pessoais' }
 }
 
 export default function AppLayout() {
   const { state, dispatch } = useStore()
-  const me = useCurrentUser()
-  const activeProfile = useActiveProfile()
-  const toast = useToast()
-  const navigate = useNavigate()
   const location = useLocation()
+  const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
-  const [confirmLogout, setConfirmLogout] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-
-
-  const can = (perm) => (activeProfile?.permissions || []).includes(perm)
-
-  const myProfiles = state.profiles.filter((p) =>
-    (me?.profileIds || []).includes(p.id)
-  )
-  const switchableUsers = state.users.filter(
-    (u) => u.active !== false && u.id !== state.currentUserId
-  )
 
   const themeRef = useRef(state.theme)
   themeRef.current = state.theme
@@ -79,11 +53,7 @@ export default function AppLayout() {
       const key = e.key.toLowerCase()
       if (key === 'n') {
         e.preventDefault()
-        if (can('create_tasks')) {
-          setQuickOpen(true)
-        } else {
-          toast.info('Seu perfil atual não tem permissão para criar tarefas')
-        }
+        setQuickOpen(true)
       } else if (key === 'd') {
         e.preventDefault()
         dispatch({ type: 'SET_THEME', theme: themeRef.current === 'dark' ? 'light' : 'dark' })
@@ -102,7 +72,7 @@ export default function AppLayout() {
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [location.pathname, activeProfile])
+  }, [location.pathname, dispatch])
 
   useEffect(() => {
     setNotifOpen(false)
@@ -166,114 +136,31 @@ export default function AppLayout() {
 
           <NotificationsPanel open={notifOpen} onOpenChange={setNotifOpen} />
 
-          <Dropdown
-            align="right"
-            triggerClassName="w-[min(288px,80vw)]"
-            trigger={
-              <Tooltip content={activeProfile?.name}>
-                <button
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
-                  aria-label="Perfil de acesso"
-                >
-                  <Shield size={16} className="text-brand-500" />
-                </button>
-              </Tooltip>
-            }
-            items={[
-              { label: 'Perfil de acesso ativo', type: 'label' },
-              { type: 'divider' },
-              ...(myProfiles.length
-                ? myProfiles.map((p) => ({
-                    label: `${p.name} · ${ACCESS_LEVELS[p.level]?.label}`,
-                    active: activeProfile?.id === p.id,
-                    onClick: () => {
-                      if (activeProfile?.id !== p.id) {
-                        dispatch({ type: 'SET_CURRENT_PROFILE', profileId: p.id })
-                        toast.info(`Perfil ativo: ${p.name}`)
-                      }
-                    }
-                  }))
-                : [{ label: 'Nenhum perfil atribuído', disabled: true }]),
-              {type: 'divider' },
-              ...(can('manage_profiles')
-                ? [
-                    {
-                      label: 'Gerenciar perfis',
-                      icon: ShieldCheck,
-                      onClick: () => navigate('/perfis')
-                    },
-                    { type: 'divider' }
-                  ]
-                : [])
-            ]}
-          />
-
-          {can('create_tasks') ? (
-            <Tooltip content="Nova tarefa (N)">
-              <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} aria-label="Nova tarefa" />
-            </Tooltip>
-          ) : (
-            <Tooltip content="Seu perfil não permite criar tarefas">
-              <Button iconOnly icon={Plus} disabled aria-label="Nova tarefa (sem permissão)" />
-            </Tooltip>
-          )}
-
-          <Dropdown
-            align="right"
-            trigger={
-              <button className="flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Menu do usuário">
-                <Avatar user={me} size="md" showStatus />
-                <ChevronDown size={14} className="hidden text-slate-400 sm:block" />
-              </button>
-            }
-            items={[
-              { label: `Logado como ${me?.name}`, type: 'label' },
-              { type: 'divider' },
-              ...(switchableUsers.length
-                ? [
-                    { label: 'Trocar de usuário (simulação)', type: 'label' },
-                    ...switchableUsers.map((u) => ({
-                      label: u.name,
-                      onClick: () => {
-                        dispatch({ type: 'SET_CURRENT_USER', userId: u.id })
-                        toast.info(`Agora logado como ${u.name}`)
-                        navigate(location.pathname)
-                      }
-                    })),
-                    { type: 'divider' }
-                  ]
-                : []),
-              ...(can('view_settings')
-                ? [
-                    {
-                      label: 'Meu perfil',
-                      icon: UserIcon,
-                      onClick: () => navigate('/configuracoes?tab=profile')
-                    },
-                    {
-                      label: 'Preferências',
-                      icon: SlidersHorizontal,
-                      onClick: () => navigate('/configuracoes?tab=preferences')
-                    }
-                  ]
-                : []),
-              {
-                label: state.theme === 'dark' ? 'Modo claro' : 'Modo escuro',
-                icon: state.theme === 'dark' ? Sun : Moon,
-                onClick: () =>
-                  dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })
-              },
-              { type: 'divider' },
-              {
-                label: 'Sair',
-                icon: LogOut,
-                danger: true,
-                onClick: () => {
-                  setConfirmLogout(true)
-                }
+          <Tooltip content={state.theme === 'dark' ? 'Modo claro (D)' : 'Modo escuro (D)'}>
+            <button
+              onClick={() =>
+                dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })
               }
-            ]}
-          />
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+              aria-label="Alternar tema"
+            >
+              {state.theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Configurações">
+            <button
+              onClick={() => navigate('/configuracoes')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+              aria-label="Configurações"
+            >
+              <SettingsIcon size={16} />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Nova tarefa (N)">
+            <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} aria-label="Nova tarefa" />
+          </Tooltip>
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -312,18 +199,6 @@ export default function AppLayout() {
           ))}
         </ul>
       </Modal>
-
-      <ConfirmDialog
-        open={confirmLogout}
-        onClose={() => setConfirmLogout(false)}
-        onConfirm={() => {
-          toast.info('Sessão simulada encerrada (protótipo sem backend)')
-          setConfirmLogout(false)
-        }}
-        title="Sair da conta?"
-        message="Este é um protótipo sem autenticação — sua sessão simulada continuará ativa."
-        confirmLabel="Sair"
-      />
     </div>
   )
 }

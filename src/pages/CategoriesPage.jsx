@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Tags } from 'lucide-react'
+import { Plus, Tags, ListTodo } from 'lucide-react'
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
@@ -36,7 +36,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          {state.categories.length} categorias · organize e filtre tarefas por tipo de trabalho
+          {state.categories.length} categorias · organize e filtre suas tarefas
         </p>
         <Button icon={Plus} onClick={() => setCreateOpen(true)}>
           Nova categoria
@@ -45,7 +45,7 @@ export default function CategoriesPage() {
 
       {state.categories.length === 0 ? (
         <div className="card-base">
-          <EmptyState icon={Tags} title="Nenhuma categoria" description="Crie categorias para organizar as tarefas da equipe." />
+          <EmptyState icon={Tags} title="Nenhuma categoria" description="Crie categorias para organizar melhor as suas tarefas." />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -177,7 +177,7 @@ export default function CategoriesPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Nova categoria"
-        description="Crie uma categoria para agrupar tarefas por tipo de trabalho."
+        description="Crie uma categoria para agrupar tarefas parecidas."
         size="md"
         footer={
           <>
@@ -202,7 +202,7 @@ export default function CategoriesPage() {
         }
       >
         <div className="space-y-4">
-          <Input label="Nome" placeholder="Ex.: Pesquisa de mercado" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <Input label="Nome" placeholder="Ex.: Casa, Estudos, Finanças" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           <div>
             <label className="label-base">Cor</label>
             <div className="flex flex-wrap gap-2 pt-1">

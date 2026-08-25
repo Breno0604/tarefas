@@ -1,25 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Search, CornerDownLeft, ListTodo, Users, FolderKanban, Tags, Settings, Activity, LayoutDashboard, FileText, ShieldCheck } from 'lucide-react'
-import { useStore, useCan, useIsManager } from '../../store/store'
+import { Search, CornerDownLeft, ListTodo, FolderKanban, Tags, Settings, Activity, LayoutDashboard, FileText } from 'lucide-react'
+import { useStore } from '../../store/store'
 import { StatusBadge } from '../ui/Badge'
 
 const PAGE_ACTIONS = [
   { to: '/', label: 'Ir para o Dashboard', icon: LayoutDashboard },
   { to: '/tarefas', label: 'Ir para Tarefas', icon: ListTodo },
-  { to: '/equipe', label: 'Ir para Equipe', icon: Users, perm: 'manage_team' },
-  { to: '/projetos', label: 'Ir para Projetos', icon: FolderKanban, perm: 'manage_projects' },
-  { to: '/categorias', label: 'Ir para Categorias', icon: Tags, perm: 'manage_projects' },
+  { to: '/projetos', label: 'Ir para Projetos', icon: FolderKanban },
+  { to: '/categorias', label: 'Ir para Categorias', icon: Tags },
   { to: '/atividades', label: 'Ir para Atividades', icon: Activity },
-  { to: '/configuracoes', label: 'Ir para Configurações', icon: Settings, perm: 'view_settings' },
-  { to: '/perfis', label: 'Ir para Perfis de Acesso', icon: ShieldCheck, perm: 'manage_profiles' }
+  { to: '/configuracoes', label: 'Ir para Configurações', icon: Settings }
 ]
 
 export default function CommandPalette({ open, onClose }) {
   const { state } = useStore()
-  const can = useCan()
-  const isManager = useIsManager()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -44,39 +40,29 @@ export default function CommandPalette({ open, onClose }) {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const pages = PAGE_ACTIONS.filter((p) => !p.perm || can(p.perm))
-    if (!q) return { tasks: [], users: [], projects: [], pages }
-    const visibleTasks = isManager
-      ? state.tasks
-      : state.tasks.filter((t) => t.assigneeId === state.currentUserId)
-    const tasks = visibleTasks
+    if (!q) return { tasks: [], projects: [], pages: PAGE_ACTIONS }
+    const tasks = state.tasks
       .filter(
         (t) =>
           t.title.toLowerCase().includes(q) ||
           (t.description || '').toLowerCase().includes(q)
       )
       .slice(0, 6)
-    const users = state.users.filter((u) => u.name.toLowerCase().includes(q)).slice(0, 4)
     const projects = state.projects
       .filter((p) => p.name.toLowerCase().includes(q))
       .slice(0, 4)
     return {
       tasks,
-      users,
       projects,
-      pages: pages.filter((p) => p.label.toLowerCase().includes(q))
+      pages: PAGE_ACTIONS.filter((p) => p.label.toLowerCase().includes(q))
     }
-  }, [query, state, can])
+  }, [query, state])
 
   const flat = useMemo(() => {
     const items = []
     if (results.tasks.length) {
       items.push({ type: 'header', label: 'Tarefas' })
       results.tasks.forEach((t) => items.push({ type: 'task', data: t }))
-    }
-    if (results.users.length) {
-      items.push({ type: 'header', label: 'Usuários' })
-      results.users.forEach((u) => items.push({ type: 'user', data: u }))
     }
     if (results.projects.length) {
       items.push({ type: 'header', label: 'Projetos' })
@@ -99,7 +85,6 @@ export default function CommandPalette({ open, onClose }) {
     onClose()
     if (item.type === 'task') navigate(`/tarefas?task=${item.data.id}`)
     else if (item.type === 'page') navigate(item.data.to)
-    else if (item.type === 'user') navigate(`/equipe?user=${item.data.id}`)
     else if (item.type === 'project') navigate(`/projetos?proj=${item.data.id}`)
   }
 
@@ -129,7 +114,7 @@ export default function CommandPalette({ open, onClose }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Buscar tarefas, pessoas, projetos... (Esc para fechar)"
+            placeholder="Buscar tarefas, projetos... (Esc para fechar)"
             className="h-14 w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-200"
           />
           <kbd className="hidden rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-400 sm:block dark:border-slate-700">
@@ -155,7 +140,7 @@ export default function CommandPalette({ open, onClose }) {
             }
             const isActive = i === active
             const d = item.data
-            const Icon = item.type === 'task' ? FileText : item.type === 'user' ? Users : item.type === 'project' ? FolderKanban : d.icon
+            const Icon = item.type === 'task' ? FileText : item.type === 'project' ? FolderKanban : d.icon
             return (
               <button
                 key={d.id || d.label}
@@ -165,16 +150,7 @@ export default function CommandPalette({ open, onClose }) {
                   isActive ? 'bg-brand-50 dark:bg-brand-500/10' : ''
                 }`}
               >
-                {item.type === 'user' ? (
-                  <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ backgroundColor: d.color }}
-                  >
-                    {d.name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
-                  </span>
-                ) : (
-                  <Icon size={16} className="shrink-0 text-slate-400" />
-                )}
+                <Icon size={16} className="shrink-0 text-slate-400" />
                 <span className="flex-1 truncate font-medium text-slate-700 dark:text-slate-200">
                   {item.type === 'task' ? d.title : d.name || d.label}
                 </span>

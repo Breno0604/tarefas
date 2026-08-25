@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Star, Pencil, ListChecks, Clock } from 'lucide-react'
-import { Avatar, StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
+import { StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import { useDismissable } from '../../hooks/useDismissable'
 
 const W = 300
@@ -9,9 +9,8 @@ const W = 300
 export default function TaskPreview({
   task,
   anchorRect,
-  assignee,
   project,
-  commentCount,
+  noteCount,
   onClose,
   onOpen,
   onEdit,
@@ -81,8 +80,7 @@ export default function TaskPreview({
 
         <div className="flex items-center justify-between text-xs">
           <span className="flex items-center gap-1.5 font-medium text-slate-500 dark:text-slate-400">
-            <Avatar user={assignee} size="xs" />
-            {assignee ? assignee.name.split(' ')[0] : 'Não atribuída'}
+            {task.recurrence && task.recurrence !== 'none' ? 'Recorrente' : 'Pessoal'}
           </span>
           {project && (
             <span className="flex items-center gap-1.5 truncate font-medium text-slate-500 dark:text-slate-400">
@@ -105,7 +103,7 @@ export default function TaskPreview({
               {task.estimatedHours}h
             </span>
           )}
-          {commentCount > 0 && <span>{commentCount} comentário(s)</span>}
+          {noteCount > 0 && <span>{noteCount} nota(s)</span>}
         </div>
       </div>
 

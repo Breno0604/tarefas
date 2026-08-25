@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('TaskFlow CRM', () => {
+test.describe('TaskFlow – Tarefas pessoais', () => {
   test('loads dashboard', async ({ page }) => {
     await page.goto('/#/')
     await expect(page.locator('h1')).toContainText('Dashboard')
@@ -23,6 +23,7 @@ test.describe('TaskFlow CRM', () => {
 
   test('opens command palette with Ctrl+K', async ({ page }) => {
     await page.goto('/#/')
+    await page.waitForTimeout(800) // aguarda o boot do app registrar os atalhos
     await page.keyboard.press('Control+k')
     await expect(page.locator('input[placeholder*="Buscar"]')).toBeVisible()
     await page.keyboard.press('Escape')

@@ -15,11 +15,11 @@ export function isTypingTarget(e) {
 
 /**
  * Dispatches DELETE_TASK and shows an undo toast.
- * @param {object} opts - { dispatch, toast, task, actorId }
+ * @param {object} opts - { dispatch, toast, task }
  */
-export function deleteTaskWithUndo({ dispatch, toast, task, actorId }) {
+export function deleteTaskWithUndo({ dispatch, toast, task }) {
   try {
-    dispatch({ type: 'DELETE_TASK', taskId: task.id, actorId })
+    dispatch({ type: 'DELETE_TASK', taskId: task.id })
   } catch (e) {
     console.error('DELETE_TASK dispatch failed:', e)
     return
@@ -28,7 +28,7 @@ export function deleteTaskWithUndo({ dispatch, toast, task, actorId }) {
     toast.push(`"${task.title}" excluída`, 'success', {
       action: {
         label: 'Desfazer',
-        onClick: () => dispatch({ type: 'RESTORE_TASK', taskId: task.id, actorId })
+        onClick: () => dispatch({ type: 'RESTORE_TASK', taskId: task.id })
       }
     })
   } catch (e) {
@@ -38,11 +38,11 @@ export function deleteTaskWithUndo({ dispatch, toast, task, actorId }) {
 
 /**
  * Dispatches DELETE_TASK for multiple tasks and shows an undo toast.
- * @param {object} opts - { dispatch, toast, taskIds, actorId }
+ * @param {object} opts - { dispatch, toast, taskIds }
  */
-export function bulkDeleteWithUndo({ dispatch, toast, taskIds, actorId }) {
+export function bulkDeleteWithUndo({ dispatch, toast, taskIds }) {
   try {
-    taskIds.forEach((id) => dispatch({ type: 'DELETE_TASK', taskId: id, actorId }))
+    taskIds.forEach((id) => dispatch({ type: 'DELETE_TASK', taskId: id }))
   } catch (e) {
     console.error('Bulk DELETE_TASK dispatch failed:', e)
     return
@@ -51,7 +51,7 @@ export function bulkDeleteWithUndo({ dispatch, toast, taskIds, actorId }) {
     toast.push(`${taskIds.length} tarefa(s) excluída(s)`, 'success', {
       action: {
         label: 'Desfazer',
-        onClick: () => dispatch({ type: 'RESTORE_TASK', taskIds, actorId })
+        onClick: () => dispatch({ type: 'RESTORE_TASK', taskIds })
       }
     })
   } catch (e) {

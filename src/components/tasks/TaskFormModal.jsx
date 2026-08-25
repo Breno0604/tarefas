@@ -3,29 +3,26 @@ import { Save } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { Input, Textarea, Select, Field } from '../ui/Inputs'
-import { useStore, useCan } from '../../store/store'
-import { STATUS, PRIORITY } from '../../lib/constants'
+import { useStore } from '../../store/store'
+import { STATUS, PRIORITY, RECURRENCE } from '../../lib/constants'
 import { useToast } from '../../store/toast'
 
 export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
   const { state, dispatch } = useStore()
   const toast = useToast()
-  const can = useCan()
   const isEdit = Boolean(task)
-  const canAssign = can('assign_tasks')
-  const canSave = isEdit ? can('edit_tasks') : can('create_tasks')
 
   const [form, setForm] = useState({
     title: '',
     description: '',
     status: 'todo',
     priority: 'medium',
-    assigneeId: '',
     projectId: '',
-    categoryId: 'c1',
+    categoryId: '',
     dueDate: '',
     estimatedHours: '',
-    tagsText: ''
+    tagsText: '',
+    recurrence: 'none'
   })
   const [errors, setErrors] = useState({})
 
@@ -37,12 +34,12 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
           description: task.description || '',
           status: task.status,
           priority: task.priority,
-          assigneeId: task.assigneeId || '',
           projectId: task.projectId || '',
-          categoryId: task.categoryId || 'c1',
+          categoryId: task.categoryId || '',
           dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
           estimatedHours: task.estimatedHours ? String(task.estimatedHours) : '',
-          tagsText: (task.tags || []).join(', ')
+          tagsText: (task.tags || []).join(', '),
+          recurrence: task.recurrence || 'none'
         })
       } else {
         setForm({
@@ -50,12 +47,12 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
           description: '',
           status: defaults.status || 'todo',
           priority: defaults.priority || 'medium',
-          assigneeId: defaults.assigneeId || '',
           projectId: defaults.projectId || '',
-          categoryId: defaults.categoryId || 'c1',
-          dueDate: '',
+          categoryId: defaults.categoryId || '',
+          dueDate: defaults.dueDate ? String(defaults.dueDate).slice(0, 10) : '',
           estimatedHours: '',
-          tagsText: ''
+          tagsText: '',
+          recurrence: 'none'
         })
       }
       setErrors({})
@@ -72,14 +69,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
     if (!form.title.trim()) {
       errs.title = 'O título da tarefa é obrigatório.'
     }
-    if (form.dueDate) {
-      const due = new Date(form.dueDate + 'T00:00:00')
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (due < today) {
-        errs.dueDate = 'A data de vencimento não pode ser retroativa.'
-      }
-    }
     if (form.estimatedHours !== '' && (isNaN(Number(form.estimatedHours)) || Number(form.estimatedHours) < 0)) {
       errs.estimatedHours = 'Horas estimadas deve ser um número não negativo.'
     }
@@ -89,10 +78,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!canSave) {
-      toast.error(isEdit ? 'Seu perfil não tem permissão para editar tarefas.' : 'Seu perfil não tem permissão para criar tarefas.')
-      return
-    }
     const errs = validate()
     const count = Object.keys(errs).length
     if (count > 0) {
@@ -107,22 +92,21 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
       description: form.description.trim(),
       status: form.status,
       priority: form.priority,
-      assigneeId: form.assigneeId || null,
       projectId: form.projectId || null,
-      categoryId: form.categoryId,
-      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+      categoryId: form.categoryId || null,
+      dueDate: form.dueDate ? new Date(form.dueDate + 'T12:00:00').toISOString() : null,
       estimatedHours: form.estimatedHours ? Number(form.estimatedHours) : 0,
       tags: form.tagsText
         .split(',')
         .map((t) => t.trim().toLowerCase())
-        .filter(Boolean)
+        .filter(Boolean),
+      recurrence: form.recurrence === 'none' ? null : form.recurrence
     }
-    const actorId = state.currentUserId
     if (isEdit) {
-      dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch: payload, actorId })
+      dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch: payload })
       toast.success('Tarefa atualizada com sucesso')
     } else {
-      dispatch({ type: 'CREATE_TASK', task: payload, actorId })
+      dispatch({ type: 'CREATE_TASK', task: payload })
       toast.success('Tarefa criada com sucesso')
     }
     onClose()
@@ -151,7 +135,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
       <form id="task-form" onSubmit={handleSubmit} className="space-y-5">
         <Input
           label="Título"
-          placeholder="Ex.: Implementar tela de relatórios"
+          placeholder="Ex.: Renovar assinatura da academia"
           value={form.title}
           onChange={set('title')}
           error={errors.title}
@@ -159,7 +143,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
         />
         <Textarea
           label="Descrição"
-          placeholder="Descreva o objetivo, contexto e critérios de aceite da tarefa..."
+          placeholder="Detalhes, links, contexto..."
           value={form.description}
           onChange={set('description')}
           hint={`${form.description.length}/500 caracteres`}
@@ -181,14 +165,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
             options={Object.values(PRIORITY).map((p) => ({ value: p.key, label: p.label }))}
           />
           <Select
-            label="Responsável"
-            value={form.assigneeId}
-            onChange={set('assigneeId')}
-            placeholder="Não atribuída"
-            disabled={!canAssign}
-            options={state.users.map((u) => ({ value: u.id, label: `${u.name} — ${u.role}` }))}
-          />
-          <Select
             label="Projeto"
             value={form.projectId}
             onChange={set('projectId')}
@@ -199,6 +175,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
             label="Categoria"
             value={form.categoryId}
             onChange={set('categoryId')}
+            placeholder="Sem categoria"
             options={state.categories.map((c) => ({ value: c.id, label: c.name }))}
           />
           <Field label="Vencimento">
@@ -222,11 +199,18 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
           </Field>
           <Field label="Tags">
             <Input
-              placeholder="Ex.: frontend, urgente"
+              placeholder="Ex.: casa, urgente"
               value={form.tagsText}
               onChange={set('tagsText')}
             />
           </Field>
+          <Select
+            label="Repetir"
+            value={form.recurrence}
+            onChange={set('recurrence')}
+            hint={form.recurrence !== 'none' ? 'Ao concluir, a próxima ocorrência é criada automaticamente.' : undefined}
+            options={Object.values(RECURRENCE).map((r) => ({ value: r.key, label: r.label }))}
+          />
         </div>
       </form>
     </Modal>

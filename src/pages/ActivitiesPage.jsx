@@ -1,47 +1,37 @@
 import React, { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Search, History, X } from 'lucide-react'
 import { useStore } from '../store/store'
 import ActivityFeed from '../components/ActivityFeed'
 import Dropdown from '../components/ui/Dropdown'
 import EmptyState from '../components/ui/EmptyState'
-import { Input } from '../components/ui/Inputs'
 import { formatDay } from '../lib/format'
 
 const TYPE_LABELS = {
   create: 'Criação',
-  assign: 'Atribuição',
+  note: 'Notas',
   status: 'Status',
   priority: 'Prioridade',
-  comment: 'Comentário',
   due: 'Vencimento',
   project: 'Projeto',
   category: 'Categoria',
   title: 'Título',
   delete: 'Exclusão',
-  profile: 'Perfil',
   restore: 'Restauração',
-  team: 'Equipe',
-  approve: 'Aprovação',
-  return: 'Devolução',
   cancel: 'Cancelamento'
 }
 
 export default function ActivitiesPage() {
   const { state } = useStore()
-  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('')
-  const [actorId, setActorId] = useState('')
 
   const filtered = useMemo(() => {
     let list = state.activities
     const q = query.trim().toLowerCase()
     if (q) list = list.filter((a) => a.text.toLowerCase().includes(q))
     if (type) list = list.filter((a) => a.type === type)
-    if (actorId) list = list.filter((a) => a.actorId === actorId)
     return list
-  }, [state.activities, query, type, actorId])
+  }, [state.activities, query, type])
 
   const grouped = useMemo(() => {
     const map = {}
@@ -52,12 +42,6 @@ export default function ActivitiesPage() {
     })
     return Object.entries(map)
   }, [filtered])
-
-  const clearFilters = () => {
-    setQuery('')
-    setType('')
-    setActorId('')
-  }
 
   return (
     <div className="space-y-5">
@@ -93,25 +77,8 @@ export default function ActivitiesPage() {
             { label: 'Todos os tipos', active: !type, onClick: () => setType('') }
           ]}
         />
-        <Dropdown
-          align="right"
-          trigger={
-            <button className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${actorId ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
-              {actorId ? state.users.find((u) => u.id === actorId)?.name : 'Membro'}
-            </button>
-          }
-          items={[
-            ...state.users.map((u) => ({
-              label: u.name,
-              active: actorId === u.id,
-              onClick: () => setActorId(actorId === u.id ? '' : u.id)
-            })),
-            { type: 'divider' },
-            { label: 'Todos os membros', active: !actorId, onClick: () => setActorId('') }
-          ]}
-        />
-        {(query || type || actorId) && (
-          <button onClick={clearFilters} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+        {(query || type) && (
+          <button onClick={() => { setQuery(''); setType('') }} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
             <X size={14} /> Limpar
           </button>
         )}
@@ -119,7 +86,7 @@ export default function ActivitiesPage() {
 
       {filtered.length === 0 ? (
         <div className="card-base">
-          <EmptyState icon={History} title="Nenhuma atividade encontrada" description="Ajuste os filtros ou aguarde novas ações da equipe." />
+          <EmptyState icon={History} title="Nenhuma atividade encontrada" description="Ajuste os filtros ou comece a usar o app para gerar histórico." />
         </div>
       ) : (
         <div className="card-base p-5">

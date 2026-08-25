@@ -19,28 +19,21 @@ function wrapper({ children } = {}) {
 vi.mock('../store/store', () => ({
   useStore: () => ({
     state: {
-      tasks: [{ id: 't1', title: 'Test task', status: 'todo', priority: 'medium', assigneeId: 'u1', projectId: null, categoryId: 'c1', tags: [], subtasks: [] }],
-      users: [{ id: 'u1', name: 'Ana', color: '#6366f1' }],
+      tasks: [{ id: 't1', title: 'Test task', status: 'todo', priority: 'medium', projectId: null, categoryId: 'c1', tags: [], subtasks: [], recurrence: null }],
+      me: { id: 'me', name: 'Você', bio: '' },
       projects: [],
       categories: [{ id: 'c1', name: 'Dev' }],
-      profiles: [{ id: 'pr1', name: 'Admin', level: 'admin', permissions: ['view_tasks'] }],
-      currentUserId: 'u1',
-      currentProfileId: 'pr1',
-      notifications: [],
+      reminders: [],
+      notes: {},
       activities: [],
       theme: 'light',
       booted: true
     },
     dispatch: vi.fn()
   }),
-  useCurrentUser: () => ({ id: 'u1', name: 'Ana', color: '#6366f1' }),
-  useActiveProfile: () => ({ id: 'pr1', name: 'Admin', level: 'admin', permissions: ['view_tasks'] }),
-  useCan: () => () => true,
-  useIsManager: () => true,
-  useCanReassign: () => true,
-  useCanModifyTask: () => () => true,
+  useMe: () => ({ id: 'me', name: 'Você', bio: '' }),
   useTaskById: () => null,
-  useTaskComments: () => []
+  useTaskNotes: () => []
 }))
 
 vi.mock('../store/toast', () => ({
@@ -86,6 +79,16 @@ describe('a11y', () => {
       <ErrorBoundary>
         <div>Test content</div>
       </ErrorBoundary>
+    )
+    const results = await axeConfig(container)
+    expect(results.violations).toEqual([])
+  })
+
+  it('ActivityFeed has no violations', async () => {
+    const { default: ActivityFeed } = await import('../components/ActivityFeed')
+    const { container } = render(
+      <ActivityFeed items={[{ id: 'a1', type: 'create', text: 'Você criou a tarefa "X"', createdAt: new Date().toISOString() }]} />,
+      { wrapper }
     )
     const results = await axeConfig(container)
     expect(results.violations).toEqual([])

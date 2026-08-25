@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, CalendarClock, ListTodo, FolderKanban, TrendingUp, AlertTriangle, XCircle } from 'lucide-react'
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
-import { AvatarStack } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Drawer from '../components/ui/Drawer'
@@ -14,7 +13,7 @@ import { formatDay, isOverdue } from '../lib/format'
 
 const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#f43f5e', '#10b981']
 
-function ProjectCard({ project, stats, usersById, onOpen }) {
+function ProjectCard({ project, stats, onOpen }) {
   const health = stats.overdue > 0 ? 'Atrasado' : stats.pct < 40 && stats.dueSoon ? 'Em risco' : 'No prazo'
   const healthStyle =
     health === 'Atrasado'
@@ -63,7 +62,7 @@ function ProjectCard({ project, stats, usersById, onOpen }) {
             <CalendarClock size={13} /> {project.due ? formatDay(project.due) : '—'}
           </span>
         </div>
-        <AvatarStack users={project.members.map((id) => usersById[id]).filter(Boolean)} max={3} size="sm" />
+        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{stats.done}/{stats.total} ✓</span>
       </div>
     </button>
   )
@@ -85,12 +84,6 @@ export default function ProjectsPage() {
       setSelectedId(projParam)
     }
   }, [projParam, state.projects])
-
-  const usersById = useMemo(() => {
-    const m = {}
-    state.users.forEach((u) => (m[u.id] = u))
-    return m
-  }, [state.users])
 
   const stats = useMemo(() => {
     const m = {}
@@ -138,7 +131,6 @@ export default function ProjectsPage() {
               project={p}
               stats={stats[p.id]}
               onOpen={() => setSelectedId(p.id)}
-              usersById={usersById}
             />
           ))}
         </div>
@@ -250,25 +242,6 @@ export default function ProjectsPage() {
                 <span className="font-bold text-slate-800 dark:text-slate-100">{stats[selectedProject.id].pct}%</span>
               </div>
               <ProgressBar value={stats[selectedProject.id].pct} color={selectedProject.color} className="mt-2" />
-            </div>
-
-            <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                Membros ({selectedProject.members.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {selectedProject.members.map((id) => {
-                  const u = usersById[id]
-                  return (
-                    <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300">
-                      <span className="h-5 w-5 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: u?.color }}>
-                        {u?.name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
-                      </span>
-                      {u?.name}
-                    </span>
-                  )
-                })}
-              </div>
             </div>
 
             <div>

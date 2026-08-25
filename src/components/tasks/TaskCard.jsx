@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { MessageSquare, ListChecks, MoreHorizontal, Clock, Star } from 'lucide-react'
-import { Avatar, Tag as TagChip, DueDateBadge } from '../ui/Badge'
+import { StickyNote, ListChecks, MoreHorizontal, Clock, Star, Repeat } from 'lucide-react'
+import { Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import Dropdown from '../ui/Dropdown'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import TaskPreview from './TaskPreview'
 import { useContextMenu } from '../ui/ContextMenu'
 import { buildTaskMenu } from './taskMenu'
-import { PRIORITY } from '../../lib/constants'
-import { useCan, useCanModifyTask } from '../../store/store'
+import { RECURRENCE } from '../../lib/constants'
 
 const PRIORITY_BAR = {
   urgent: 'bg-red-500',
@@ -18,16 +17,15 @@ const PRIORITY_BAR = {
 
 export default function TaskCard({
   task,
-  assignee,
   project,
-  commentCount,
+  noteCount,
   onChange,
   onOpen,
   onEdit,
   onDelete,
   onToggleFavorite,
   onDuplicate,
-  onApprove,
+  onToggleDone,
   onCancel,
   draggable = true,
   onDragStart
@@ -38,9 +36,6 @@ export default function TaskCard({
   const cardRef = useRef(null)
   const showTimer = useRef(null)
   const hideTimer = useRef(null)
-  const can = useCan()
-  const canModify = useCanModifyTask()
-  const canEditThis = can('edit_tasks') && canModify(task)
 
   useEffect(() => {
     return () => {
@@ -56,11 +51,11 @@ export default function TaskCard({
     onChange: (patch) => onChange(patch, task.id),
     onFavorite: onToggleFavorite,
     onDuplicate,
-    onApprove: onApprove ? () => onApprove(task) : undefined,
+    onToggleDone: onToggleDone ? () => onToggleDone(task) : undefined,
     onCancel: onCancel ? () => onCancel(task) : undefined,
-    allowEdit: canEditThis,
-    allowDelete: can('delete_tasks') && canModify(task),
-    allowCreate: can('create_tasks')
+    allowEdit: true,
+    allowDelete: true,
+    allowCreate: true
   })
 
   const queuePreview = () => {
@@ -140,15 +135,38 @@ export default function TaskCard({
             </div>
           )}
 
-          {task.subtasks.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500" aria-label={`${task.subtasks.filter((s) => s.done).length} de ${task.subtasks.length} subtarefas concluídas`}>
-              <ListChecks size={12} />
-              {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
+          {(task.subtasks.length > 0 || (task.recurrence && task.recurrence !== 'none')) && (
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {task.subtasks.length > 0 && (
+                <span
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500"
+                  aria-label={`${task.subtasks.filter((s) => s.done).length} de ${task.subtasks.length} subtarefas concluídas`}
+                >
+                  <ListChecks size={12} />
+                  {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
+                </span>
+              )}
+              {task.recurrence && task.recurrence !== 'none' && (
+                <span
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-brand-500 dark:text-brand-300"
+                  title={`Repete ${RECURRENCE[task.recurrence]?.label?.toLowerCase() || ''}`}
+                >
+                  <Repeat size={12} />
+                  {RECURRENCE[task.recurrence]?.label?.replace('Todo ', '').replace('Toda ', '').replace('Todos os ', '').replace('Toda semana', 'semanal').replace('Todo mês', 'mensal') || task.recurrence}
+                </span>
+              )}
             </div>
           )}
 
           <div className="mt-3 flex items-center justify-between">
-            <Avatar user={assignee} size="sm" />
+            {project ? (
+              <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
+                <span className="truncate">{project.name}</span>
+              </span>
+            ) : (
+              <span />
+            )}
             <div className="flex items-center gap-2.5">
               {task.estimatedHours > 0 && (
                 <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500" aria-label={`${task.estimatedHours} horas estimadas`}>
@@ -156,10 +174,10 @@ export default function TaskCard({
                   {task.estimatedHours}h
                 </span>
               )}
-              {commentCount > 0 && (
-                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                  <MessageSquare size={11} />
-                  {commentCount}
+              {noteCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500" title={`${noteCount} nota(s)`}>
+                  <StickyNote size={11} />
+                  {noteCount}
                 </span>
               )}
               <DueDateBadge dueDate={task.dueDate} status={task.status} />
@@ -172,9 +190,8 @@ export default function TaskCard({
         <TaskPreview
           task={task}
           anchorRect={preview}
-          assignee={assignee}
           project={project}
-          commentCount={commentCount}
+          noteCount={noteCount}
           onClose={() => setPreview(null)}
           onOpen={onOpen}
           onEdit={onEdit}

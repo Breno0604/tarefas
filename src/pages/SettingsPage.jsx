@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard } from 'lucide-react'
-import { useStore, useCurrentUser } from '../store/store'
+import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download } from 'lucide-react'
+import { useStore, useMe } from '../store/store'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { Avatar } from '../components/ui/Badge'
 import { Input, Switch, Textarea } from '../components/ui/Inputs'
 
 const TABS = [
@@ -13,15 +12,15 @@ const TABS = [
   { key: 'preferences', label: 'Preferências', icon: SlidersHorizontal },
   { key: 'appearance', label: 'Aparência', icon: Palette },
   { key: 'shortcuts', label: 'Atalhos', icon: Keyboard },
-  { key: 'notifications', label: 'Notificações', icon: Bell },
-  { key: 'general', label: 'Geral', icon: Database }
+  { key: 'reminders', label: 'Lembretes', icon: Bell },
+  { key: 'general', label: 'Dados', icon: Database }
 ]
 
 const VALID_TABS = TABS.map((t) => t.key)
 
 export default function SettingsPage() {
   const { state, dispatch } = useStore()
-  const me = useCurrentUser()
+  const me = useMe()
   const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
@@ -30,46 +29,54 @@ export default function SettingsPage() {
 
   const [profile, setProfile] = useState({
     name: me?.name || '',
-    email: me?.email || '',
-    role: me?.role || '',
-    bio: me?.bio || 'Gestão de projetos e priorização do roadmap. Apaixonada por organizar times de alta performance.'
+    bio: me?.bio || ''
   })
 
   const prefs = state.prefs || {
-    emailWeekly: true,
-    emailMentions: true,
     soundAlerts: false,
-    compactMode: false,
-    autoAssign: true
+    compactMode: false
   }
 
   const notifPrefs = state.notifPrefs || {
-    assignments: true,
-    mentions: true,
-    dueDates: true,
-    statusChanges: true,
-    comments: true,
-    digests: false
+    dueDates: true
   }
 
-  const appearance = state.appearance || {
-    language: 'pt-BR',
-    timezone: 'America/Sao_Paulo',
-    firstDay: 'sunday'
-  }
+  const [appearanceState, setAppearanceState] = useState(
+    state.appearance || {
+      language: 'pt-BR',
+      timezone: 'America/Sao_Paulo',
+      firstDay: localStorage.getItem('taskflow-first-day') || 'sunday'
+    }
+  )
 
   const saveProfile = () => {
     dispatch({
-      type: 'UPDATE_CURRENT_USER',
-      patch: { name: profile.name, email: profile.email, role: profile.role, bio: profile.bio }
+      type: 'UPDATE_ME',
+      patch: { name: profile.name.trim() || 'Você', bio: profile.bio }
     })
     toast.success('Perfil atualizado com sucesso')
   }
 
   const saveAppearance = () => {
-    dispatch({ type: 'UPDATE_APPEARANCE', appearance })
-    localStorage.setItem('taskflow-first-day', appearance.firstDay)
+    dispatch({ type: 'UPDATE_APPEARANCE', appearance: appearanceState })
+    localStorage.setItem('taskflow-first-day', appearanceState.firstDay)
     toast.success('Configurações salvas')
+  }
+
+  const exportData = () => {
+    try {
+      const data = JSON.stringify({ ...state, __exportedAt: new Date().toISOString() }, null, 2)
+      const blob = new Blob([data], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `taskflow-backup-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Backup exportado')
+    } catch {
+      toast.error?.('Não foi possível exportar os dados') || toast.info('Não foi possível exportar os dados')
+    }
   }
 
   const SectionCard = ({ title, description, children }) => (
@@ -86,10 +93,12 @@ export default function SettingsPage() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
         <div className="card-base mb-4 flex items-center gap-3 p-4">
-          <Avatar user={me} size="lg" showStatus />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+            {(profile.name || 'V').trim().charAt(0).toUpperCase()}
+          </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{me?.name}</p>
-            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{me?.role}</p>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">Uso pessoal</p>
           </div>
         </div>
         <nav className="card-base space-y-0.5 p-2">
@@ -119,46 +128,28 @@ export default function SettingsPage() {
 
       <div className="space-y-5">
         {tab === 'profile' && (
-          <>
-            <SectionCard title="Informações do perfil" description="Essas informações aparecem para a sua equipe.">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Input label="Nome completo" value={profile.name} onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} />
-                  <Input label="Cargo" value={profile.role} onChange={(e) => setProfile((p) => ({ ...p, role: e.target.value }))} />
-                </div>
-                <Input label="E-mail profissional" type="email" value={profile.email} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} />
-                <Textarea label="Sobre você" value={profile.bio} onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))} />
-                <div className="flex justify-end">
-                  <Button icon={Save} onClick={saveProfile}>Salvar alterações</Button>
-                </div>
+          <SectionCard title="Seu perfil" description="Apenas o seu nome e uma descrição pessoal — este é um app de uso individual.">
+            <div className="space-y-4">
+              <Input
+                label="Como quer ser chamado(a)"
+                value={profile.name}
+                onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+              />
+              <Textarea label="Sobre você (opcional)" value={profile.bio} onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))} />
+              <div className="flex justify-end">
+                <Button icon={Save} onClick={saveProfile}>Salvar alterações</Button>
               </div>
-            </SectionCard>
-          </>
+            </div>
+          </SectionCard>
         )}
 
         {tab === 'preferences' && (
-          <SectionCard title="Preferências de trabalho" description="Personalize como o sistema se comporta para você.">
+          <SectionCard title="Preferências" description="Personalize como o sistema se comporta para você.">
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               <div className="py-3.5">
                 <Switch
-                  label="Receber resumo semanal por e-mail"
-                  description="Um resumo das tarefas e prazos toda segunda-feira."
-                  checked={prefs.emailWeekly}
-                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { emailWeekly: v } })}
-                />
-              </div>
-              <div className="py-3.5">
-                <Switch
-                  label="Atribuir tarefas automaticamente"
-                  description="Ao criar uma tarefa sem responsável, sugerir o membro com menor carga."
-                  checked={prefs.autoAssign}
-                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { autoAssign: v } })}
-                />
-              </div>
-              <div className="py-3.5">
-                <Switch
                   label="Sons de notificação"
-                  description="Reproduzir um som ao receber novas notificações."
+                  description="Reproduz um som ao receber novos lembretes."
                   checked={prefs.soundAlerts}
                   onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { soundAlerts: v } })}
                 />
@@ -168,10 +159,7 @@ export default function SettingsPage() {
                   label="Modo compacto"
                   description="Reduz espaçamentos e densifica as listas de tarefas."
                   checked={prefs.compactMode}
-                  onChange={(v) => {
-                    dispatch({ type: 'UPDATE_PREFS', prefs: { compactMode: v } })
-                    toast.info(v ? 'Modo compacto ativado (protótipo)' : 'Modo compacto desativado')
-                  }}
+                  onChange={(v) => dispatch({ type: 'UPDATE_PREFS', prefs: { compactMode: v } })}
                 />
               </div>
             </div>
@@ -210,20 +198,20 @@ export default function SettingsPage() {
 
             <SectionCard title="Idioma e região" description="Configurações locais de exibição.">
               <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                Protótipo: idioma e fuso são apenas visuais. O início da semana é aplicado no calendário.
+                Observação: idioma e fuso são apenas visuais. O início da semana é aplicado no calendário.
               </p>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <label className="label-base">Idioma</label>
-                    <select className="input-base" value={appearance.language} onChange={(e) => setAppearance((a) => ({ ...a, language: e.target.value }))}>
+                    <select className="input-base" value={appearanceState.language} onChange={(e) => setAppearanceState({ ...appearanceState, language: e.target.value })}>
                       <option value="pt-BR">Português (Brasil)</option>
                       <option value="en-US">English (US)</option>
                     </select>
                   </div>
                   <div>
                     <label className="label-base">Fuso horário</label>
-                    <select className="input-base" value={appearance.timezone} onChange={(e) => setAppearance((a) => ({ ...a, timezone: e.target.value }))}>
+                    <select className="input-base" value={appearanceState.timezone} onChange={(e) => setAppearanceState({ ...appearanceState, timezone: e.target.value })}>
                       <option value="America/Sao_Paulo">America/Sao_Paulo</option>
                       <option value="America/New_York">America/New_York</option>
                       <option value="Europe/Lisbon">Europe/Lisbon</option>
@@ -231,7 +219,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label className="label-base">Início da semana</label>
-                    <select className="input-base" value={appearance.firstDay} onChange={(e) => setAppearance((a) => ({ ...a, firstDay: e.target.value }))}>
+                    <select className="input-base" value={appearanceState.firstDay} onChange={(e) => setAppearanceState({ ...appearanceState, firstDay: e.target.value })}>
                       <option value="sunday">Domingo</option>
                       <option value="monday">Segunda-feira</option>
                     </select>
@@ -245,29 +233,26 @@ export default function SettingsPage() {
           </>
         )}
 
-        {tab === 'notifications' && (
-          <SectionCard title="Notificações" description="Escolha quais eventos geram notificações para você.">
+        {tab === 'reminders' && (
+          <SectionCard title="Lembretes" description="Escolha quais prazos geram lembretes para você.">
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {[
-                { key: 'assignments', label: 'Atribuições de tarefas', desc: 'Quando uma tarefa for atribuída a você.' },
-                { key: 'mentions', label: 'Menções', desc: 'Quando você for mencionado em comentários.' },
-                { key: 'dueDates', label: 'Vencimentos e atrasos', desc: 'Avisos de prazos próximos ou vencidos.' },
-                { key: 'statusChanges', label: 'Alterações de status', desc: 'Quando uma tarefa sua muda de status.' },
-                { key: 'comments', label: 'Comentários', desc: 'Novos comentários em tarefas suas.' },
-                { key: 'digests', label: 'Resumo diário', desc: 'Consolidado das atividades ao fim do dia.' }
-              ].map((item) => (
-                <div key={item.key} className="py-3.5">
-                  <Switch
-                    label={item.label}
-                    description={item.desc}
-                    checked={notifPrefs[item.key]}
-                    onChange={(v) => dispatch({ type: 'UPDATE_NOTIF_PREFS', notifPrefs: { [item.key]: v } })}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="secondary" onClick={() => toast.success('Preferências de notificação salvas')}>Salvar</Button>
+              <div className="py-3.5">
+                <Switch
+                  label="Vencimentos próximos"
+                  description="Avisar quando uma tarefa vencer nos próximos 3 dias."
+                  checked={notifPrefs.dueDates}
+                  onChange={(v) => dispatch({ type: 'UPDATE_NOTIF_PREFS', notifPrefs: { dueDates: v } })}
+                />
+              </div>
+              <div className="py-3.5">
+                <Switch
+                  label="Tarefas atrasadas"
+                  description="Sempre avisa quando uma tarefa passa do prazo (recomendado)."
+                  checked={true}
+                  disabled
+                  onChange={() => {}}
+                />
+              </div>
             </div>
           </SectionCard>
         )}
@@ -297,19 +282,29 @@ export default function SettingsPage() {
 
         {tab === 'general' && (
           <>
-            <SectionCard title="Dados de demonstração" description="Este é um protótipo com dados fictícios mantidos apenas em memória.">
+            <SectionCard title="Backup dos dados" description="Seus dados ficam apenas neste navegador — exporte um backup em JSON quando quiser.">
               <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60">
                 <div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Restaurar dados de demonstração</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Reinicia todas as tarefas, usuários e atividades para o estado inicial.</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Exportar backup</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Baixa um arquivo JSON com todas as suas tarefas, projetos e notas.</p>
                 </div>
-                <Button variant="danger" icon={RotateCcw} onClick={() => setConfirmReset(true)}>Restaurar</Button>
+                <Button variant="secondary" icon={Download} onClick={exportData}>Exportar</Button>
               </div>
               <div className="mt-3 text-xs text-slate-400 dark:text-slate-500">
                 Estado atual: <span className="font-semibold text-slate-600 dark:text-slate-300">{state.tasks.length} tarefas</span> ·{' '}
-                <span className="font-semibold text-slate-600 dark:text-slate-300">{state.users.length} membros</span> ·{' '}
                 <span className="font-semibold text-slate-600 dark:text-slate-300">{state.projects.length} projetos</span> ·{' '}
+                <span className="font-semibold text-slate-600 dark:text-slate-300">{state.notes ? Object.keys(state.notes).length : 0} tarefas com notas</span> ·{' '}
                 <span className="font-semibold text-slate-600 dark:text-slate-300">{state.activities.length} atividades</span>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Restaurar dados de exemplo" description="Volta tudo ao estado inicial com as tarefas de exemplo.">
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Restaurar agora</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Substitui todas as suas tarefas e projetos atuais pelos dados de exemplo.</p>
+                </div>
+                <Button variant="danger" icon={RotateCcw} onClick={() => setConfirmReset(true)}>Restaurar</Button>
               </div>
             </SectionCard>
           </>
@@ -323,11 +318,11 @@ export default function SettingsPage() {
           setConfirmReset(false)
           try {
             dispatch({ type: 'RESET' })
-            toast.success('Dados de demonstração restaurados')
+            toast.success('Dados restaurados')
           } catch (e) { console.error('Reset failed:', e) }
         }}
         title="Restaurar dados"
-        message="Todos os dados atuais serão substituídos pelos dados fictícios iniciais. Deseja continuar?"
+        message="Todos os seus dados atuais serão substituídos pelos dados iniciais. Deseja continuar?"
         confirmLabel="Restaurar"
         confirmVariant="primary"
       />

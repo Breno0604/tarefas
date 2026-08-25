@@ -63,7 +63,7 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
         style={{ backgroundColor: PRIORITY[t.priority]?.hex || '#94a3b8' }}
       />
       <span className="truncate">{t.title}</span>
-      {state.comments[t.id]?.length > 0 && (
+      {state.notes[t.id]?.length > 0 && (
         <span className="shrink-0 text-slate-300 dark:text-slate-600">●</span>
       )}
     </button>

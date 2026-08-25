@@ -14,16 +14,15 @@ import {
   useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Plus, Columns3, UserRound, Flag } from 'lucide-react'
+import { Plus, Columns3, Flag } from 'lucide-react'
 import { STATUS, KANBAN_COLUMNS, PRIORITY, PRIORITY_ORDER } from '../../lib/constants'
-import { useStore, useCan, useCanModifyTask, validateTaskPayload } from '../../store/store'
+import { useStore, validateTaskPayload } from '../../store/store'
 import TaskCard from './TaskCard'
 import { useToast } from '../../store/toast'
 import { SegmentedControl } from '../ui/Tabs'
 
 const GROUP_OPTIONS = [
   { key: 'status', label: 'Status', icon: Columns3 },
-  { key: 'assignee', label: 'Responsável', icon: UserRound },
   { key: 'priority', label: 'Prioridade', icon: Flag }
 ]
 
@@ -91,15 +90,11 @@ export default function KanbanView({
   onDeleteTask,
   onToggleFavorite,
   onDuplicateTask,
-  onApproveTask,
+  onToggleDone,
   onCancelTask
 }) {
   const { state, dispatch } = useStore()
-  const can = useCan()
-  const canModify = useCanModifyTask()
   const toast = useToast()
-  const canEdit = can('edit_tasks')
-  const canCreate = can('create_tasks')
   const [groupBy, setGroupBy] = useState('status')
   const [activeId, setActiveId] = useState(null)
   const [overColumn, setOverColumn] = useState(null)
@@ -125,26 +120,6 @@ export default function KanbanView({
         }
       })
     }
-    if (groupBy === 'assignee') {
-      return [
-        ...state.users.map((u) => ({
-          key: u.id,
-          label: u.name.split(' ')[0],
-          dot: u.color,
-          addDefaults: { assigneeId: u.id },
-          patch: () => ({ assigneeId: u.id }),
-          colorStyle: { backgroundColor: u.color }
-        })),
-        {
-          key: 'none',
-          label: 'Não atribuída',
-          dot: '#94a3b8',
-          addDefaults: { assigneeId: null },
-          patch: () => ({ assigneeId: null }),
-          colorStyle: undefined
-        }
-      ]
-    }
     return PRIORITY_ORDER.map((key) => ({
       key,
       label: PRIORITY[key].label,
@@ -153,11 +128,10 @@ export default function KanbanView({
       patch: () => ({ priority: key }),
       colorStyle: { color: PRIORITY[key].hex }
     }))
-  }, [groupBy, state.users])
+  }, [groupBy])
 
   const groupOf = (t) => {
     if (groupBy === 'status') return t.status
-    if (groupBy === 'assignee') return t.assigneeId || 'none'
     return t.priority
   }
 
@@ -192,7 +166,6 @@ export default function KanbanView({
       return
     }
 
-    const activeCol = findColumn(active.id)
     let overCol = findColumn(over.id)
 
     // If hovering over a column (empty area), over.id is the column key
@@ -225,12 +198,12 @@ export default function KanbanView({
     if (!task || !col) return
 
     if (groupBy === 'status' && overCol === 'cancelled') {
-      toast.info('Cancelamento exige motivo. Use o menu "…" do card.')
+      toast.info('Cancelamento pede confirmação. Use o menu "…" do card.')
       return
     }
 
-    if (!canEdit || !canModify(task)) {
-      toast.error('Você não pode editar esta tarefa.')
+    if (groupBy === 'status' && overCol === 'done' && onToggleDone) {
+      onToggleDone(task)
       return
     }
 
@@ -244,11 +217,24 @@ export default function KanbanView({
     dispatch({
       type: 'UPDATE_TASK',
       taskId: active.id,
-      patch,
-      actorId: state.currentUserId
+      patch
     })
     toast.success(`Tarefa movida para ${col.label}`)
   }
+
+  const cardProps = (t) => ({
+    task: t,
+    project: state.projects.find((p) => p.id === t.projectId),
+    noteCount: (state.notes[t.id] || []).length,
+    onChange,
+    onOpen: () => onOpenTask(t.id),
+    onEdit: () => onEditTask(t),
+    onDelete: () => onDeleteTask(t),
+    onToggleFavorite: () => onToggleFavorite(t),
+    onDuplicate: () => onDuplicateTask(t),
+    onToggleDone,
+    onCancel: onCancelTask
+  })
 
   return (
     <div>
@@ -276,30 +262,14 @@ export default function KanbanView({
               cancelled={col.key === 'cancelled'}
             >
               {(tasksByColumn[col.key] || []).map((t) => (
-                <SortableTaskCard
-                  key={t.id}
-                  task={t}
-                  assignee={state.users.find((u) => u.id === t.assigneeId)}
-                  project={state.projects.find((p) => p.id === t.projectId)}
-                  commentCount={(state.comments[t.id] || []).length}
-                  onChange={onChange}
-                  onOpen={() => onOpenTask(t.id)}
-                  onEdit={() => onEditTask(t)}
-                  onDelete={() => onDeleteTask(t)}
-                  onToggleFavorite={() => onToggleFavorite(t)}
-                  onDuplicate={() => onDuplicateTask(t)}
-                  onApprove={onApproveTask}
-                  onCancel={onCancelTask}
-                />
+                <SortableTaskCard key={t.id} {...cardProps(t)} />
               ))}
-              {canCreate && (
-                <button
-                  onClick={() => onEditTask(null, col.addDefaults)}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-slate-400 transition hover:bg-white hover:text-brand-600 hover:shadow-sm dark:hover:bg-slate-900 dark:hover:text-brand-300"
-                >
-                  <Plus size={14} /> Adicionar tarefa
-                </button>
-              )}
+              <button
+                onClick={() => onEditTask(null, col.addDefaults)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-slate-400 transition hover:bg-white hover:text-brand-600 hover:shadow-sm dark:hover:bg-slate-900 dark:hover:text-brand-300"
+              >
+                <Plus size={14} /> Adicionar tarefa
+              </button>
             </KanbanColumn>
           ))}
         </div>
@@ -308,10 +278,7 @@ export default function KanbanView({
           {activeTask ? (
             <div className="w-72 rotate-2 opacity-90">
               <TaskCard
-                task={activeTask}
-                assignee={state.users.find((u) => u.id === activeTask.assigneeId)}
-                project={state.projects.find((p) => p.id === activeTask.projectId)}
-                commentCount={(state.comments[activeTask.id] || []).length}
+                {...cardProps(activeTask)}
                 onChange={() => {}}
                 onOpen={() => {}}
                 onEdit={() => {}}

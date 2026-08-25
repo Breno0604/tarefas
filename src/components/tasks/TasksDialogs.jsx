@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -7,8 +7,6 @@ import { Input } from '../ui/Inputs'
 export default function TasksDialogs({
   cancelTarget,
   onCloseCancel,
-  cancelReason,
-  setCancelReason,
   onConfirmCancel,
   saveFilterOpen,
   onCloseSave,
@@ -19,13 +17,19 @@ export default function TasksDialogs({
   onApplySavedFilter,
   onRemoveSavedFilter
 }) {
+  const [cancelReason, setCancelReason] = useState('')
+
+  useEffect(() => {
+    if (cancelTarget) setCancelReason('')
+  }, [cancelTarget])
+
   return (
     <>
       <Modal
         open={Boolean(cancelTarget)}
         onClose={onCloseCancel}
         title="Cancelar tarefa"
-        description="Informe o motivo do cancelamento — o responsável e a equipe serão avisados."
+        description="O motivo é opcional — anote se quiser lembrar o porquê."
         size="sm"
         footer={
           <>
@@ -33,8 +37,7 @@ export default function TasksDialogs({
               Voltar
             </Button>
             <Button
-              disabled={!cancelReason.trim()}
-              onClick={onConfirmCancel}
+              onClick={() => onConfirmCancel(cancelReason.trim() || null)}
               className="bg-red-600 hover:bg-red-700"
             >
               Cancelar tarefa
@@ -49,7 +52,7 @@ export default function TasksDialogs({
             </div>
           )}
           <Input
-            label="Motivo do cancelamento"
+            label="Motivo (opcional)"
             placeholder="Ex.: Fora de escopo, duplicada, prioridade mudou..."
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
@@ -78,7 +81,7 @@ export default function TasksDialogs({
         <Input
           autoFocus
           label="Nome do filtro"
-          placeholder="Ex.: Minhas tarefas urgentes"
+          placeholder="Ex.: Tarefas urgentes"
           value={saveName}
           onChange={(e) => setSaveName(e.target.value)}
           onKeyDown={(e) => {

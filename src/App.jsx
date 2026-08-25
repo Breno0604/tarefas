@@ -4,18 +4,15 @@ import { StoreProvider } from './store/store'
 import { ToastProvider } from './store/toast'
 import { ContextMenuProvider } from './components/ui/ContextMenu'
 import AppLayout from './components/layout/AppLayout'
-import RequirePerm from './components/RequirePerm'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/ui/Skeleton'
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const TasksPage = React.lazy(() => import('./pages/TasksPage'))
-const TeamPage = React.lazy(() => import('./pages/TeamPage'))
 const ProjectsPage = React.lazy(() => import('./pages/ProjectsPage'))
 const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage'))
 const ActivitiesPage = React.lazy(() => import('./pages/ActivitiesPage'))
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
-const ProfilesPage = React.lazy(() => import('./pages/ProfilesPage'))
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
 
 function PageLoader() {
@@ -38,12 +35,10 @@ export default function App() {
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/tarefas" element={<TasksPage />} />
-                    <Route path="/equipe" element={<RequirePerm perm="manage_team"><TeamPage /></RequirePerm>} />
-                    <Route path="/projetos" element={<RequirePerm perm="manage_projects"><ProjectsPage /></RequirePerm>} />
-                    <Route path="/categorias" element={<RequirePerm perm="manage_projects"><CategoriesPage /></RequirePerm>} />
+                    <Route path="/projetos" element={<ProjectsPage />} />
+                    <Route path="/categorias" element={<CategoriesPage />} />
                     <Route path="/atividades" element={<ActivitiesPage />} />
-                    <Route path="/configuracoes" element={<RequirePerm perm="view_settings"><SettingsPage /></RequirePerm>} />
-                    <Route path="/perfis" element={<RequirePerm perm="manage_profiles"><ProfilesPage /></RequirePerm>} />
+                    <Route path="/configuracoes" element={<SettingsPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>
                 </Routes>

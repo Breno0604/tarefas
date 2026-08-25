@@ -1,27 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { reducer, validateTaskPayload } from '../store/store'
 
-/* ─── Helper: minimal state with admin permissions ─── */
-const adminState = () => ({
-  users: [
-    { id: 'u1', name: 'Ana', role: 'Gerente', email: 'a@b.com', color: '#6366f1', online: true, active: true, profileIds: ['pr1'] },
-    { id: 'u2', name: 'Bruno', role: 'Dev', email: 'b@b.com', color: '#0ea5e9', online: true, active: true, profileIds: ['pr2'] }
-  ],
-  profiles: [
-    { id: 'pr1', name: 'Admin', level: 'admin', permissions: ['view_tasks', 'create_tasks', 'edit_tasks', 'delete_tasks', 'assign_tasks', 'manage_projects', 'manage_team', 'manage_profiles', 'view_settings'], createdBy: 'u1', color: '#f43f5e', createdAt: '2026-01-01' },
-    { id: 'pr2', name: 'Member', level: 'member', permissions: ['view_tasks', 'create_tasks', 'edit_tasks'], createdBy: 'u1', color: '#6366f1', createdAt: '2026-01-01' }
-  ],
-  projects: [{ id: 'p1', name: 'Alpha', color: '#6366f1', members: ['u1', 'u2'] }],
-  categories: [{ id: 'c1', name: 'Dev', color: '#6366f1' }],
+/* ─── Helper: minimal personal state ─── */
+const baseState = () => ({
+  me: { id: 'me', name: 'Você', bio: '' },
+  projects: [{ id: 'p1', name: 'Pessoal', color: '#6366f1' }],
+  categories: [{ id: 'c1', name: 'Casa', color: '#6366f1' }],
   tasks: [
-    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', assigneeId: 'u2', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: [], subtasks: [], favorite: false },
-    { id: 't2', title: 'Task 2', description: '', status: 'review', priority: 'medium', assigneeId: 'u2', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true }
+    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: [], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
+    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: null, cancelReason: null }
   ],
-  comments: { t1: [{ id: 'cm1', userId: 'u2', text: 'Old comment', createdAt: '2026-08-01' }] },
+  notes: { t1: [{ id: 'n1', text: 'Old note', createdAt: '2026-08-01' }] },
   activities: [],
-  notifications: [],
-  currentUserId: 'u1',
-  currentProfileId: 'pr1',
+  reminders: [],
   theme: 'light',
   booted: true,
   trash: []
@@ -31,7 +22,7 @@ describe('reducer', () => {
   let state
 
   beforeEach(() => {
-    state = adminState()
+    state = baseState()
   })
 
   /* ─── Theme ─── */
@@ -44,82 +35,159 @@ describe('reducer', () => {
 
   /* ─── Task CRUD ─── */
   describe('CREATE_TASK', () => {
-    it('creates a new task', () => {
-      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'Nova tarefa' }, actorId: 'u1' })
+    it('creates a new task with defaults', () => {
+      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'Nova tarefa' } })
       expect(next.tasks.length).toBe(3)
       expect(next.tasks[0].title).toBe('Nova tarefa')
       expect(next.tasks[0].status).toBe('todo')
+      expect(next.tasks[0].priority).toBe('medium')
+      expect(next.tasks[0].recurrence).toBeNull()
     })
 
-    it('creates activity entry', () => {
-      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'Nova tarefa' }, actorId: 'u1' })
+    it('creates activity entry in first person', () => {
+      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'Nova tarefa' } })
       expect(next.activities.length).toBe(1)
       expect(next.activities[0].type).toBe('create')
+      expect(next.activities[0].text).toContain('Você criou')
+      expect(next.activities[0].actorId).toBeUndefined()
     })
 
-    it('sends notification to assignee', () => {
-      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'X', assigneeId: 'u2' }, actorId: 'u1' })
-      expect(next.notifications.length).toBe(1)
-      expect(next.notifications[0].targetUserId).toBe('u2')
-    })
-
-    it('blocks if no create_tasks permission', () => {
-      state.currentProfileId = 'pr2'
-      state.profiles[1].permissions = ['view_tasks']
-      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'X' }, actorId: 'u1' })
+    it('rejects invalid payload', () => {
+      const next = reducer(state, { type: 'CREATE_TASK', task: { title: '' } })
       expect(next.tasks.length).toBe(2)
+    })
+
+    it('persists recurrence when provided', () => {
+      const next = reducer(state, { type: 'CREATE_TASK', task: { title: 'X', recurrence: 'weekly' } })
+      expect(next.tasks[0].recurrence).toBe('weekly')
     })
   })
 
   describe('UPDATE_TASK', () => {
     it('updates a task', () => {
-      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'in_progress' }, actorId: 'u1' })
+      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'in_progress' } })
       expect(next.tasks.find((t) => t.id === 't1').status).toBe('in_progress')
     })
 
     it('creates activity for status change', () => {
-      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'in_progress' }, actorId: 'u1' })
+      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'in_progress' } })
       expect(next.activities.some((a) => a.type === 'status')).toBe(true)
     })
 
-    it('notifies assignee on status change', () => {
-      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'in_progress' }, actorId: 'u1' })
-      expect(next.notifications.some((n) => n.type === 'status' && n.targetUserId === 'u2')).toBe(true)
-    })
-
-    it('blocks if no edit_tasks permission', () => {
-      state.currentProfileId = 'pr2'
-      state.profiles[1].permissions = ['view_tasks']
-      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { status: 'done' }, actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't1').status).toBe('todo')
+    it('creates activity for priority change', () => {
+      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { priority: 'urgent' } })
+      expect(next.activities.some((a) => a.type === 'priority')).toBe(true)
     })
 
     it('blocks if task not found', () => {
-      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 'nonexistent', patch: { status: 'done' }, actorId: 'u1' })
+      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 'nonexistent', patch: { status: 'done' } })
       expect(next.tasks.length).toBe(2)
+    })
+
+    it('rejects invalid payload', () => {
+      const next = reducer(state, { type: 'UPDATE_TASK', taskId: 't1', patch: { title: '' } })
+      expect(next.tasks[0].title).toBe('Task 1')
+      expect(next.activities.length).toBe(0)
     })
   })
 
-  describe('DELETE_TASK', () => {
-    it('deletes a task and moves to trash', () => {
-      const next = reducer(state, { type: 'DELETE_TASK', taskId: 't1', actorId: 'u1' })
+  describe('TOGGLE_TASK_DONE', () => {
+    it('completes an open task with full progress', () => {
+      const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 't1' })
+      const task = next.tasks.find((t) => t.id === 't1')
+      expect(task.status).toBe('done')
+      expect(task.progress).toBe(100)
+    })
+
+    it('reopens a done task as in_progress', () => {
+      state.tasks[0].status = 'done'
+      state.tasks[0].progress = 100
+      const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 't1' })
+      const task = next.tasks.find((t) => t.id === 't1')
+      expect(task.status).toBe('in_progress')
+      expect(task.progress).toBe(99)
+    })
+
+    it('spawns next occurrence for recurring task', () => {
+      state.tasks[0].recurrence = 'weekly'
+      state.tasks[0].subtasks = [
+        { id: 's1', title: 'A', done: true },
+        { id: 's2', title: 'B', done: true }
+      ]
+      const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 't1' })
+      // original completed
+      expect(next.tasks.find((t) => t.id === 't1').status).toBe('done')
+      // spawned copy exists
+      const spawned = next.tasks.find((t) => t.id !== 't1' && t.title === 'Task 1')
+      expect(spawned).toBeTruthy()
+      expect(spawned.status).toBe('todo')
+      expect(spawned.recurrence).toBe('weekly')
+      expect(spawned.progress).toBe(0)
+      expect(spawned.subtasks.every((s) => !s.done)).toBe(true)
+      // due date advanced by 7 days
+      expect(new Date(spawned.dueDate).getTime()).toBe(new Date('2026-09-08').getTime())
+    })
+
+    it('does not spawn for non-recurring task', () => {
+      const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 't1' })
+      expect(next.tasks.length).toBe(2)
+    })
+
+    it('ignores unknown task', () => {
+      const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 'nope' })
+      expect(next).toBe(state)
+    })
+  })
+
+  describe('CANCEL_TASK', () => {
+    it('cancels a task with reason', () => {
+      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: 'No longer needed' })
+      const task = next.tasks.find((t) => t.id === 't1')
+      expect(task.status).toBe('cancelled')
+      expect(task.cancelReason).toBe('No longer needed')
+    })
+
+    it('cancels without reason (optional)', () => {
+      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: null })
+      const task = next.tasks.find((t) => t.id === 't1')
+      expect(task.status).toBe('cancelled')
+      expect(task.cancelReason).toBeFalsy()
+    })
+
+    it('blocks cancel on done task', () => {
+      state.tasks[0].status = 'done'
+      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: 'X' })
+      expect(next.tasks.find((t) => t.id === 't1').status).toBe('done')
+    })
+
+    it('blocks double-cancel', () => {
+      state.tasks[0].status = 'cancelled'
+      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: 'X' })
+      expect(next).toBe(state)
+    })
+  })
+
+  describe('DELETE_TASK / RESTORE_TASK', () => {
+    it('deletes a task and moves to trash with its notes', () => {
+      const next = reducer(state, { type: 'DELETE_TASK', taskId: 't1' })
       expect(next.tasks.length).toBe(1)
       expect(next.trash.length).toBe(1)
       expect(next.trash[0].task.id).toBe('t1')
+      expect(next.trash[0].notes).toHaveLength(1)
+      expect(next.notes.t1).toBeUndefined()
     })
 
-    it('removes comments for deleted task', () => {
-      const next = reducer(state, { type: 'DELETE_TASK', taskId: 't1', actorId: 'u1' })
-      expect(next.comments.t1).toBeUndefined()
+    it('creates delete activity', () => {
+      const next = reducer(state, { type: 'DELETE_TASK', taskId: 't1' })
+      expect(next.activities.some((a) => a.type === 'delete')).toBe(true)
     })
-  })
 
-  describe('RESTORE_TASK', () => {
-    it('restores a task from trash', () => {
-      let next = reducer(state, { type: 'DELETE_TASK', taskId: 't1', actorId: 'u1' })
-      next = reducer(next, { type: 'RESTORE_TASK', taskId: 't1', actorId: 'u1' })
+    it('restores a task from trash with its notes', () => {
+      let next = reducer(state, { type: 'DELETE_TASK', taskId: 't1' })
+      next = reducer(next, { type: 'RESTORE_TASK', taskId: 't1' })
       expect(next.tasks.length).toBe(2)
       expect(next.trash.length).toBe(0)
+      expect(next.notes.t1).toHaveLength(1)
     })
   })
 
@@ -135,10 +203,11 @@ describe('reducer', () => {
 
   /* ─── Duplicate ─── */
   describe('DUPLICATE_TASK', () => {
-    it('duplicates a task with (cópia) suffix', () => {
-      const next = reducer(state, { type: 'DUPLICATE_TASK', taskId: 't1', actorId: 'u1' })
+    it('duplicates a task with (cópia) suffix, reset status', () => {
+      const next = reducer(state, { type: 'DUPLICATE_TASK', taskId: 't1' })
       expect(next.tasks.length).toBe(3)
       expect(next.tasks[0].title).toBe('Task 1 (cópia)')
+      expect(next.tasks[0].status).toBe('todo')
       expect(next.tasks[0].progress).toBe(0)
     })
   })
@@ -157,159 +226,119 @@ describe('reducer', () => {
     })
   })
 
-  /* ─── Approve / Return / Cancel ─── */
-  describe('APPROVE_TASK', () => {
-    it('approves a review task to done', () => {
-      state.tasks[1].status = 'review'
-      const next = reducer(state, { type: 'APPROVE_TASK', taskId: 't2', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't2').status).toBe('done')
+  /* ─── Notes ─── */
+  describe('ADD_NOTE', () => {
+    it('adds a note with timestamp and activity', () => {
+      const next = reducer(state, { type: 'ADD_NOTE', taskId: 't1', text: 'Progresso hoje' })
+      expect(next.notes.t1.length).toBe(2)
+      expect(next.notes.t1[1].text).toBe('Progresso hoje')
+      expect(next.notes.t1[1].createdAt).toBeTruthy()
+      expect(next.activities.some((a) => a.type === 'note')).toBe(true)
     })
 
-    it('blocks if task not in review', () => {
-      const next = reducer(state, { type: 'APPROVE_TASK', taskId: 't1', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't1').status).toBe('todo')
-    })
-  })
-
-  describe('RETURN_TASK', () => {
-    it('returns a review task to in_progress', () => {
-      state.tasks[1].status = 'review'
-      const next = reducer(state, { type: 'RETURN_TASK', taskId: 't2', reason: 'Needs fix', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't2').status).toBe('in_progress')
+    it('rejects empty note', () => {
+      const next = reducer(state, { type: 'ADD_NOTE', taskId: 't1', text: '   ' })
+      expect(next).toBe(state)
     })
 
-    it('blocks if no reason provided', () => {
-      state.tasks[1].status = 'review'
-      const next = reducer(state, { type: 'RETURN_TASK', taskId: 't2', reason: '', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't2').status).toBe('review')
+    it('rejects note on nonexistent task', () => {
+      const next = reducer(state, { type: 'ADD_NOTE', taskId: 'nope', text: 'x' })
+      expect(next).toBe(state)
     })
   })
 
-  describe('CANCEL_TASK', () => {
-    it('cancels a task with reason', () => {
-      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: 'No longer needed', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't1').status).toBe('cancelled')
-      expect(next.tasks.find((t) => t.id === 't1').cancelReason).toBe('No longer needed')
+  describe('DELETE_NOTE', () => {
+    it('removes a specific note', () => {
+      const next = reducer(state, { type: 'DELETE_NOTE', taskId: 't1', noteId: 'n1' })
+      expect(next.notes.t1).toHaveLength(0)
     })
 
-    it('blocks cancel on done task', () => {
-      state.tasks[0].status = 'done'
-      const next = reducer(state, { type: 'CANCEL_TASK', taskId: 't1', reason: 'X', actorId: 'u1' })
-      expect(next.tasks.find((t) => t.id === 't1').status).toBe('done')
+    it('ignores unknown note', () => {
+      const next = reducer(state, { type: 'DELETE_NOTE', taskId: 't1', noteId: 'nope' })
+      expect(next.notes.t1).toHaveLength(1)
     })
   })
 
-  /* ─── Comments ─── */
-  describe('ADD_COMMENT', () => {
-    it('adds a comment and notifies assignee', () => {
-      const next = reducer(state, { type: 'ADD_COMMENT', taskId: 't1', userId: 'u1', text: 'Great work!' })
-      expect(next.comments.t1.length).toBe(2)
-      expect(next.comments.t1[1].text).toBe('Great work!')
-      expect(next.notifications.some((n) => n.type === 'comment' && n.targetUserId === 'u2')).toBe(true)
+  /* ─── Reminders ─── */
+  describe('reminders', () => {
+    it('MARK_REMINDER_READ marks one reminder read', () => {
+      state.reminders = [
+        { id: 'r1', type: 'due', title: 'T', body: 'B', taskId: 't1', read: false },
+        { id: 'r2', type: 'due', title: 'T2', body: 'B2', taskId: 't2', read: false }
+      ]
+      const next = reducer(state, { type: 'MARK_REMINDER_READ', id: 'r1' })
+      expect(next.reminders.find((r) => r.id === 'r1').read).toBe(true)
+      expect(next.reminders.find((r) => r.id === 'r2').read).toBe(false)
     })
 
-    it('detects @mentions', () => {
-      const next = reducer(state, { type: 'ADD_COMMENT', taskId: 't1', userId: 'u1', text: 'Hey @Bruno check this' })
-      expect(next.notifications.some((n) => n.type === 'mention')).toBe(true)
+    it('MARK_ALL_REMINDERS_READ marks everything read', () => {
+      state.reminders = [
+        { id: 'r1', read: false },
+        { id: 'r2', read: false }
+      ]
+      const next = reducer(state, { type: 'MARK_ALL_REMINDERS_READ' })
+      expect(next.reminders.every((r) => r.read)).toBe(true)
     })
-  })
 
-  /* ─── Notifications ─── */
-  describe('MARK_NOTIFICATION_READ', () => {
-    it('marks a notification as read', () => {
-      state.notifications = [{ id: 'n1', read: false }]
-      const next = reducer(state, { type: 'MARK_NOTIFICATION_READ', id: 'n1' })
-      expect(next.notifications[0].read).toBe(true)
-    })
-  })
-
-  describe('MARK_ALL_NOTIFICATIONS_READ', () => {
-    it('marks all notifications as read', () => {
-      state.notifications = [{ id: 'n1', read: false }, { id: 'n2', read: false }]
-      const next = reducer(state, { type: 'MARK_ALL_NOTIFICATIONS_READ' })
-      expect(next.notifications.every((n) => n.read)).toBe(true)
+    it('CLEAR_REMINDERS empties the list', () => {
+      state.reminders = [{ id: 'r1' }]
+      const next = reducer(state, { type: 'CLEAR_REMINDERS' })
+      expect(next.reminders.length).toBe(0)
     })
   })
 
-  describe('CLEAR_NOTIFICATIONS', () => {
-    it('clears all notifications', () => {
-      state.notifications = [{ id: 'n1' }]
-      const next = reducer(state, { type: 'CLEAR_NOTIFICATIONS' })
-      expect(next.notifications.length).toBe(0)
+  /* ─── BOOT generates overdue/upcoming reminders ─── */
+  describe('BOOT', () => {
+    it('generates reminder for overdue open task', () => {
+      state.tasks = [
+        { ...state.tasks[0], dueDate: new Date(Date.now() - 86400000).toISOString(), status: 'todo', recurrence: null }
+      ]
+      state.booted = false
+      const next = reducer(state, { type: 'BOOT' })
+      expect(next.booted).toBe(true)
+      expect(next.reminders.some((r) => r.type === 'due' && r.title === 'Tarefa atrasada')).toBe(true)
+    })
+
+    it('does not remind for done tasks', () => {
+      state.tasks = [
+        { ...state.tasks[0], dueDate: new Date(Date.now() - 86400000).toISOString(), status: 'done' }
+      ]
+      state.booted = false
+      const next = reducer(state, { type: 'BOOT' })
+      expect(next.reminders.length).toBe(0)
+    })
+
+    it('deduplicates reminders per task', () => {
+      const due = new Date(Date.now() - 86400000).toISOString()
+      state.tasks = [
+        { ...state.tasks[0], dueDate: due, status: 'todo' }
+      ]
+      state.reminders = [
+        { id: 'r1', type: 'due', title: 'Tarefa atrasada', body: 'x', taskId: 't1', read: true }
+      ]
+      state.booted = false
+      const next = reducer(state, { type: 'BOOT' })
+      expect(next.reminders.filter((r) => r.taskId === 't1').length).toBe(1)
     })
   })
 
-  /* ─── Profiles ─── */
-  describe('CREATE_PROFILE', () => {
-    it('creates a new access profile', () => {
-      const next = reducer(state, { type: 'CREATE_PROFILE', name: 'QA', level: 'member', permissions: ['view_tasks'] })
-      expect(next.profiles.length).toBe(3)
-      expect(next.profiles[2].name).toBe('QA')
-    })
-  })
-
-  describe('UPDATE_ACCESS_PROFILE', () => {
-    it('updates a profile', () => {
-      const next = reducer(state, { type: 'UPDATE_ACCESS_PROFILE', profileId: 'pr2', patch: { name: 'Senior Dev' } })
-      expect(next.profiles.find((p) => p.id === 'pr2').name).toBe('Senior Dev')
-    })
-  })
-
-  describe('DELETE_PROFILE', () => {
-    it('deletes a profile', () => {
-      const next = reducer(state, { type: 'DELETE_PROFILE', profileId: 'pr2' })
-      expect(next.profiles.length).toBe(1)
-    })
-
-    it('blocks deleting current profile', () => {
-      const next = reducer(state, { type: 'DELETE_PROFILE', profileId: 'pr1' })
-      expect(next.profiles.length).toBe(2)
-    })
-  })
-
-  /* ─── Team ─── */
-  describe('ADD_USER', () => {
-    it('adds a new user', () => {
-      const next = reducer(state, { type: 'ADD_USER', name: 'Carla', role: 'QA' })
-      expect(next.users.length).toBe(3)
-      expect(next.users[2].name).toBe('Carla')
-    })
-  })
-
-  describe('SET_CURRENT_USER', () => {
-    it('switches current user and profile', () => {
-      const next = reducer(state, { type: 'SET_CURRENT_USER', userId: 'u2' })
-      expect(next.currentUserId).toBe('u2')
-      expect(next.currentProfileId).toBe('pr2')
-    })
-  })
-
-  describe('SET_CURRENT_PROFILE', () => {
-    it('switches current profile', () => {
-      const next = reducer(state, { type: 'SET_CURRENT_PROFILE', profileId: 'pr2' })
-      expect(next.currentProfileId).toBe('pr2')
-    })
-  })
-
-  describe('DEACTIVATE_USER', () => {
-    it('deactivates a user and reassigns tasks', () => {
-      const next = reducer(state, { type: 'DEACTIVATE_USER', userId: 'u2', reassignTo: 'u1' })
-      expect(next.users.find((u) => u.id === 'u2').active).toBe(false)
-      expect(next.tasks.every((t) => t.assigneeId !== 'u2')).toBe(true)
-    })
-
-    it('blocks self-deactivation', () => {
-      const next = reducer(state, { type: 'DEACTIVATE_USER', userId: 'u1' })
-      expect(next.users.find((u) => u.id === 'u1').active).toBe(true)
+  /* ─── Me ─── */
+  describe('UPDATE_ME', () => {
+    it('updates name and bio', () => {
+      const next = reducer(state, { type: 'UPDATE_ME', patch: { name: 'Breno', bio: 'Dev' } })
+      expect(next.me.name).toBe('Breno')
+      expect(next.me.bio).toBe('Dev')
     })
   })
 
   /* ─── Projects / Categories ─── */
   describe('CREATE_PROJECT', () => {
-    it('creates a project', () => {
+    it('creates a project without members', () => {
       const next = reducer(state, { type: 'CREATE_PROJECT', name: 'Beta', color: '#0ea5e9' })
       expect(next.projects.length).toBe(2)
       expect(next.projects[1].name).toBe('Beta')
+      expect(next.projects[1].members).toBeUndefined()
+      expect(next.activities.some((a) => a.text.includes('Beta'))).toBe(true)
     })
   })
 
@@ -321,9 +350,32 @@ describe('reducer', () => {
     })
   })
 
+  /* ─── Prefs / appearance ─── */
+  describe('prefs and appearance', () => {
+    it('UPDATE_PREFS merges preferences', () => {
+      state.prefs = { soundAlerts: false, compactMode: false }
+      const next = reducer(state, { type: 'UPDATE_PREFS', prefs: { compactMode: true } })
+      expect(next.prefs.compactMode).toBe(true)
+      expect(next.prefs.soundAlerts).toBe(false)
+    })
+
+    it('UPDATE_NOTIF_PREFS merges reminder prefs', () => {
+      state.notifPrefs = { dueDates: true }
+      const next = reducer(state, { type: 'UPDATE_NOTIF_PREFS', notifPrefs: { dueDates: false } })
+      expect(next.notifPrefs.dueDates).toBe(false)
+    })
+
+    it('UPDATE_APPEARANCE merges appearance', () => {
+      state.appearance = { language: 'pt-BR', timezone: 'America/Sao_Paulo', firstDay: 'sunday' }
+      const next = reducer(state, { type: 'UPDATE_APPEARANCE', appearance: { firstDay: 'monday' } })
+      expect(next.appearance.firstDay).toBe('monday')
+      expect(next.appearance.language).toBe('pt-BR')
+    })
+  })
+
   /* ─── Reset ─── */
   describe('RESET', () => {
-    it('resets to initial state', () => {
+    it('resets to initial state with data restored', () => {
       state.tasks = []
       state.theme = 'dark'
       const next = reducer(state, { type: 'RESET' })
@@ -353,8 +405,7 @@ describe('reducer', () => {
     })
 
     it('returns error for whitespace-only title', () => {
-      const errors = validateTaskPayload({ title: '   ' })
-      expect(errors.length).toBe(1)
+      expect(validateTaskPayload({ title: '   ' }).length).toBe(1)
     })
 
     it('returns error for negative estimatedHours', () => {
@@ -370,8 +421,7 @@ describe('reducer', () => {
     })
 
     it('returns multiple errors for multiple invalid fields', () => {
-      const errors = validateTaskPayload({ title: '', estimatedHours: -1, dueDate: 'bad' })
-      expect(errors.length).toBe(3)
+      expect(validateTaskPayload({ title: '', estimatedHours: -1, dueDate: 'bad' }).length).toBe(3)
     })
 
     it('returns error for null/undefined payload', () => {
@@ -381,77 +431,6 @@ describe('reducer', () => {
 
     it('ignores fields not in the payload', () => {
       expect(validateTaskPayload({})).toEqual([])
-    })
-  })
-
-  /* ─── Permission checks ─── */
-  describe('permission checks', () => {
-    it('non-manager cannot see tasks assigned to others', () => {
-      const memberState = adminState()
-      memberState.currentUserId = 'u2'
-      memberState.currentProfileId = 'pr2' // member profile
-      const next = reducer(memberState, { type: 'BOOT' })
-      // Non-managers see only their own tasks via useTaskFilters, not via reducer
-      // The reducer itself doesn't filter — this is handled in the hook
-      // But we can verify the reducer state is unchanged
-      expect(next.tasks.length).toBe(2)
-    })
-
-    it('admin can create tasks', () => {
-      const next = reducer(state, {
-        type: 'CREATE_TASK',
-        task: { title: 'New task' },
-        actorId: 'u1'
-      })
-      expect(next.tasks.length).toBe(3)
-      expect(next.tasks.find((t) => t.title === 'New task')).toBeTruthy()
-    })
-
-    it('member cannot create tasks without permission', () => {
-      const memberState = adminState()
-      memberState.currentProfileId = 'pr2' // member: has create_tasks
-      const next = reducer(memberState, {
-        type: 'CREATE_TASK',
-        task: { title: 'Should fail' },
-        actorId: 'u2'
-      })
-      // pr2 has create_tasks, so it succeeds
-      expect(next.tasks.length).toBe(3)
-    })
-
-    it('CREATE_TASK rejects invalid payload', () => {
-      const next = reducer(state, {
-        type: 'CREATE_TASK',
-        task: { title: '' },
-        actorId: 'u1'
-      })
-      // Validation fails, state unchanged
-      expect(next.tasks.length).toBe(2)
-    })
-
-    it('UPDATE_TASK rejects invalid payload', () => {
-      const next = reducer(state, {
-        type: 'UPDATE_TASK',
-        taskId: 't1',
-        patch: { title: '' },
-        actorId: 'u1'
-      })
-      expect(next.tasks.length).toBe(2)
-      expect(next.tasks[0].title).toBe('Task 1')
-    })
-
-    it('TOGGLE_FAVORITE requires view_tasks permission', () => {
-      const viewerState = adminState()
-      viewerState.currentProfileId = 'pr3'
-      viewerState.profiles.push({
-        id: 'pr3', name: 'Viewer', level: 'viewer', permissions: [],
-        createdBy: 'u1', color: '#94a3b8', createdAt: '2026-01-01'
-      })
-      const next = reducer(viewerState, {
-        type: 'TOGGLE_FAVORITE', taskId: 't1'
-      })
-      // No view_tasks permission, favorite unchanged
-      expect(next.tasks[0].favorite).toBe(false)
     })
   })
 })

@@ -4,10 +4,9 @@ import {
   Trash2,
   Calendar,
   Clock,
-  User,
   FolderKanban,
   Tag,
-  MessageSquare,
+  StickyNote,
   History,
   Send,
   ListChecks,
@@ -16,24 +15,23 @@ import {
   Circle,
   Star,
   Copy,
-  RotateCcw,
   Ban,
-  ShieldCheck
+  Repeat,
+  Trash
 } from 'lucide-react'
 import Drawer from '../ui/Drawer'
 import Dropdown from '../ui/Dropdown'
 import Button from '../ui/Button'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import Modal from '../ui/Modal'
-import { Avatar, StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
+import { StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import { Textarea } from '../ui/Inputs'
 import ProgressBar from '../ui/ProgressBar'
-import { useStore, useTaskById, useTaskComments, useCurrentUser, useCan, useCanReassign, useCanModifyTask } from '../../store/store'
-import { STATUS, PRIORITY } from '../../lib/constants'
+import { useStore, useTaskById, useTaskNotes } from '../../store/store'
+import { STATUS, RECURRENCE } from '../../lib/constants'
 import { formatDate, formatRelative } from '../../lib/format'
 import { useToast } from '../../store/toast'
 import { deleteTaskWithUndo } from '../../lib/utils'
-import EmptyState from '../ui/EmptyState'
 
 function MetaRow({ icon: Icon, label, value, children }) {
   return (
@@ -55,49 +53,47 @@ function MetaRow({ icon: Icon, label, value, children }) {
 export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
   const { state, dispatch } = useStore()
   const task = useTaskById(taskId)
-  const comments = useTaskComments(taskId)
-  const me = useCurrentUser()
-  const can = useCan()
-  const canReassign = useCanReassign()
-  const canModifyThis = useCanModifyTask()(task)
+  const notes = useTaskNotes(taskId)
   const toast = useToast()
-  const [comment, setComment] = useState('')
+  const [noteText, setNoteText] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [reasonOpen, setReasonOpen] = useState(null)
-  const [reason, setReason] = useState('')
-
-  const canEdit = can('edit_tasks') && canModifyThis
-  const canDelete = can('delete_tasks') && canModifyThis
-  const canCreate = can('create_tasks')
-  const canComment = canEdit
-  const isCancelled = task?.status === 'cancelled'
-  const cancelAuthor = isCancelled
-    ? state.users.find((u) => u.id === task.canceledBy)
-    : null
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
 
   useEffect(() => {
-    setComment('')
-    setReason('')
-    setReasonOpen(null)
+    setNoteText('')
+    setCancelReason('')
+    setCancelOpen(false)
   }, [taskId, open])
 
   if (!open || !task) return null
 
-  const actorId = state.currentUserId
+  const isDone = task.status === 'done'
+  const isCancelled = task.status === 'cancelled'
 
   const change = (patch, msg) => {
-    dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch, actorId })
+    dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch })
     if (msg) toast.success(msg)
+  }
+
+  const toggleDone = () => {
+    dispatch({ type: 'TOGGLE_TASK_DONE', taskId: task.id })
+    toast.success(isDone ? 'Tarefa reaberta' : (task.recurrence && task.recurrence !== 'none') ? 'Tarefa concluída — próxima ocorrência criada' : 'Tarefa concluída')
   }
 
   const taskActivities = state.activities.filter((a) => a.taskId === task.id).slice(0, 8)
 
-  const submitComment = (e) => {
+  const submitNote = (e) => {
     e.preventDefault()
-    if (!comment.trim()) return
-    dispatch({ type: 'ADD_COMMENT', taskId: task.id, userId: state.currentUserId, text: comment.trim() })
-    setComment('')
-    toast.success('Comentário adicionado')
+    if (!noteText.trim()) return
+    dispatch({ type: 'ADD_NOTE', taskId: task.id, text: noteText.trim() })
+    setNoteText('')
+    toast.success('Nota adicionada')
+  }
+
+  const removeNote = (noteId) => {
+    dispatch({ type: 'DELETE_NOTE', taskId: task.id, noteId })
+    toast.info('Nota removida')
   }
 
   const doneSubtasks = task.subtasks.filter((s) => s.done).length
@@ -109,33 +105,29 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         onClose={onClose}
         title="Detalhes da tarefa"
         subtitle={`Criada em ${formatDate(task.createdAt)}`}
-        disableDismiss={confirmDelete || reasonOpen !== null}
+        disableDismiss={confirmDelete || cancelOpen}
         footer={
           <>
-            {canDelete && (
-              <Button variant="ghost" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
-                Excluir
-              </Button>
-            )}
-            {canCreate && (
-              <Button
-                variant="ghost"
-                icon={Copy}
-                onClick={() => {
-                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id, actorId })
-                  toast.success('Tarefa duplicada')
-                }}
-              >
-                Duplicar
-              </Button>
-            )}
-            {canEdit && task.status !== 'done' && task.status !== 'cancelled' && (
+            <Button variant="ghost" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
+              Excluir
+            </Button>
+            <Button
+              variant="ghost"
+              icon={Copy}
+              onClick={() => {
+                dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+                toast.success('Tarefa duplicada')
+              }}
+            >
+              Duplicar
+            </Button>
+            {!isDone && !isCancelled && (
               <Button
                 variant="ghost"
                 icon={Ban}
                 onClick={() => {
-                  setReason('')
-                  setReasonOpen('cancel')
+                  setCancelReason('')
+                  setCancelOpen(true)
                 }}
                 className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
               >
@@ -146,17 +138,15 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
             <Button variant="secondary" onClick={onClose}>
               Fechar
             </Button>
-            {canEdit && (
-              <Button
-                icon={Pencil}
-                onClick={() => {
-                  onEdit?.(task)
-                  onClose()
-                }}
-              >
-                Editar
-              </Button>
-            )}
+            <Button
+              icon={Pencil}
+              onClick={() => {
+                onEdit?.(task)
+                onClose()
+              }}
+            >
+              Editar
+            </Button>
           </>
         }
       >
@@ -195,6 +185,17 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
             )}
           </div>
 
+          {!isCancelled && (
+            <Button
+              variant={isDone ? 'secondary' : 'primary'}
+              icon={isDone ? undefined : CheckCircle2}
+              onClick={toggleDone}
+              className="w-full"
+            >
+              {isDone ? 'Reabrir tarefa' : 'Marcar como concluída'}
+            </Button>
+          )}
+
           {task.subtasks.length > 0 && (
             <div className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
               <div className="flex items-center justify-between">
@@ -211,11 +212,10 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                 {task.subtasks.map((s) => (
                   <button
                     key={s.id}
-                    disabled={!canEdit}
                     onClick={() =>
                       dispatch({ type: 'TOGGLE_SUBTASK', taskId: task.id, subtaskId: s.id })
                     }
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800/70 ${
+                    className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/70 ${
                       s.done ? 'text-slate-400 line-through dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'
                     }`}
                   >
@@ -236,128 +236,66 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
               Informações
             </p>
             <div className="space-y-2">
-              <MetaRow
-                icon={User}
-                label="Responsável"
-                value={task.assigneeId ? state.users.find((u) => u.id === task.assigneeId)?.name : 'Não atribuída'}
-              >
-                {task.assigneeId ? (
-                  <Avatar user={state.users.find((u) => u.id === task.assigneeId)} size="sm" />
-                ) : null}
-              </MetaRow>
-              <MetaRow
-                icon={FolderKanban}
-                label="Projeto"
-                value={task.projectId ? state.projects.find((p) => p.id === task.projectId)?.name : 'Sem projeto'}
-              />
-              <MetaRow
-                icon={Tag}
-                label="Categoria"
-                value={state.categories.find((c) => c.id === task.categoryId)?.name || '—'}
-              />
-              <MetaRow
-                icon={Calendar}
-                label="Vencimento"
-                value={task.dueDate ? formatDate(task.dueDate) : 'Sem prazo'}
-              />
+              {task.projectId && (
+                <MetaRow
+                  icon={FolderKanban}
+                  label="Projeto"
+                  value={state.projects.find((p) => p.id === task.projectId)?.name || '—'}
+                />
+              )}
+              {task.categoryId && (
+                <MetaRow
+                  icon={Tag}
+                  label="Categoria"
+                  value={state.categories.find((c) => c.id === task.categoryId)?.name || '—'}
+                />
+              )}
+              {task.dueDate && (
+                <MetaRow
+                  icon={Calendar}
+                  label="Vencimento"
+                  value={formatDate(task.dueDate)}
+                />
+              )}
               <MetaRow
                 icon={Clock}
                 label="Horas estimadas"
                 value={task.estimatedHours ? `${task.estimatedHours}h` : 'Não estimado'}
               />
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Dropdown
-                align="right"
-                trigger={
-                  <button
-                    disabled={!canEdit}
-                    title={canEdit ? 'Alterar status' : 'Você não pode editar esta tarefa'}
-                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Alterar status
-                    <ChevronDown size={15} className="text-slate-400" />
-                  </button>
+              <MetaRow
+                icon={Repeat}
+                label="Repetição"
+                value={
+                  task.recurrence && RECURRENCE[task.recurrence]
+                    ? RECURRENCE[task.recurrence].label
+                    : 'Não se repete'
                 }
-                items={Object.values(STATUS)
-                  .filter((s) => s.key !== 'cancelled')
-                  .map((s) => ({
-                    label: s.label,
-                    active: task.status === s.key,
-                    onClick: () => {
-                      if (task.status !== s.key) change({ status: s.key }, `Movida para ${s.label}`)
-                    }
-                  }))}
-              />
-              <Dropdown
-                align="right"
-                trigger={
-                  <button
-                    disabled={!canReassign}
-                    title={canReassign ? 'Alterar responsável' : 'Somente gestores podem reatribuir tarefas'}
-                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Alterar responsável
-                    <ChevronDown size={15} className="text-slate-400" />
-                  </button>
-                }
-                items={[
-                  {
-                    label: 'Não atribuída',
-                    active: !task.assigneeId,
-                    onClick: () => {
-                      if (task.assigneeId) change({ assigneeId: null }, 'Atribuição removida')
-                    }
-                  },
-                  { type: 'divider' },
-                  ...state.users
-                    .filter((u) => u.active !== false)
-                    .map((u) => ({
-                      label: u.name,
-                      active: task.assigneeId === u.id,
-                      onClick: () => {
-                        if (task.assigneeId !== u.id)
-                          change({ assigneeId: u.id }, `Atribuída a ${u.name}`)
-                      }
-                    }))
-                ]}
               />
             </div>
 
-            {task.status === 'review' && canEdit && (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-                <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
-                  Tarefa em revisão
-                </p>
-                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  Aprove para concluir ou devolva ao responsável com um motivo.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    icon={ShieldCheck}
-                    onClick={() => {
-                      dispatch({ type: 'APPROVE_TASK', taskId: task.id, actorId })
-                      toast.success('Tarefa aprovada e concluída')
-                    }}
-                  >
-                    Aprovar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon={RotateCcw}
-                    onClick={() => {
-                      setReason('')
-                      setReasonOpen('return')
-                    }}
-                  >
-                    Devolver com motivo
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Dropdown
+              align="right"
+              triggerClassName="w-full mt-4"
+              trigger={
+                <button
+                  title="Alterar status"
+                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Alterar status
+                  <ChevronDown size={15} className="text-slate-400" />
+                </button>
+              }
+              items={Object.values(STATUS)
+                .filter((s) => s.key !== 'cancelled')
+                .map((s) => ({
+                  label: s.label,
+                  active: task.status === s.key,
+                  onClick: () => {
+                    if (task.status !== s.key) change({ status: s.key }, `Movida para ${s.label}`)
+                  }
+                }))
+              }
+            />
 
             {isCancelled && (
               <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40">
@@ -369,11 +307,14 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                     Motivo: {task.cancelReason}
                   </p>
                 )}
-                {cancelAuthor && (
-                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                    Decidido por {cancelAuthor.name}
-                  </p>
-                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="mt-3"
+                  onClick={() => change({ status: 'todo', cancelReason: null }, 'Tarefa reativada')}
+                >
+                  Reativar
+                </Button>
               </div>
             )}
           </div>
@@ -388,129 +329,102 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
               </p>
             ) : (
               <ul className="space-y-3">
-                {taskActivities.map((a) => {
-                  const actor = state.users.find((u) => u.id === a.actorId)
-                  return (
-                    <li key={a.id} className="flex items-start gap-2.5">
-                      <Avatar user={actor} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs leading-snug text-slate-600 dark:text-slate-300">{a.text}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
-                          {formatRelative(a.createdAt)}
-                        </p>
-                      </div>
-                    </li>
-                  )
-                })}
+                {taskActivities.map((a) => (
+                  <li key={a.id} className="flex items-start gap-2.5">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs leading-snug text-slate-600 dark:text-slate-300">{a.text}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                        {formatRelative(a.createdAt)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
 
           <div>
             <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-              <MessageSquare size={13} /> Comentários ({comments.length})
+              <StickyNote size={13} /> Notas ({notes.length})
             </p>
             <div className="space-y-3">
-              {comments.length === 0 && (
-                <EmptyState
-                  icon={MessageSquare}
-                  title="Sem comentários"
-                  description="Seja o primeiro a comentar nesta tarefa."
-                  compact
-                />
+              {notes.length === 0 && (
+                <p className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-xs text-slate-400 dark:border-slate-700">
+                  Anote progressos, links ou ideias sobre esta tarefa.
+                </p>
               )}
-              {comments.map((c) => {
-                const author = state.users.find((u) => u.id === c.userId)
-                return (
-                  <div key={c.id} className="flex items-start gap-2.5">
-                    <Avatar user={author} size="sm" />
-                    <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
-                      <p className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                          {author?.name}
-                        </span>
-                        <span className="text-[11px] text-slate-400">{formatRelative(c.createdAt)}</span>
-                      </p>
-                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{c.text}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {canComment ? (
-              <form onSubmit={submitComment} className="mt-4">
-                <div className="flex items-start gap-2.5">
-                  <Avatar user={me} size="sm" />
-                  <div className="flex-1">
-                    <Textarea
-                      placeholder="Escreva um comentário..."
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      className="min-h-[60px]"
-                    />
-                    <div className="mt-2 flex justify-end">
-                      <Button type="submit" size="sm" icon={Send} disabled={!comment.trim()}>
-                        Comentar
-                      </Button>
-                    </div>
+              {notes.map((n) => (
+                <div key={n.id} className="group flex items-start gap-2.5">
+                  <div className="min-w-0 flex-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+                    <p className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-slate-400">{formatRelative(n.createdAt)}</span>
+                      <button
+                        onClick={() => removeNote(n.id)}
+                        className="rounded p-0.5 text-slate-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
+                        aria-label="Remover nota"
+                      >
+                        <Trash size={12} />
+                      </button>
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{n.text}</p>
                   </div>
                 </div>
-              </form>
-            ) : (
-              <p className="mt-4 rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-xs text-slate-400 dark:border-slate-700">
-                Seu perfil não tem permissão para comentar nesta tarefa.
-              </p>
-            )}
+              ))}
+            </div>
+
+            <form onSubmit={submitNote} className="mt-4">
+              <Textarea
+                placeholder="Escreva uma nota..."
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                className="min-h-[60px]"
+              />
+              <div className="mt-2 flex justify-end">
+                <Button type="submit" size="sm" icon={Send} disabled={!noteText.trim()}>
+                  Adicionar nota
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       </Drawer>
 
       <Modal
-        open={reasonOpen !== null}
-        onClose={() => setReasonOpen(null)}
-        title={reasonOpen === 'cancel' ? 'Cancelar tarefa' : 'Devolver tarefa'}
-        description={
-          reasonOpen === 'cancel'
-            ? 'Informe o motivo do cancelamento e quem decidiu ficará registrado.'
-            : 'Informe o motivo da devolução para o responsável corrigir.'
-        }
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        title="Cancelar tarefa"
+        description="O motivo é opcional — anote se quiser lembrar o porquê."
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setReasonOpen(null)}>
+            <Button variant="secondary" onClick={() => setCancelOpen(false)}>
               Voltar
             </Button>
             <Button
-              disabled={!reason.trim()}
               onClick={() => {
-                const reasonText = reason.trim()
-                if (reasonOpen === 'cancel') {
-                  dispatch({ type: 'CANCEL_TASK', taskId: task.id, reason: reasonText, actorId })
-                  toast.success('Tarefa cancelada')
-                } else {
-                  dispatch({ type: 'RETURN_TASK', taskId: task.id, reason: reasonText, actorId })
-                  toast.success('Tarefa devolvida para execução')
-                }
-                setReason('')
-                setReasonOpen(null)
+                dispatch({
+                  type: 'CANCEL_TASK',
+                  taskId: task.id,
+                  reason: cancelReason.trim() || null
+                })
+                toast.success('Tarefa cancelada')
+                setCancelReason('')
+                setCancelOpen(false)
               }}
+              className="bg-red-600 hover:bg-red-700"
             >
-              {reasonOpen === 'cancel' ? 'Cancelar tarefa' : 'Devolver'}
+              Cancelar tarefa
             </Button>
           </>
         }
       >
         <Textarea
-          label="Motivo"
+          label="Motivo (opcional)"
           autoFocus
-          placeholder={
-            reasonOpen === 'cancel'
-              ? 'Ex.: Fora de escopo, duplicada, prioridade mudou...'
-              : 'Ex.: Critérios de aceite não atendidos, falta de testes...'
-          }
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          placeholder="Ex.: Fora de escopo, duplicada, prioridade mudou..."
+          value={cancelReason}
+          onChange={(e) => setCancelReason(e.target.value)}
         />
       </Modal>
 
@@ -520,7 +434,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         onConfirm={() => {
           setConfirmDelete(false)
           try {
-            deleteTaskWithUndo({ dispatch, toast, task, actorId })
+            deleteTaskWithUndo({ dispatch, toast, task })
             onClose()
           } catch (e) { console.error('Delete failed:', e) }
         }}

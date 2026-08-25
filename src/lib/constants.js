@@ -1,5 +1,3 @@
-export const AVATAR_COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#f43f5e', '#14b8a6', '#3b82f6', '#84cc16']
-
 export const STATUS = {
   todo: {
     key: 'todo',
@@ -18,35 +16,9 @@ export const STATUS = {
     dot: 'bg-blue-500',
     bar: 'bg-blue-500'
   },
-  review: {
-    key: 'review',
-    label: 'Em revisão',
-    hex: '#f59e0b',
-    badge:
-      'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-    dot: 'bg-amber-500',
-    bar: 'bg-amber-500'
-  },
-  blocked: {
-    key: 'blocked',
-    label: 'Bloqueado',
-    hex: '#ef4444',
-    badge: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300',
-    dot: 'bg-red-500',
-    bar: 'bg-red-500'
-  },
-  paused: {
-    key: 'paused',
-    label: 'Pausada',
-    hex: '#f97316',
-    badge:
-      'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300',
-    dot: 'bg-orange-500',
-    bar: 'bg-orange-500'
-  },
   done: {
     key: 'done',
-    label: 'Concluído',
+    label: 'Concluída',
     hex: '#10b981',
     badge:
       'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
@@ -64,7 +36,7 @@ export const STATUS = {
   }
 }
 
-export const KANBAN_COLUMNS = ['todo', 'in_progress', 'review', 'blocked', 'paused', 'done', 'cancelled']
+export const KANBAN_COLUMNS = ['todo', 'in_progress', 'done', 'cancelled']
 
 export const PRIORITY = {
   low: { key: 'low', label: 'Baixa', hex: '#64748b', rank: 0 },
@@ -90,97 +62,36 @@ export const VIEWS = [
   { key: 'calendar', label: 'Calendário' }
 ]
 
-export const ROLE_BADGE = {
-  'Gerente de Projetos': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
-  'Desenvolvedor Frontend': 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
-  'Desenvolvedora Backend': 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
-  'Desenvolvedor Fullstack': 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  'Desenvolvedora Fullstack': 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  'Designer UX/UI': 'bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300',
-  'Analista de QA': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
-  'Product Owner': 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
-  'DevOps Engineer': 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300'
+export const RECURRENCE = {
+  none: { key: 'none', label: 'Não repetir' },
+  daily: { key: 'daily', label: 'Todos os dias' },
+  weekly: { key: 'weekly', label: 'Toda semana' },
+  monthly: { key: 'monthly', label: 'Todo mês' }
 }
 
-export const ACCESS_LEVELS = {
-  admin: {
-    key: 'admin',
-    label: 'Administrador',
-    rank: 3,
-    hex: '#f43f5e',
-    badge: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
-  },
-  manager: {
-    key: 'manager',
-    label: 'Gerente',
-    rank: 2,
-    hex: '#f59e0b',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
-  },
-  member: {
-    key: 'member',
-    label: 'Membro',
-    rank: 1,
-    hex: '#6366f1',
-    badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
-  },
-  viewer: {
-    key: 'viewer',
-    label: 'Visitante',
-    rank: 0,
-    hex: '#94a3b8',
-    badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+export const RECURRENCE_KEYS = ['none', 'daily', 'weekly', 'monthly']
+
+/**
+ * Calcula a data da próxima ocorrência de uma tarefa recorrente.
+ * @param {string|null} dueDate Data base (ISO). Se nula, usa agora.
+ * @param {'daily'|'weekly'|'monthly'} recurrence
+ * @returns {string} ISO string
+ */
+export function nextRecurrenceDate(dueDate, recurrence) {
+  const base = dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : new Date()
+  const next = new Date(base.getTime())
+  switch (recurrence) {
+    case 'daily':
+      next.setDate(next.getDate() + 1)
+      break
+    case 'weekly':
+      next.setDate(next.getDate() + 7)
+      break
+    case 'monthly':
+      next.setMonth(next.getMonth() + 1)
+      break
+    default:
+      return null
   }
+  return next.toISOString()
 }
-
-export const ACCESS_LEVEL_ORDER = ['admin', 'manager', 'member', 'viewer']
-
-export const ACCESS_TYPES = {
-  view_tasks: {
-    key: 'view_tasks',
-    label: 'Visualizar tarefas',
-    description: 'Ver tarefas, kanban, calendário e atividades'
-  },
-  create_tasks: {
-    key: 'create_tasks',
-    label: 'Criar tarefas',
-    description: 'Criar novas tarefas'
-  },
-  edit_tasks: {
-    key: 'edit_tasks',
-    label: 'Editar tarefas',
-    description: 'Alterar dados de tarefas existentes'
-  },
-  delete_tasks: {
-    key: 'delete_tasks',
-    label: 'Excluir tarefas',
-    description: 'Excluir tarefas (com opção de desfazer)'
-  },
-  assign_tasks: {
-    key: 'assign_tasks',
-    label: 'Atribuir tarefas',
-    description: 'Atribuir e reatribuir responsáveis'
-  },
-  manage_projects: {
-    key: 'manage_projects',
-    label: 'Gerenciar projetos',
-    description: 'Criar e editar projetos e categorias'
-  },
-  manage_team: {
-    key: 'manage_team',
-    label: 'Gerenciar equipe',
-    description: 'Convidar e visualizar membros'
-  },
-  manage_profiles: {
-    key: 'manage_profiles',
-    label: 'Gerenciar perfis de acesso',
-    description: 'Criar, editar e excluir perfis de acesso'
-  },
-  view_settings: {
-    key: 'view_settings',
-    label: 'Acessar configurações',
-    description: 'Ver e alterar configurações do sistema'
-  }
-}
-
-export const ALL_ACCESS_TYPES = Object.keys(ACCESS_TYPES)

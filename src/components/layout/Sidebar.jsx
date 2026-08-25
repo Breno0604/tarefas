@@ -3,37 +3,28 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   ListTodo,
-  Users,
   FolderKanban,
   Tags,
   Activity,
   Settings,
-  ShieldCheck,
-  X,
-  Lock
+  X
 } from 'lucide-react'
-import { useStore, useActiveProfile } from '../../store/store'
-import { useToast } from '../../store/toast'
-import { Avatar } from '../ui/Badge'
+import { useStore, useMe } from '../../store/store'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/tarefas', label: 'Tarefas', icon: ListTodo },
-  { to: '/equipe', label: 'Equipe', icon: Users, perm: 'manage_team' },
-  { to: '/projetos', label: 'Projetos', icon: FolderKanban, perm: 'manage_projects' },
-  { to: '/categorias', label: 'Categorias', icon: Tags, perm: 'manage_projects' },
+  { to: '/projetos', label: 'Projetos', icon: FolderKanban },
+  { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/atividades', label: 'Atividades', icon: Activity },
-  { to: '/perfis', label: 'Perfis de acesso', icon: ShieldCheck, perm: 'manage_profiles' },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings, perm: 'view_settings' }
+  { to: '/configuracoes', label: 'Configurações', icon: Settings }
 ]
 
 export default function Sidebar({ mobileOpen, onClose }) {
   const { state } = useStore()
-  const activeProfile = useActiveProfile()
-  const toast = useToast()
+  const me = useMe()
   const navigate = useNavigate()
-  const me = state.users.find((u) => u.id === state.currentUserId)
-  const openTasks = state.tasks.filter((t) => t.status !== 'done').length
+  const openTasks = state.tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress').length
   const completion = useMemo(() => {
     const total = state.tasks.length
     if (!total) return 0
@@ -41,16 +32,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
     return Math.round((done / total) * 100)
   }, [state.tasks])
 
-  const can = (perm) => (activeProfile?.permissions || []).includes(perm)
-
-  const handleNavClick = (item) => {
-    if (item.perm && !can(item.perm)) {
-      toast.info(`Seu perfil (${activeProfile?.name}) não tem permissão para acessar "${item.label}"`)
-      return
-    }
-    onClose()
-    navigate(item.to)
-  }
+  const initial = (me?.name || 'V').trim().charAt(0).toUpperCase()
 
   const content = (
     <div className="flex h-full flex-col">
@@ -72,7 +54,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
               TaskFlow
             </p>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              CRM de tarefas
+              Tarefas pessoais
             </p>
           </div>
         </div>
@@ -92,47 +74,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
         <nav className="space-y-0.5">
           {NAV.map((item) => {
             const Icon = item.icon
-            const restricted = Boolean(item.perm && !can(item.perm))
-            const inner = ({ isActive }) => (
-              <>
-                {isActive && !restricted && (
-                  <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 -translate-x-1.5 rounded-r bg-brand-600 dark:bg-brand-400" />
-                )}
-                <Icon
-                  size={18}
-                  className={
-                    restricted
-                      ? 'text-slate-400'
-                      : isActive
-                        ? 'text-brand-600 dark:text-brand-400'
-                        : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
-                  }
-                />
-                <span className="flex-1">{item.label}</span>
-                {item.label === 'Tarefas' && openTasks > 0 && (
-                  <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
-                    {openTasks}
-                  </span>
-                )}
-                {restricted && <Lock size={13} className="text-slate-400" />}
-              </>
-            )
-            const cls = restricted
-              ? 'group relative flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 opacity-60 dark:text-slate-500'
-              : 'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-100'
-            if (restricted) {
-              return (
-                <button key={item.to} type="button" onClick={() => handleNavClick(item)} className={cls}>
-                  {inner({ isActive: false })}
-                </button>
-              )
-            }
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                onClick={() => handleNavClick(item)}
+                onClick={() => onClose()}
                 className={({ isActive }) =>
                   `group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition outline-none ${
                     isActive
@@ -141,7 +88,27 @@ export default function Sidebar({ mobileOpen, onClose }) {
                   }`
                 }
               >
-                {inner}
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 -translate-x-1.5 rounded-r bg-brand-600 dark:bg-brand-400" />
+                    )}
+                    <Icon
+                      size={18}
+                      className={
+                        isActive
+                          ? 'text-brand-600 dark:text-brand-400'
+                          : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                      }
+                    />
+                    <span className="flex-1">{item.label}</span>
+                    {item.label === 'Tarefas' && openTasks > 0 && (
+                      <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                        {openTasks}
+                      </span>
+                    )}
+                  </>
+                )}
               </NavLink>
             )
           })}
@@ -150,7 +117,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       <div className="mt-auto p-3">
         <div className="rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 p-4 text-white">
-          <p className="text-xs font-bold">Progresso da equipe</p>
+          <p className="text-xs font-bold">Meu progresso</p>
           <p className="mt-0.5 text-[11px] opacity-80">{completion}% das tarefas concluídas</p>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
             <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${completion}%` }} />
@@ -163,13 +130,15 @@ export default function Sidebar({ mobileOpen, onClose }) {
           }}
           className="mt-3 flex w-full items-center gap-3 rounded-lg p-2 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800"
         >
-          <Avatar user={me} size="md" showStatus />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+            {initial}
+          </span>
           <span className="min-w-0">
             <span className="block truncate text-sm font-bold text-slate-800 dark:text-slate-100">
-              {me?.name}
+              {me?.name || 'Você'}
             </span>
             <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
-              {me?.role}
+              Uso pessoal
             </span>
           </span>
         </button>

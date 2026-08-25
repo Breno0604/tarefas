@@ -3,13 +3,12 @@ import {
   FilterX,
   CircleDot,
   Flag,
-  UserRound,
   FolderKanban,
-  Tags
+  Tags,
+  Hash
 } from 'lucide-react'
 import Dropdown from '../ui/Dropdown'
 import Button from '../ui/Button'
-import { useIsManager } from '../../store/store'
 import { STATUS, PRIORITY } from '../../lib/constants'
 
 function FilterDropdown({ label, icon: Icon, activeCount, items, onClear, ariaLabel }) {
@@ -43,8 +42,7 @@ function FilterDropdown({ label, icon: Icon, activeCount, items, onClear, ariaLa
   )
 }
 
-export default function TasksToolbar({ f, openSaveFilter }) {
-  const isManager = useIsManager()
+export default function TasksToolbar({ f }) {
   const {
     filters,
     setFilters,
@@ -80,28 +78,6 @@ export default function TasksToolbar({ f, openSaveFilter }) {
           onClick: () => toggleFilter('priority', p.key)
         }))}
       />
-      {isManager && (
-        <FilterDropdown
-          label="Responsável"
-          icon={UserRound}
-          activeCount={filters.assignee.length}
-          onClear={() => setFilters((f) => ({ ...f, assignee: [] }))}
-          items={[
-            ...f.users.map((u) => ({
-              label: u.name,
-              active: filters.assignee.includes(u.id),
-              keepOpen: true,
-              onClick: () => toggleFilter('assignee', u.id)
-            })),
-            {
-              label: 'Não atribuída',
-              active: filters.assignee.includes('none'),
-              keepOpen: true,
-              onClick: () => toggleFilter('assignee', 'none')
-            }
-          ]}
-        />
-      )}
       <FilterDropdown
         label="Projeto"
         icon={FolderKanban}
@@ -134,6 +110,20 @@ export default function TasksToolbar({ f, openSaveFilter }) {
           onClick: () => toggleFilter('category', c.id)
         }))}
       />
+      {(f.tags || []).length > 0 && (
+        <FilterDropdown
+          label="Tag"
+          icon={Hash}
+          activeCount={(filters.tags || []).length}
+          onClear={() => setFilters((f) => ({ ...f, tags: [] }))}
+          items={f.tags.map((tag) => ({
+            label: `#${tag}`,
+            active: (filters.tags || []).includes(tag),
+            keepOpen: true,
+            onClick: () => toggleFilter('tags', tag)
+          }))}
+        />
+      )}
 
       {(activeFilterCount > 0 || query) && (
         <Button variant="ghost" size="md" icon={FilterX} onClick={clearFilters}>

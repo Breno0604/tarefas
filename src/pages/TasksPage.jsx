@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   SlidersHorizontal,
@@ -14,9 +14,8 @@ import {
   Bookmark,
   Plus
 } from 'lucide-react'
-import { useStore, useCan, validateTaskPayload } from '../store/store'
+import { useStore, validateTaskPayload } from '../store/store'
 import { useToast } from '../store/toast'
-import { STATUS } from '../lib/constants'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
 import { useDebounce } from '../hooks/useDebounce'
 import { isTypingTarget, deleteTaskWithUndo, bulkDeleteWithUndo } from '../lib/utils'
@@ -40,7 +39,6 @@ import { CardSkeleton } from '../components/ui/Skeleton'
 
 export default function TasksPage() {
   const { state, dispatch } = useStore()
-  const can = useCan()
   const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const searchRef = useRef(null)
@@ -63,7 +61,6 @@ export default function TasksPage() {
   const [formDefaults, setFormDefaults] = useState({})
   const [bulkDelete, setBulkDelete] = useState(false)
   const [cancelTarget, setCancelTarget] = useState(null)
-  const [cancelReason, setCancelReason] = useState('')
   const [saveFilterOpen, setSaveFilterOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -116,29 +113,17 @@ export default function TasksPage() {
   }
 
   const openCreate = (defaults = {}) => {
-    if (!can('create_tasks')) {
-      toast.error('Seu perfil não tem permissão para criar tarefas.')
-      return
-    }
     setEditing(null)
     setFormDefaults(defaults)
     setFormOpen(true)
   }
   const openEdit = (task) => {
-    if (!can('edit_tasks')) {
-      toast.error('Seu perfil não tem permissão para editar tarefas.')
-      return
-    }
     setEditing(task)
     setFormDefaults({})
     setFormOpen(true)
   }
 
   const changeTask = (patch, taskId) => {
-    if (!can('edit_tasks')) {
-      toast.error('Seu perfil não tem permissão para editar tarefas.')
-      return
-    }
     const task = state.tasks.find((t) => t.id === taskId)
     if (!task) {
       toast.error('Tarefa não encontrada.')
@@ -149,51 +134,42 @@ export default function TasksPage() {
       toast.error(validationErrors[0])
       return
     }
-    dispatch({ type: 'UPDATE_TASK', taskId, patch, actorId: state.currentUserId })
+    dispatch({ type: 'UPDATE_TASK', taskId, patch })
     toast.success('Tarefa atualizada')
   }
+  const toggleDoneTask = (task) => {
+    dispatch({ type: 'TOGGLE_TASK_DONE', taskId: task.id })
+    toast.success(
+      task.status === 'done'
+        ? 'Tarefa reaberta'
+        : task.recurrence && task.recurrence !== 'none'
+          ? 'Concluída — próxima ocorrência criada'
+          : 'Tarefa concluída'
+    )
+  }
   const deleteTask = (task) => {
-    if (!can('delete_tasks')) {
-      toast.error('Seu perfil não tem permissão para excluir tarefas.')
-      return
-    }
-    deleteTaskWithUndo({ dispatch, toast, task, actorId: state.currentUserId })
+    deleteTaskWithUndo({ dispatch, toast, task })
   }
   const toggleFavorite = (task) => {
     dispatch({ type: 'TOGGLE_FAVORITE', taskId: task.id })
     toast.success(task.favorite ? 'Removida dos favoritos' : 'Adicionada aos favoritos')
   }
   const duplicateTask = (task) => {
-    if (!can('create_tasks')) {
-      toast.error('Seu perfil não tem permissão para duplicar tarefas.')
-      return
-    }
-    dispatch({ type: 'DUPLICATE_TASK', taskId: task.id, actorId: state.currentUserId })
+    dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
     toast.success('Tarefa duplicada')
-  }
-  const approveTask = (task) => {
-    if (!can('edit_tasks')) {
-      toast.error('Seu perfil não tem permissão para aprovar tarefas.')
-      return
-    }
-    dispatch({ type: 'APPROVE_TASK', taskId: task.id, actorId: state.currentUserId })
-    toast.success('Tarefa aprovada e concluída')
   }
   const requestCancel = (task) => {
     setCancelTarget(task)
-    setCancelReason('')
   }
-  const confirmCancel = () => {
+  const confirmCancel = (reason) => {
     if (!cancelTarget) return
     dispatch({
       type: 'CANCEL_TASK',
       taskId: cancelTarget.id,
-      reason: cancelReason,
-      actorId: state.currentUserId
+      reason: reason || null
     })
     toast.success('Tarefa cancelada')
     setCancelTarget(null)
-    setCancelReason('')
   }
 
   const saveCurrentFilters = () => {
@@ -214,33 +190,31 @@ export default function TasksPage() {
   }
 
   const bulkApply = (status) => {
-    if (!can('edit_tasks')) {
-      toast.error('Seu perfil não tem permissão para editar tarefas.')
-      return
-    }
     f.selected.forEach((id) =>
-      dispatch({ type: 'UPDATE_TASK', taskId: id, patch: { status }, actorId: state.currentUserId })
+      dispatch({ type: 'UPDATE_TASK', taskId: id, patch: { status } })
     )
     toast.success(`${f.selected.size} tarefa(s) movida(s) para ${status}`)
     f.setSelected(new Set())
   }
   const bulkDeleteAll = () => {
-    if (!can('delete_tasks')) {
-      toast.error('Seu perfil não tem permissão para excluir tarefas.')
-      return
-    }
-    bulkDeleteWithUndo({ dispatch, toast, taskIds: Array.from(f.selected), actorId: state.currentUserId })
+    bulkDeleteWithUndo({ dispatch, toast, taskIds: Array.from(f.selected) })
     f.setSelected(new Set())
     setBulkDelete(false)
   }
 
   const showPagination = view === 'list' || view === 'table'
 
+  const allTags = useMemo(() => {
+    const set = new Set()
+    state.tasks.forEach((t) => (t.tags || []).forEach((tag) => set.add(tag)))
+    return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }, [state.tasks])
+
   const toolbarData = {
     ...f,
-    users: state.users,
     projects: state.projects,
-    categories: state.categories
+    categories: state.categories,
+    tags: allTags
   }
 
   return (
@@ -345,10 +319,7 @@ export default function TasksPage() {
       </div>
 
       {filtersVisible && (
-        <TasksToolbar f={toolbarData} openSaveFilter={() => {
-          setSaveName('')
-          setSaveFilterOpen(true)
-        }} />
+        <TasksToolbar f={toolbarData} />
       )}
 
       <ActiveFiltersBar activeFilters={f.activeFilters} onRemove={removeActiveFilter} />
@@ -367,11 +338,11 @@ export default function TasksPage() {
             description={
               f.activeFilterCount > 0 || f.query
                 ? 'Tente ajustar ou remover os filtros aplicados.'
-                : 'Comece criando uma nova tarefa para sua equipe.'
+                : 'Comece criando sua primeira tarefa pessoal.'
             }
             action={
-              <Button variant="secondary" onClick={f.clearFilters}>
-                Limpar filtros
+              <Button variant="secondary" onClick={openCreate}>
+                Nova tarefa
               </Button>
             }
           />
@@ -380,8 +351,6 @@ export default function TasksPage() {
         <>
           <BulkTasksBar
             selected={f.selected}
-            canEdit={can('edit_tasks')}
-            canDelete={can('delete_tasks')}
             onApplyStatus={bulkApply}
             onRequestDelete={() => setBulkDelete(true)}
             onClear={() => f.setSelected(new Set())}
@@ -394,9 +363,8 @@ export default function TasksPage() {
                   <TaskListItem
                     key={task.id}
                     task={task}
-                    assignee={state.users.find((u) => u.id === task.assigneeId)}
                     project={state.projects.find((p) => p.id === task.projectId)}
-                    commentCount={(state.comments[task.id] || []).length}
+                    noteCount={(state.notes[task.id] || []).length}
                     selected={f.selected.has(task.id)}
                     onToggleSelect={() =>
                       f.setSelected((s) => {
@@ -410,7 +378,7 @@ export default function TasksPage() {
                     onDelete={() => deleteTask(task)}
                     onToggleFavorite={() => toggleFavorite(task)}
                     onDuplicate={() => duplicateTask(task)}
-                    onApprove={approveTask}
+                    onToggleDone={toggleDoneTask}
                     onCancel={requestCancel}
                     onChange={changeTask}
                   />
@@ -453,7 +421,7 @@ export default function TasksPage() {
                 onDeleteTask={deleteTask}
                 onToggleFavorite={toggleFavorite}
                 onDuplicateTask={duplicateTask}
-                onApproveTask={approveTask}
+                onToggleDone={toggleDoneTask}
                 onCancelTask={requestCancel}
               />
               <Pagination
@@ -476,7 +444,7 @@ export default function TasksPage() {
               onDeleteTask={deleteTask}
               onToggleFavorite={toggleFavorite}
               onDuplicateTask={duplicateTask}
-              onApproveTask={approveTask}
+              onToggleDone={toggleDoneTask}
               onCancelTask={requestCancel}
             />
             </React.Suspense>
@@ -514,8 +482,8 @@ export default function TasksPage() {
       <TasksDialogs
         cancelTarget={cancelTarget}
         onCloseCancel={() => setCancelTarget(null)}
-        cancelReason={cancelReason}
-        setCancelReason={setCancelReason}
+        cancelReason=""
+        setCancelReason={() => {}}
         onConfirmCancel={confirmCancel}
         saveFilterOpen={saveFilterOpen}
         onCloseSave={() => setSaveFilterOpen(false)}

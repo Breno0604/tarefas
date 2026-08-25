@@ -1,11 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useStore, useIsManager } from '../store/store'
+import { useStore } from '../store/store'
 import { STATUS, PRIORITY, KANBAN_COLUMNS, PRIORITY_ORDER } from '../lib/constants'
 
 const PAGE_SIZE = 10
 const SAVED_FILTERS_KEY = 'taskflow-saved-filters'
 const TASK_FILTERS_KEY = 'taskflow-task-filters'
+
+export const DEFAULT_FILTERS = {
+  status: [],
+  priority: [],
+  project: [],
+  category: [],
+  tags: []
+}
+
+/** Garante que filtros salvos antigos tenham todas as dimensões. */
+function normalizeFilters(filters) {
+  return { ...DEFAULT_FILTERS, ...(filters || {}) }
+}
 
 const parseSortKey = (key) => {
   const m = /^(.+?)(_(asc|desc))?$/.exec(key || '')
@@ -50,9 +63,10 @@ function compareTasks(base, dir, a, b) {
 
 export function useTaskFilters(view) {
   const { state } = useStore()
-  const isManager = useIsManager()
   const [searchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
+  const categoryParam = searchParams.get('category')
+  const tagParam = searchParams.get('tag')
 
   const [savedState] = useState(() => {
     try {
@@ -62,13 +76,7 @@ export function useTaskFilters(view) {
     }
   })
   const [query, setQuery] = useState(savedState.query || '')
-  const [filters, setFilters] = useState(savedState.filters || {
-    status: [],
-    priority: [],
-    assignee: [],
-    project: [],
-    category: []
-  })
+  const [filters, setFilters] = useState(normalizeFilters(savedState.filters))
   const [favoritesOnly, setFavoritesOnly] = useState(savedState.favoritesOnly || false)
   const [savedFilters, setSavedFilters] = useState(() => {
     try {
@@ -91,6 +99,26 @@ export function useTaskFilters(view) {
   }, [projectParam])
 
   useEffect(() => {
+    if (!categoryParam) return
+    setFilters((f) => {
+      if (f.category.includes(categoryParam)) return f
+      return { ...f, category: [categoryParam] }
+    })
+    setPage(1)
+  }, [categoryParam])
+
+  useEffect(() => {
+    if (!tagParam) return
+    const tags = tagParam.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+    if (tags.length === 0) return
+    setFilters((f) => {
+      if (tags.every((t) => f.tags.includes(t))) return f
+      return { ...f, tags }
+    })
+    setPage(1)
+  }, [tagParam])
+
+  useEffect(() => {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(savedFilters))
   }, [savedFilters])
 
@@ -108,15 +136,16 @@ export function useTaskFilters(view) {
   }, [query, filters, view, favoritesOnly])
 
   const toggleFilter = (dim, key) => {
-    setFilters((f) => {
-      const arr = f[dim]
+    setFilters((prev) => {
+      const f = normalizeFilters(prev)
+      const arr = f[dim] || []
       const next = arr.includes(key) ? arr.filter((k) => k !== key) : [...arr, key]
       return { ...f, [dim]: next }
     })
   }
 
   const clearFilters = () => {
-    setFilters({ status: [], priority: [], assignee: [], project: [], category: [] })
+    setFilters(normalizeFilters(null))
     setQuery('')
     setFavoritesOnly(false)
   }
@@ -125,13 +154,8 @@ export function useTaskFilters(view) {
     Object.values(filters).reduce((acc, arr) => acc + arr.length, 0) +
     (favoritesOnly ? 1 : 0)
 
-  const visible = useMemo(() => {
-    if (isManager) return state.tasks
-    return state.tasks.filter((t) => t.assigneeId === state.currentUserId)
-  }, [state.tasks, state.currentUserId, isManager])
-
   const filtered = useMemo(() => {
-    let list = visible
+    let list = state.tasks
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
@@ -143,11 +167,11 @@ export function useTaskFilters(view) {
     }
     if (filters.status.length) list = list.filter((t) => filters.status.includes(t.status))
     if (filters.priority.length) list = list.filter((t) => filters.priority.includes(t.priority))
-    if (filters.assignee.length)
-      list = list.filter((t) => filters.assignee.includes(t.assigneeId || 'none'))
     if (filters.project.length)
       list = list.filter((t) => filters.project.includes(t.projectId || 'none'))
     if (filters.category.length) list = list.filter((t) => filters.category.includes(t.categoryId))
+    if (filters.tags.length)
+      list = list.filter((t) => filters.tags.some((tag) => (t.tags || []).includes(tag)))
     if (favoritesOnly) list = list.filter((t) => t.favorite)
 
     const sorted = [...list]
@@ -155,7 +179,7 @@ export function useTaskFilters(view) {
     const sortDir = dir || SORT_DEFAULT_DIR[base] || 'asc'
     sorted.sort((a, b) => compareTasks(base, sortDir, a, b))
     return sorted
-  }, [visible, state.currentUserId, query, filters, sortKey, favoritesOnly])
+  }, [state.tasks, query, filters, sortKey, favoritesOnly])
 
   const pageTasks = useMemo(
     () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -167,11 +191,6 @@ export function useTaskFilters(view) {
     ...(favoritesOnly ? [{ dim: 'fav', key: 'fav', label: 'Favoritas' }] : []),
     ...filters.status.map((k) => ({ dim: 'status', key: k, label: STATUS[k].label })),
     ...filters.priority.map((k) => ({ dim: 'priority', key: k, label: PRIORITY[k].label })),
-    ...filters.assignee.map((k) => ({
-      dim: 'assignee',
-      key: k,
-      label: k === 'none' ? 'Não atribuída' : state.users.find((u) => u.id === k)?.name
-    })),
     ...filters.project.map((k) => ({
       dim: 'project',
       key: k,
@@ -181,6 +200,11 @@ export function useTaskFilters(view) {
       dim: 'category',
       key: k,
       label: state.categories.find((c) => c.id === k)?.name
+    })),
+    ...(filters.tags || []).map((k) => ({
+      dim: 'tags',
+      key: k,
+      label: `#${k}`
     }))
   ]
 
@@ -199,9 +223,7 @@ export function useTaskFilters(view) {
 
   const applySavedFilter = (preset) => {
     setQuery(preset.query || '')
-    setFilters(
-      preset.filters || { status: [], priority: [], assignee: [], project: [], category: [] }
-    )
+    setFilters(normalizeFilters(preset.filters))
     setFavoritesOnly(Boolean(preset.favoritesOnly))
     setPage(1)
   }

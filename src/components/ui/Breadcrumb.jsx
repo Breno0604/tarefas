@@ -5,12 +5,10 @@ import { ChevronRight, Home } from 'lucide-react'
 const ROUTE_LABELS = {
   '/': 'Dashboard',
   '/tarefas': 'Tarefas',
-  '/equipe': 'Equipe',
   '/projetos': 'Projetos',
   '/categorias': 'Categorias',
   '/atividades': 'Atividades',
-  '/configuracoes': 'Configurações',
-  '/perfis': 'Perfis de acesso'
+  '/configuracoes': 'Configurações'
 }
 
 export default function Breadcrumb() {

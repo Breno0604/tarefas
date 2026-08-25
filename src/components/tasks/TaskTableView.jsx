@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
-import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star } from 'lucide-react'
-import { Avatar, StatusBadge, PriorityBadge, Tag as TagChip } from '../ui/Badge'
+import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Star, Repeat } from 'lucide-react'
+import { StatusBadge, PriorityBadge, Tag as TagChip } from '../ui/Badge'
 import Dropdown from '../ui/Dropdown'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { Checkbox } from '../ui/Inputs'
 import { useContextMenu } from '../ui/ContextMenu'
 import { buildTaskMenu } from './taskMenu'
 import { formatDay, isOverdue } from '../../lib/format'
-import { useStore, useCan, useCanModifyTask } from '../../store/store'
+import { useStore } from '../../store/store'
 
 function SortHeader({ label, sortKey, current, onSort }) {
   const active = current && current.startsWith(sortKey)
@@ -29,11 +29,9 @@ function SortHeader({ label, sortKey, current, onSort }) {
   )
 }
 
-export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSelect, onSort, sortKey, onOpenTask, onEditTask, onChange, onDeleteTask, onToggleFavorite, onDuplicateTask, onApproveTask, onCancelTask }) {
+export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSelect, onSort, sortKey, onOpenTask, onEditTask, onChange, onDeleteTask, onToggleFavorite, onDuplicateTask, onToggleDone, onCancelTask }) {
   const { state } = useStore()
   const { show } = useContextMenu()
-  const can = useCan()
-  const canModify = useCanModifyTask()
   const [confirm, setConfirm] = useState(null)
 
   const allSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id))
@@ -64,7 +62,6 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
               <th className="px-2 py-3">
                 <SortHeader label="Prioridade" sortKey="priority" current={sortKey} onSort={onSort} />
               </th>
-              <th className="px-2 py-3">Responsável</th>
               <th className="px-2 py-3">Projeto</th>
               <th className="px-2 py-3">
                 <SortHeader label="Vencimento" sortKey="dueDate" current={sortKey} onSort={onSort} />
@@ -79,7 +76,6 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
           </thead>
           <tbody>
             {tasks.map((task) => {
-              const assignee = state.users.find((u) => u.id === task.assigneeId)
               const project = state.projects.find((p) => p.id === task.projectId)
               const overdue = isOverdue(task.dueDate, task.status)
               const menu = buildTaskMenu(task, {
@@ -89,11 +85,11 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
                 onChange: (patch) => onChange(patch, task.id),
                 onFavorite: () => onToggleFavorite(task),
                 onDuplicate: () => onDuplicateTask(task),
-                onApprove: onApproveTask ? () => onApproveTask(task) : undefined,
+                onToggleDone: onToggleDone ? () => onToggleDone(task) : undefined,
                 onCancel: onCancelTask ? () => onCancelTask(task) : undefined,
-                allowEdit: can('edit_tasks') && canModify(task),
-                allowDelete: can('delete_tasks') && canModify(task),
-                allowCreate: can('create_tasks')
+                allowEdit: true,
+                allowDelete: true,
+                allowCreate: true
               })
               return (
                 <tr
@@ -129,18 +125,6 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
                   <td className="px-2 py-3">
                     <PriorityBadge priority={task.priority} />
                   </td>
-                  <td className="px-2 py-3">
-                    {assignee ? (
-                      <span className="flex items-center gap-2">
-                        <Avatar user={assignee} size="sm" />
-                        <span className="hidden whitespace-nowrap text-xs font-medium text-slate-600 xl:inline dark:text-slate-300">
-                          {assignee.name.split(' ')[0]}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400 dark:text-slate-500">Não atribuída</span>
-                    )}
-                  </td>
                   <td className="max-w-[140px] px-2 py-3">
                     {project ? (
                       <span className="flex items-center gap-1.5 truncate text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -155,6 +139,9 @@ export default function TaskTableView({ tasks, selected, onToggleAll, onToggleSe
                     <span className={`flex items-center gap-1 text-xs font-medium ${overdue ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
                       <Calendar size={12} />
                       {task.dueDate ? formatDay(task.dueDate) : '—'}
+                      {task.recurrence && task.recurrence !== 'none' && (
+                        <Repeat size={11} className="ml-1 text-brand-500 dark:text-brand-300" aria-label="Recorrente" />
+                      )}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-center">

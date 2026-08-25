@@ -1,24 +1,17 @@
-import { Eye, Pencil, Trash2, Flag, CheckCircle2, Star, Copy, ShieldCheck, Ban } from 'lucide-react'
-import { STATUS, PRIORITY } from '../../lib/constants'
+import { Eye, Pencil, Trash2, Flag, CheckCircle2, RotateCcw, Star, Copy, Ban, Repeat } from 'lucide-react'
+import { STATUS, PRIORITY, RECURRENCE } from '../../lib/constants'
 
 const MOVE_STATUSES = Object.values(STATUS).filter((s) => s.key !== 'cancelled')
 
 export function buildTaskMenu(
   task,
-  { onOpen, onEdit, onDelete, onChange, onFavorite, onDuplicate, onApprove, onCancel, allowEdit = true, allowDelete = true, allowCreate = true }
+  { onOpen, onEdit, onDelete, onChange, onFavorite, onDuplicate, onToggleDone, onCancel, allowEdit = true, allowDelete = true, allowCreate = true }
 ) {
   const items = [
     { label: 'Abrir detalhes', icon: Eye, onClick: onOpen }
   ]
   if (allowEdit) {
     items.push({ label: 'Editar tarefa', icon: Pencil, onClick: onEdit })
-  }
-  if (allowEdit && task.status === 'review' && onApprove) {
-    items.push({
-      label: 'Aprovar tarefa',
-      icon: ShieldCheck,
-      onClick: onApprove
-    })
   }
   items.push({
     label: task.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
@@ -29,11 +22,24 @@ export function buildTaskMenu(
     items.push({ label: 'Duplicar tarefa', icon: Copy, onClick: onDuplicate })
   }
   if (allowEdit) {
-    if (task.status !== 'done') {
+    if (onToggleDone && task.status !== 'cancelled') {
+      items.push({
+        label: task.status === 'done' ? 'Reabrir tarefa' : 'Marcar como concluída',
+        icon: task.status === 'done' ? RotateCcw : CheckCircle2,
+        onClick: () => onToggleDone(task)
+      })
+    } else if (task.status !== 'done') {
       items.push({
         label: 'Marcar como concluída',
         icon: CheckCircle2,
         onClick: () => onChange({ status: 'done' })
+      })
+    }
+    if (task.recurrence && task.recurrence !== 'none') {
+      items.push({
+        label: `Repete ${RECURRENCE[task.recurrence]?.label?.toLowerCase() || ''}`,
+        icon: Repeat,
+        disabled: true
       })
     }
     items.push({ type: 'divider' })

@@ -6,31 +6,23 @@ import { useTaskFilters } from '../hooks/useTaskFilters'
 
 /* ─── Mock store ─── */
 const MOCK_TASKS = [
-  { id: 't1', title: 'Implementar login', description: 'Fluxo de autenticação', status: 'in_progress', priority: 'high', assigneeId: 'u1', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01T10:00:00Z', createdAt: '2026-08-01T10:00:00Z', tags: ['auth'], favorite: false },
-  { id: 't2', title: 'Criar dashboard', description: 'Painel de métricas', status: 'todo', priority: 'medium', assigneeId: 'u2', projectId: 'p1', categoryId: 'c2', dueDate: '2026-09-10T10:00:00Z', createdAt: '2026-08-02T10:00:00Z', tags: ['frontend'], favorite: true },
-  { id: 't3', title: 'Testes de integração', description: 'Cobertura de fluxos', status: 'done', priority: 'low', assigneeId: 'u1', projectId: 'p2', categoryId: 'c1', dueDate: '2026-08-20T10:00:00Z', createdAt: '2026-08-03T10:00:00Z', tags: ['qa'], favorite: false },
-  { id: 't4', title: 'Corrigir bug no pagamento', description: 'Erro no checkout', status: 'blocked', priority: 'urgent', assigneeId: null, projectId: 'p2', categoryId: 'c3', dueDate: '2026-08-25T10:00:00Z', createdAt: '2026-08-04T10:00:00Z', tags: ['bug'], favorite: false },
-  { id: 't5', title: 'Documentar API', description: 'Endpoints REST', status: 'todo', priority: 'medium', assigneeId: 'u2', projectId: null, categoryId: 'c1', dueDate: null, createdAt: '2026-08-05T10:00:00Z', tags: [], favorite: true },
-]
-
-const MOCK_USERS = [
-  { id: 'u1', name: 'Ana Souza', color: '#6366f1' },
-  { id: 'u2', name: 'Bruno Lima', color: '#0ea5e9' },
+  { id: 't1', title: 'Implementar login', description: 'Fluxo de autenticação', status: 'todo', priority: 'high', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01T10:00:00Z', createdAt: '2026-08-01T10:00:00Z', tags: ['auth'], favorite: false },
+  { id: 't2', title: 'Criar dashboard', description: 'Painel de métricas', status: 'in_progress', priority: 'medium', projectId: 'p1', categoryId: 'c2', dueDate: '2026-09-10T10:00:00Z', createdAt: '2026-08-02T10:00:00Z', tags: ['frontend'], favorite: true },
+  { id: 't3', title: 'Testes de integração', description: 'Cobertura de fluxos', status: 'done', priority: 'low', projectId: 'p2', categoryId: 'c1', dueDate: '2026-08-20T10:00:00Z', createdAt: '2026-08-03T10:00:00Z', tags: ['qa'], favorite: false },
+  { id: 't4', title: 'Corrigir bug no pagamento', description: 'Erro no checkout', status: 'todo', priority: 'urgent', projectId: 'p2', categoryId: 'c3', dueDate: '2026-08-25T10:00:00Z', createdAt: '2026-08-04T10:00:00Z', tags: ['bug'], favorite: false },
+  { id: 't5', title: 'Documentar API', description: 'Endpoints REST', status: 'cancelled', priority: 'medium', projectId: null, categoryId: 'c1', dueDate: null, createdAt: '2026-08-05T10:00:00Z', tags: [], favorite: true }
 ]
 
 const MOCK_STATE = {
   tasks: MOCK_TASKS,
-  users: MOCK_USERS,
   projects: [{ id: 'p1', name: 'Projeto Alpha' }, { id: 'p2', name: 'Projeto Beta' }],
-  categories: [{ id: 'c1', name: 'Dev' }, { id: 'c2', name: 'Design' }, { id: 'c3', name: 'Bug' }],
+  categories: [{ id: 'c1', name: 'Dev' }, { id: 'c2', name: 'Design' }, { id: 'c3', name: 'Bug' }]
 }
 
-let mockState = { ...MOCK_STATE, currentUserId: 'u1' }
-let mockIsManager = true
+let mockState = { ...MOCK_STATE }
 
 vi.mock('../store/store', () => ({
-  useStore: () => ({ state: mockState }),
-  useIsManager: () => mockIsManager,
+  useStore: () => ({ state: mockState })
 }))
 
 function wrapper({ children, initialEntries = ['/'] } = {}) {
@@ -43,25 +35,15 @@ function wrapper({ children, initialEntries = ['/'] } = {}) {
 
 describe('useTaskFilters', () => {
   beforeEach(() => {
-    mockState = { ...MOCK_STATE, currentUserId: 'u1' }
-    mockIsManager = true
+    mockState = { ...MOCK_STATE }
     localStorage.clear()
   })
 
-  /* ─── Visibility by role ─── */
-  describe('role-based visibility', () => {
-    it('manager sees all tasks', () => {
-      mockIsManager = true
+  /* ─── Base visibility ─── */
+  describe('base visibility', () => {
+    it('shows all tasks (single user)', () => {
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
       expect(result.current.filtered.length).toBe(5)
-    })
-
-    it('non-manager sees only own tasks', () => {
-      mockIsManager = false
-      mockState = { ...MOCK_STATE, currentUserId: 'u1' }
-      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
-      expect(result.current.filtered.length).toBe(2)
-      expect(result.current.filtered.every((t) => t.assigneeId === 'u1')).toBe(true)
     })
   })
 
@@ -111,26 +93,28 @@ describe('useTaskFilters', () => {
       expect(result.current.filtered[0].priority).toBe('urgent')
     })
 
-    it('filters by assignee', () => {
+    it('filters by project', () => {
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
-      act(() => result.current.toggleFilter('assignee', 'u2'))
-      expect(result.current.filtered.every((t) => t.assigneeId === 'u2')).toBe(true)
+      act(() => result.current.toggleFilter('project', 'p1'))
+      expect(result.current.filtered.length).toBe(2)
+      expect(result.current.filtered.every((t) => t.projectId === 'p1')).toBe(true)
     })
 
-    it('filters unassigned tasks', () => {
+    it('filters tasks without project', () => {
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
-      act(() => result.current.toggleFilter('assignee', 'none'))
+      act(() => result.current.toggleFilter('project', 'none'))
       expect(result.current.filtered.length).toBe(1)
-      expect(result.current.filtered[0].assigneeId).toBeNull()
+      expect(result.current.filtered[0].projectId).toBeNull()
     })
 
     it('combines multiple filters', () => {
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
       act(() => {
         result.current.toggleFilter('status', 'todo')
-        result.current.toggleFilter('priority', 'medium')
+        result.current.toggleFilter('priority', 'urgent')
       })
-      expect(result.current.filtered.length).toBe(2)
+      expect(result.current.filtered.length).toBe(1)
+      expect(result.current.filtered[0].id).toBe('t4')
     })
   })
 
@@ -160,11 +144,13 @@ describe('useTaskFilters', () => {
       expect(titles).toEqual(sorted)
     })
 
-    it('sorts by priority descending by default (low first)', () => {
+    it('sorts by due date ascending with undated last', () => {
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
-      act(() => result.current.setSortKey('priority'))
-      const priorities = result.current.filtered.map((t) => t.priority)
-      expect(priorities[0]).toBe('low')
+      act(() => result.current.setSortKey('dueDate'))
+      const dates = result.current.filtered.map((t) => t.dueDate)
+      expect(dates[dates.length - 1]).toBeNull()
+      const dated = dates.slice(0, -1)
+      expect([...dated].sort()).toEqual(dated)
     })
   })
 
@@ -236,6 +222,97 @@ describe('useTaskFilters', () => {
       })
       expect(result.current.activeFilters.length).toBe(2)
       expect(result.current.activeFilters.map((f) => f.dim)).toEqual(['status', 'priority'])
+    })
+  })
+
+  /* ─── URL param deep-link ─── */
+  describe('project URL param', () => {
+    it('applies project filter from ?project= param', () => {
+      const { result } = renderHook(
+        () => useTaskFilters('list'),
+        { wrapper: ({ children }) => <MemoryRouter initialEntries={['/?project=p2']}>{children}</MemoryRouter> }
+      )
+      expect(result.current.filters.project).toContain('p2')
+      expect(result.current.filtered.every((t) => t.projectId === 'p2')).toBe(true)
+    })
+  })
+
+  describe('category URL param', () => {
+    it('applies category filter from ?category= param', () => {
+      const { result } = renderHook(
+        () => useTaskFilters('list'),
+        { wrapper: ({ children }) => <MemoryRouter initialEntries={['/?category=c1']}>{children}</MemoryRouter> }
+      )
+      expect(result.current.filters.category).toContain('c1')
+      expect(result.current.filtered.every((t) => t.categoryId === 'c1')).toBe(true)
+      expect(result.current.activeFilters.some((f) => f.dim === 'category')).toBe(true)
+    })
+  })
+
+  /* ─── Tag filter dimension ─── */
+  describe('tag filters', () => {
+    it('filters by a single tag', () => {
+      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
+      act(() => result.current.toggleFilter('tags', 'bug'))
+      expect(result.current.filtered.length).toBe(1)
+      expect(result.current.filtered[0].id).toBe('t4')
+    })
+
+    it('matches tasks having any of the selected tags (OR)', () => {
+      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
+      act(() => {
+        result.current.toggleFilter('tags', 'bug')
+        result.current.toggleFilter('tags', 'qa')
+      })
+      expect(result.current.filtered.length).toBe(2)
+      expect(result.current.filtered.map((t) => t.id).sort()).toEqual(['t3', 't4'])
+    })
+
+    it('shows tag chips with # prefix', () => {
+      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
+      act(() => result.current.toggleFilter('tags', 'bug'))
+      const chip = result.current.activeFilters.find((f) => f.dim === 'tags')
+      expect(chip.label).toBe('#bug')
+    })
+
+    it('applies tag filter from ?tag= param', () => {
+      const { result } = renderHook(
+        () => useTaskFilters('list'),
+        { wrapper: ({ children }) => <MemoryRouter initialEntries={['/?tag=frontend']}>{children}</MemoryRouter> }
+      )
+      expect(result.current.filters.tags).toContain('frontend')
+      expect(result.current.filtered.length).toBe(1)
+      expect(result.current.filtered[0].id).toBe('t2')
+    })
+
+    it('supports multiple comma-separated tags in ?tag= param', () => {
+      const { result } = renderHook(
+        () => useTaskFilters('list'),
+        { wrapper: ({ children }) => <MemoryRouter initialEntries={['/?tag=auth, qa']}>{children}</MemoryRouter> }
+      )
+      expect(result.current.filters.tags.sort()).toEqual(['auth', 'qa'])
+      expect(result.current.filtered.map((t) => t.id).sort()).toEqual(['t1', 't3'])
+    })
+
+    it('saved filters persist the tags dimension', () => {
+      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
+      act(() => result.current.toggleFilter('tags', 'bug'))
+      act(() => result.current.saveCurrentFilters('Bugs'))
+      act(() => result.current.clearFilters())
+      expect(result.current.filtered.length).toBe(5)
+      act(() => result.current.applySavedFilter(result.current.savedFilters[0]))
+      expect(result.current.filters.tags).toEqual(['bug'])
+      expect(result.current.filtered.length).toBe(1)
+    })
+
+    it('normalizes old saved filters without tags dimension', () => {
+      localStorage.setItem(
+        'taskflow-task-filters',
+        JSON.stringify({ query: '', filters: { status: ['todo'], priority: [], project: [], category: [] }, favoritesOnly: false, sortKey: 'dueDate', page: 1 })
+      )
+      const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
+      expect(Array.isArray(result.current.filters.tags)).toBe(true)
+      expect(() => result.current.toggleFilter('tags', 'bug')).not.toThrow()
     })
   })
 })

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { MessageSquare, MoreHorizontal, Calendar, Star } from 'lucide-react'
-import { Avatar, StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
+import { StickyNote, MoreHorizontal, Calendar, Star, Repeat } from 'lucide-react'
+import { StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import Dropdown from '../ui/Dropdown'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { Checkbox } from '../ui/Inputs'
@@ -8,13 +8,10 @@ import { useContextMenu } from '../ui/ContextMenu'
 import { buildTaskMenu } from './taskMenu'
 import { PRIORITY } from '../../lib/constants'
 import { formatDay, isOverdue } from '../../lib/format'
-import { useCan, useCanModifyTask } from '../../store/store'
 
-export default function TaskListItem({ task, assignee, project, commentCount, selected, onToggleSelect, onChange, onOpen, onEdit, onDelete, onToggleFavorite, onDuplicate, onApprove, onCancel }) {
+export default function TaskListItem({ task, project, noteCount, selected, onToggleSelect, onChange, onOpen, onEdit, onDelete, onToggleFavorite, onDuplicate, onToggleDone, onCancel }) {
   const { show } = useContextMenu()
   const [confirm, setConfirm] = useState(false)
-  const can = useCan()
-  const canModify = useCanModifyTask()
 
   const menu = buildTaskMenu(task, {
     onOpen,
@@ -23,11 +20,11 @@ export default function TaskListItem({ task, assignee, project, commentCount, se
     onChange: (patch) => onChange(patch, task.id),
     onFavorite: onToggleFavorite,
     onDuplicate,
-    onApprove: onApprove ? () => onApprove(task) : undefined,
+    onToggleDone: onToggleDone ? () => onToggleDone(task) : undefined,
     onCancel: onCancel ? () => onCancel(task) : undefined,
-    allowEdit: can('edit_tasks') && canModify(task),
-    allowDelete: can('delete_tasks') && canModify(task),
-    allowCreate: can('create_tasks')
+    allowEdit: true,
+    allowDelete: true,
+    allowCreate: true
   })
 
   const overdue = isOverdue(task.dueDate, task.status)
@@ -67,6 +64,12 @@ export default function TaskListItem({ task, assignee, project, commentCount, se
           <PriorityBadge priority={task.priority} />
         </div>
 
+        {task.recurrence && task.recurrence !== 'none' && (
+          <span className="hidden items-center gap-1 text-xs font-medium text-brand-500 dark:text-brand-300 lg:flex" title="Tarefa recorrente">
+            <Repeat size={12} />
+          </span>
+        )}
+
         <span className="hidden w-40 items-center gap-1.5 truncate text-xs font-medium text-slate-500 lg:flex dark:text-slate-400">
           {project ? (
             <>
@@ -89,12 +92,13 @@ export default function TaskListItem({ task, assignee, project, commentCount, se
           {task.dueDate ? formatDay(task.dueDate) : '—'}
         </span>
 
-        <span className="hidden items-center gap-1 text-xs font-medium text-slate-400 sm:flex dark:text-slate-500">
-          <MessageSquare size={12} />
-          {commentCount}
-        </span>
-
-        <Avatar user={assignee} size="sm" />
+        {noteCount > 0 && (
+          <span className="hidden items-center gap-1 text-xs font-medium text-slate-400 sm:flex dark:text-slate-500" title={`${noteCount} nota(s)`}>
+            <StickyNote size={12} />
+            {noteCount}
+          </span>
+        )}
+        <DueDateBadge dueDate={task.dueDate} status={task.status} />
 
         <Dropdown
           align="right"
