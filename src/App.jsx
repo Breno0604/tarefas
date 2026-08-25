@@ -7,6 +7,7 @@ import AppLayout from './components/layout/AppLayout'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/ui/Skeleton'
 
+const TodayPage = React.lazy(() => import('./pages/TodayPage'))
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const TasksPage = React.lazy(() => import('./pages/TasksPage'))
 const ProjectsPage = React.lazy(() => import('./pages/ProjectsPage'))
@@ -33,7 +34,8 @@ export default function App() {
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route element={<AppLayout />}>
-                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/" element={<TodayPage />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/tarefas" element={<TasksPage />} />
                     <Route path="/projetos" element={<ProjectsPage />} />
                     <Route path="/categorias" element={<CategoriesPage />} />

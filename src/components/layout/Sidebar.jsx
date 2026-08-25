@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
+  Sunrise,
   LayoutDashboard,
   ListTodo,
   FolderKanban,
@@ -12,7 +13,8 @@ import {
 import { useStore, useMe } from '../../store/store'
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Hoje', icon: Sunrise, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { to: '/projetos', label: 'Projetos', icon: FolderKanban },
   { to: '/categorias', label: 'Categorias', icon: Tags },

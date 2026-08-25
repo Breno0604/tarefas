@@ -1,8 +1,15 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('TaskFlow – Tarefas pessoais', () => {
-  test('loads dashboard', async ({ page }) => {
+  test('loads Today view as home', async ({ page }) => {
     await page.goto('/#/')
+    await expect(page.locator('h1')).toContainText('Hoje')
+    await expect(page.getByPlaceholder('Adicionar tarefa para hoje')).toBeVisible()
+  })
+
+  test('navigates to dashboard', async ({ page }) => {
+    await page.goto('/#/')
+    await page.click('nav a[href="#/dashboard"]')
     await expect(page.locator('h1')).toContainText('Dashboard')
     await expect(page.locator('text=Tarefas ativas')).toBeVisible()
   })

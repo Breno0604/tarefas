@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Search, CornerDownLeft, ListTodo, FolderKanban, Tags, Settings, Activity, LayoutDashboard, FileText } from 'lucide-react'
+import { Search, CornerDownLeft, ListTodo, FolderKanban, Tags, Settings, Activity, LayoutDashboard, FileText, Sunrise } from 'lucide-react'
 import { useStore } from '../../store/store'
 import { StatusBadge } from '../ui/Badge'
 
 const PAGE_ACTIONS = [
-  { to: '/', label: 'Ir para o Dashboard', icon: LayoutDashboard },
+  { to: '/', label: 'Ir para Hoje', icon: Sunrise },
+  { to: '/dashboard', label: 'Ir para o Dashboard', icon: LayoutDashboard },
   { to: '/tarefas', label: 'Ir para Tarefas', icon: ListTodo },
   { to: '/projetos', label: 'Ir para Projetos', icon: FolderKanban },
   { to: '/categorias', label: 'Ir para Categorias', icon: Tags },

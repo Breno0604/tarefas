@@ -21,7 +21,8 @@ import { PageSkeleton } from '../ui/Skeleton'
 import Breadcrumb from '../ui/Breadcrumb'
 
 const TITLES = {
-  '/': { title: 'Dashboard', subtitle: 'Sua visão do dia' },
+  '/': { title: 'Hoje', subtitle: 'Sua agenda do dia' },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Visão geral das suas tarefas' },
   '/tarefas': { title: 'Tarefas', subtitle: 'Organize tudo o que você precisa fazer' },
   '/projetos': { title: 'Projetos', subtitle: 'Acompanhe o progresso dos seus projetos' },
   '/categorias': { title: 'Categorias', subtitle: 'Organize tarefas por categoria' },
