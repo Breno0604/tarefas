@@ -68,7 +68,7 @@ function ProjectCard({ project, stats, onOpen }) {
   )
 }
 
-export default function ProjectsPage() {
+function ProjectsPage() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const navigate = useNavigate()
@@ -278,3 +278,5 @@ export default function ProjectsPage() {
     </div>
   )
 }
+
+export default React.memo(ProjectsPage)

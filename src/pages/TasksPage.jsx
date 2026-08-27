@@ -76,6 +76,20 @@ export default function TasksPage() {
     setView(viewParam)
   }, [viewParam])
 
+  // Sync view back to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams)
+    if (view && view !== 'list') {
+      next.set('view', view)
+    } else {
+      next.delete('view')
+    }
+    // Preserve task param if present
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true })
+    }
+  }, [view])  // intentionally omit searchParams/setSearchParams to avoid loop
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e)) return
@@ -247,7 +261,7 @@ export default function TasksPage() {
         <Tooltip content={filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}>
           <button
             onClick={() => setFiltersVisible((v) => !v)}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+            className={`shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
               !filtersVisible && f.activeFilterCount > 0
                 ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300'
                 : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-slate-600'
@@ -280,7 +294,7 @@ export default function TasksPage() {
 
         <button
           onClick={() => f.setFavoritesOnly((v) => !v)}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+          className={`shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border transition ${
             f.favoritesOnly
               ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300'
               : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'
@@ -293,7 +307,7 @@ export default function TasksPage() {
         <Dropdown
           align="right"
           trigger={
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600" aria-label="Filtros salvos">
+            <button className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600" aria-label="Filtros salvos">
               <Bookmark size={14} />
             </button>
           }

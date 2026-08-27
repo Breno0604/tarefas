@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ListTodo, CheckCircle2, AlertTriangle, CalendarClock, ArrowRight, Plus, Star } from 'lucide-react'
 import * as DashboardCharts from '../components/DashboardCharts'
 import { useStore } from '../store/store'
-import { STATUS, PRIORITY } from '../lib/constants'
-import { formatDay, isOverdue, startOfDay, endOfDay } from '../lib/format'
+import { formatDay, isOverdue } from '../lib/format'
 import { StatusBadge } from '../components/ui/Badge'
 import ActivityFeed from '../components/ActivityFeed'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
+import useDashboardMetrics from '../hooks/useDashboardMetrics'
 
-function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp }) {
+function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp, onClick }) {
   return (
-    <div className="card-base flex items-start gap-4 p-5 cursor-default">
+    <button onClick={onClick} className="card-base flex w-full items-start gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-popover">
       <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}>
         <Icon size={20} />
       </span>
@@ -28,126 +28,28 @@ function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp }) 
           </p>
         )}
       </div>
-    </div>
+    </button>
   )
 }
 
-export default function Dashboard() {
+function Dashboard() {
   const { state } = useStore()
   const navigate = useNavigate()
   const tasks = state.tasks
 
-  const metrics = useMemo(() => {
-    const open = tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress')
-    const done = tasks.filter((t) => t.status === 'done')
-    const overdue = tasks.filter((t) => isOverdue(t.dueDate, t.status))
-    const start = startOfDay().getTime()
-    const end = endOfDay().getTime()
-    const dueToday = open.filter((t) => {
-      if (!t.dueDate) return false
-      const ts = new Date(t.dueDate).getTime()
-      return ts >= start && ts <= end
-    })
-    return {
-      total: tasks.length,
-      activeCount: open.length,
-      doneCount: done.length,
-      overdueCount: overdue.length,
-      dueTodayCount: dueToday.length,
-      completion: tasks.length ? Math.round((done.length / tasks.length) * 100) : 0
-    }
-  }, [tasks])
-
-  const statusData = useMemo(
-    () =>
-      Object.values(STATUS).map((s) => ({
-        name: s.label,
-        value: tasks.filter((t) => t.status === s.key).length,
-        color: s.hex
-      })),
-    [tasks]
-  )
-
-  const priorityData = useMemo(
-    () =>
-      Object.values(PRIORITY)
-        .map((p) => ({
-          name: p.label,
-          value: tasks.filter((t) => t.priority === p.key && t.status !== 'done' && t.status !== 'cancelled').length,
-          color: p.hex
-        })),
-    [tasks]
-  )
-
-  const projectData = useMemo(
-    () =>
-      state.projects
-        .map((p) => ({
-          name: p.name.length > 14 ? `${p.name.slice(0, 13)}…` : p.name,
-          ativas: tasks.filter((t) => t.projectId === p.id && (t.status === 'todo' || t.status === 'in_progress')).length,
-          concluídas: tasks.filter((t) => t.projectId === p.id && t.status === 'done').length
-        }))
-        .sort((a, b) => b.ativas - a.ativas),
-    [state.projects, tasks]
-  )
-
-  const upcoming = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.dueDate && (t.status === 'todo' || t.status === 'in_progress'))
-        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-        .slice(0, 5),
-    [tasks]
-  )
+  const {
+    metrics,
+    statusData,
+    priorityData,
+    projectData,
+    upcoming,
+    activityByDay,
+    openTasks,
+    today,
+    favoriteTasks
+  } = useDashboardMetrics()
 
   const recentActivities = useMemo(() => state.activities.slice(0, 7), [state.activities])
-
-  const activityByDay = useMemo(() => {
-    const now = new Date()
-    const days = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - i)
-      const key = d.toISOString().slice(0, 10)
-      const label = d.toLocaleDateString('pt-BR', { weekday: 'short' })
-      const count = state.activities.filter((a) => a.createdAt.slice(0, 10) === key).length
-      days.push({ name: label, value: count, color: count > 0 ? '#6366f1' : '#e2e8f0' })
-    }
-    return days
-  }, [state.activities])
-
-  const openTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.status === 'todo' || t.status === 'in_progress')
-        .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
-        .slice(0, 4),
-    [tasks]
-  )
-
-  const today = useMemo(() => {
-    const start = startOfDay().getTime()
-    const end = endOfDay().getTime()
-    const dueTodayOpen = tasks.filter((t) => {
-      if (!t.dueDate) return false
-      const ts = new Date(t.dueDate).getTime()
-      return ts >= start && ts <= end && (t.status === 'todo' || t.status === 'in_progress')
-    })
-    const overdueOpen = tasks.filter((t) => isOverdue(t.dueDate, t.status))
-    const agenda = [
-      ...overdueOpen,
-      ...dueTodayOpen.filter((t) => !isOverdue(t.dueDate, t.status))
-    ]
-      .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
-      .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
-    return {
-      dueToday: dueTodayOpen.length,
-      overdue: overdueOpen.length,
-      agenda: agenda.slice(0, 6)
-    }
-  }, [tasks])
-
-  const favoriteTasks = useMemo(() => tasks.filter((t) => t.favorite).slice(0, 4), [tasks])
 
   return (
     <div className="space-y-6">
@@ -158,6 +60,7 @@ export default function Dashboard() {
           label="Tarefas ativas"
           value={metrics.activeCount}
           sub={`de ${metrics.total} no total`}
+          onClick={() => navigate('/tarefas')}
         />
         <StatCard
           icon={CheckCircle2}
@@ -181,6 +84,7 @@ export default function Dashboard() {
           label="Vencendo hoje"
           value={metrics.dueTodayCount}
           sub="Agenda do dia"
+          onClick={() => navigate('/tarefas')}
         />
       </div>
 
@@ -498,3 +402,5 @@ export default function Dashboard() {
     </div>
   )
 }
+
+export default React.memo(Dashboard)

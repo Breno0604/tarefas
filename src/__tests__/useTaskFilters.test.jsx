@@ -16,7 +16,8 @@ const MOCK_TASKS = [
 const MOCK_STATE = {
   tasks: MOCK_TASKS,
   projects: [{ id: 'p1', name: 'Projeto Alpha' }, { id: 'p2', name: 'Projeto Beta' }],
-  categories: [{ id: 'c1', name: 'Dev' }, { id: 'c2', name: 'Design' }, { id: 'c3', name: 'Bug' }]
+  categories: [{ id: 'c1', name: 'Dev' }, { id: 'c2', name: 'Design' }, { id: 'c3', name: 'Bug' }],
+  notes: {}
 }
 
 let mockState = { ...MOCK_STATE }

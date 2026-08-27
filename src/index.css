@@ -10,6 +10,21 @@
     @apply bg-surface-secondary text-slate-800 dark:bg-slate-950 dark:text-slate-200;
     font-feature-settings: 'cv02', 'cv03', 'cv04';
   }
+  /* Respect user's motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  /* Prevent 300ms tap delay on touch devices */
+  html {
+    touch-action: manipulation;
+  }
   :focus-visible {
     @apply outline-none ring-2 ring-brand-400/50 ring-offset-2 ring-offset-white dark:ring-brand-400/30 dark:ring-offset-slate-900;
   }
@@ -39,5 +54,28 @@
   }
   .card-base {
     @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700/60 dark:bg-slate-900;
+  }
+  /* Tap feedback: subtle scale + opacity on press */
+  .tap-feedback {
+    @apply transition-transform transition-opacity duration-100;
+  }
+  .tap-feedback:active {
+    @apply scale-[0.97] opacity-80;
+  }
+  /* Secondary text with better dark mode contrast (WCAG AA) */
+  .text-secondary {
+    @apply text-slate-500;
+  }
+  :root.dark .text-secondary,
+  .dark .text-secondary {
+    color: #94a3b8;
+  }
+  /* Tertiary/muted text */
+  .text-muted {
+    @apply text-slate-400;
+  }
+  :root.dark .text-muted,
+  .dark .text-muted {
+    color: #7a8ba0;
   }
 }

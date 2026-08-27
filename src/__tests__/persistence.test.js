@@ -290,3 +290,43 @@ describe('persistence – cross-field integrity', () => {
     expect(blocked.tasks.length).toBe(state.tasks.length)
   })
 })
+
+describe('persistence – import cycle (simulating JSON import)', () => {
+  let state
+  beforeEach(() => { state = baseState() })
+
+  it('RESET then CREATE_TASK replicates imported data', () => {
+    // Simulate what the import function does
+    let next = reducer(state, { type: 'RESET' })
+    expect(next.tasks.length).toBeGreaterThan(0) // mock data restored
+
+    // Now import custom tasks
+    const importTasks = [
+      { title: 'Imported Task 1', status: 'todo', priority: 'high' },
+      { title: 'Imported Task 2', status: 'in_progress', priority: 'medium' }
+    ]
+    importTasks.forEach((t) => {
+      next = reducer(next, { type: 'CREATE_TASK', task: t })
+    })
+    // Should have mock tasks + imported tasks
+    expect(next.tasks.length).toBeGreaterThan(2)
+    expect(next.tasks.some((t) => t.title === 'Imported Task 1')).toBe(true)
+    expect(next.tasks.some((t) => t.title === 'Imported Task 2')).toBe(true)
+  })
+
+  it('import preserves projects and categories', () => {
+    let next = reducer(state, { type: 'RESET' })
+    next = reducer(next, { type: 'CREATE_PROJECT', name: 'Projeto Importado', color: '#ef4444' })
+    next = reducer(next, { type: 'CREATE_CATEGORY', name: 'Categoria Importada', color: '#10b981' })
+    expect(next.projects.some((p) => p.name === 'Projeto Importado')).toBe(true)
+    expect(next.categories.some((c) => c.name === 'Categoria Importada')).toBe(true)
+  })
+
+  it('imported data persists through theme change', () => {
+    let next = reducer(state, { type: 'RESET' })
+    next = reducer(next, { type: 'CREATE_TASK', task: { title: 'Persist Test' } })
+    next = reducer(next, { type: 'SET_THEME', theme: 'dark' })
+    expect(next.theme).toBe('dark')
+    expect(next.tasks.some((t) => t.title === 'Persist Test')).toBe(true)
+  })
+})

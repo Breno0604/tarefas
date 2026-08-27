@@ -120,7 +120,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
       description={
         isEdit ? 'Atualize as informações da tarefa.' : 'Preencha os dados para criar uma nova tarefa.'
       }
-      size="lg"
+      size="md"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -146,6 +146,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
           placeholder="Detalhes, links, contexto..."
           value={form.description}
           onChange={set('description')}
+          maxLength={500}
           hint={`${form.description.length}/500 caracteres`}
         />
 

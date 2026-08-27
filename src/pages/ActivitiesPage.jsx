@@ -20,7 +20,7 @@ const TYPE_LABELS = {
   cancel: 'Cancelamento'
 }
 
-export default function ActivitiesPage() {
+function ActivitiesPage() {
   const { state } = useStore()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('')
@@ -46,7 +46,7 @@ export default function ActivitiesPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1">
+        <div className="relative min-w-[140px] flex-1 sm:min-w-[220px]">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
@@ -112,3 +112,5 @@ export default function ActivitiesPage() {
     </div>
   )
 }
+
+export default React.memo(ActivitiesPage)

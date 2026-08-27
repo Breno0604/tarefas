@@ -13,7 +13,7 @@ import { formatDay, isOverdue } from '../lib/format'
 
 const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#f43f5e', '#10b981', '#64748b']
 
-export default function CategoriesPage() {
+function CategoriesPage() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const navigate = useNavigate()
@@ -222,3 +222,5 @@ export default function CategoriesPage() {
     </div>
   )
 }
+
+export default React.memo(CategoriesPage)

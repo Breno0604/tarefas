@@ -13,12 +13,12 @@ import NotificationsPanel from './NotificationsPanel'
 import CommandPalette from './CommandPalette'
 import TaskFormModal from '../tasks/TaskFormModal'
 import Button from '../ui/Button'
+import { useToast } from '../../store/toast'
 import Tooltip from '../ui/Tooltip'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store/store'
 import { isTypingTarget } from '../../lib/utils'
 import { PageSkeleton } from '../ui/Skeleton'
-import Breadcrumb from '../ui/Breadcrumb'
 
 const TITLES = {
   '/': { title: 'Hoje', subtitle: 'Sua agenda do dia' },
@@ -27,7 +27,8 @@ const TITLES = {
   '/projetos': { title: 'Projetos', subtitle: 'Acompanhe o progresso dos seus projetos' },
   '/categorias': { title: 'Categorias', subtitle: 'Organize tarefas por categoria' },
   '/atividades': { title: 'Atividades', subtitle: 'Seu histórico recente' },
-  '/configuracoes': { title: 'Configurações', subtitle: 'Preferências pessoais' }
+  '/configuracoes': { title: 'Configurações', subtitle: 'Preferências pessoais' },
+  '/lixeira': { title: 'Lixeira', subtitle: 'Tarefas excluídas' }
 }
 
 export default function AppLayout() {
@@ -69,6 +70,9 @@ export default function AppLayout() {
       } else if (key === 'f' && location.pathname === '/tarefas') {
         e.preventDefault()
         window.dispatchEvent(new CustomEvent('taskflow:toggle-favorites'))
+      } else if (key === 't' && !e.shiftKey) {
+        e.preventDefault()
+        navigate('/lixeira')
       }
     }
     document.addEventListener('keydown', onKey)
@@ -77,7 +81,16 @@ export default function AppLayout() {
 
   useEffect(() => {
     setNotifOpen(false)
+    setMobileOpen(false)
   }, [location.pathname])
+
+  // Warn user when localStorage persistence fails
+  const layoutToast = useToast()
+  useEffect(() => {
+    const handler = () => layoutToast.error('Dados não salvos — o armazenamento local está cheio ou indisponível.')
+    window.addEventListener('taskflow:storage-error', handler)
+    return () => window.removeEventListener('taskflow:storage-error', handler)
+  }, [layoutToast])
 
   const pageMeta = TITLES[location.pathname] || { title: 'TaskFlow', subtitle: '' }
 
@@ -99,10 +112,10 @@ export default function AppLayout() {
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-slate-200 bg-white/90 px-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 sm:gap-3 sm:px-6">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="tap-feedback rounded-lg p-2.5 text-slate-500 hover:bg-slate-100 sm:p-3 dark:text-slate-400 dark:hover:bg-slate-800"
             aria-label="Abrir menu"
           >
             <Menu size={20} />
@@ -129,7 +142,7 @@ export default function AppLayout() {
           </button>
           <button
             onClick={() => setPaletteOpen(true)}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden dark:text-slate-400 dark:hover:bg-slate-800"
+            className="tap-feedback rounded-lg p-2.5 text-slate-500 hover:bg-slate-100 sm:p-3 md:hidden dark:text-slate-400 dark:hover:bg-slate-800"
             aria-label="Buscar"
           >
             <Search size={18} />
@@ -137,12 +150,12 @@ export default function AppLayout() {
 
           <NotificationsPanel open={notifOpen} onOpenChange={setNotifOpen} />
 
-          <Tooltip content={state.theme === 'dark' ? 'Modo claro (D)' : 'Modo escuro (D)'}>
+          <Tooltip side="bottom" content={state.theme === 'dark' ? 'Modo claro (D)' : 'Modo escuro (D)'}>
             <button
               onClick={() =>
                 dispatch({ type: 'SET_THEME', theme: state.theme === 'dark' ? 'light' : 'dark' })
               }
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+              className="tap-feedback inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 sm:h-11 sm:w-11 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
               aria-label="Alternar tema"
             >
               {state.theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -159,13 +172,12 @@ export default function AppLayout() {
             </button>
           </Tooltip>
 
-          <Tooltip content="Nova tarefa (N)">
+          <Tooltip side="bottom" content="Nova tarefa (N)">
             <Button iconOnly icon={Plus} onClick={() => setQuickOpen(true)} aria-label="Nova tarefa" />
           </Tooltip>
         </header>
 
         <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          <Breadcrumb />
           <Outlet />
         </main>
       </div>
@@ -189,6 +201,7 @@ export default function AppLayout() {
             ['1 – 4', 'Alternar visão (somente na página de Tarefas)'],
             ['?', 'Mostrar estes atalhos'],
             ['F', 'Favoritas (na página de Tarefas)'],
+            ['T', 'Abrir Lixeira'],
             ['Esc', 'Fechar janelas abertas']
           ].map(([keys, label]) => (
             <li key={keys} className="flex items-center justify-between gap-4">

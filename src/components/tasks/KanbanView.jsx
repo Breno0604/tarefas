@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -48,7 +48,7 @@ function SortableTaskCard({ task, ...props }) {
 
 function KanbanColumn({ column, tasks, isOver, cancelled, children }) {
   return (
-    <div className={`flex w-72 shrink-0 flex-col${cancelled ? ' opacity-50' : ''}`}>
+    <div className={`flex w-64 shrink-0 flex-col sm:w-72${cancelled ? ' opacity-50' : ''}`}>
       <div className="mb-3 flex items-center gap-2 px-1">
         {column.colorStyle ? (
           <span className="h-2.5 w-2.5 rounded-full" style={column.colorStyle} />
@@ -222,7 +222,7 @@ export default function KanbanView({
     toast.success(`Tarefa movida para ${col.label}`)
   }
 
-  const cardProps = (t) => ({
+  const cardProps = useCallback((t) => ({
     task: t,
     project: state.projects.find((p) => p.id === t.projectId),
     noteCount: (state.notes[t.id] || []).length,
@@ -234,7 +234,7 @@ export default function KanbanView({
     onDuplicate: () => onDuplicateTask(t),
     onToggleDone,
     onCancel: onCancelTask
-  })
+  }), [state.projects, state.notes, onChange, onOpenTask, onEditTask, onDeleteTask, onToggleFavorite, onDuplicateTask, onToggleDone, onCancelTask])
 
   return (
     <div>
@@ -267,6 +267,7 @@ export default function KanbanView({
               <button
                 onClick={() => onEditTask(null, col.addDefaults)}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-slate-400 transition hover:bg-white hover:text-brand-600 hover:shadow-sm dark:hover:bg-slate-900 dark:hover:text-brand-300"
+                aria-label={`Adicionar tarefa em ${col.label}`}
               >
                 <Plus size={14} /> Adicionar tarefa
               </button>
@@ -276,7 +277,7 @@ export default function KanbanView({
 
         <DragOverlay>
           {activeTask ? (
-            <div className="w-72 rotate-2 opacity-90">
+            <div className="w-64 rotate-2 opacity-90 sm:w-72">
               <TaskCard
                 {...cardProps(activeTask)}
                 onChange={() => {}}

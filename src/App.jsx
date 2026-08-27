@@ -14,6 +14,7 @@ const ProjectsPage = React.lazy(() => import('./pages/ProjectsPage'))
 const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage'))
 const ActivitiesPage = React.lazy(() => import('./pages/ActivitiesPage'))
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
+const TrashPage = React.lazy(() => import('./pages/TrashPage'))
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
 
 function PageLoader() {
@@ -41,6 +42,7 @@ export default function App() {
                     <Route path="/categorias" element={<CategoriesPage />} />
                     <Route path="/atividades" element={<ActivitiesPage />} />
                     <Route path="/configuracoes" element={<SettingsPage />} />
+                    <Route path="/lixeira" element={<TrashPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>
                 </Routes>

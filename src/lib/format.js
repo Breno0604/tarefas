@@ -47,7 +47,7 @@ export function formatDay(iso) {
 }
 
 export function isOverdue(iso, status) {
-  if (!iso || status === 'done') return false
+  if (!iso || status === 'done' || status === 'cancelled') return false
   return new Date(iso).getTime() < Date.now()
 }
 

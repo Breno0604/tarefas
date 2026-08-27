@@ -20,13 +20,33 @@ export function ContextMenuProvider({ children }) {
     e.stopPropagation()
     const vw = window.innerWidth
     const vh = window.innerHeight
-    const estimatedW = 220
-    const estimatedH = Math.min(items.length * 36 + 8, vh)
-    const x = Math.min(e.clientX, vw - estimatedW - 8)
-    const y = Math.min(e.clientY, vh - estimatedH - 8)
+    // Start at click position; adjust after render using measured size
+    const x = Math.min(e.clientX, vw - 8)
+    const y = Math.min(e.clientY, vh - 8)
     setMenu({ x, y, items })
     setFocusIndex(-1)
   }, [])
+
+  // After menu renders, measure actual size and reposition if needed
+  useEffect(() => {
+    if (!menu || !menuRef.current) return
+    const el = menuRef.current
+    const rect = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let { x, y } = menu
+    // Adjust horizontal overflow
+    if (x + rect.width > vw - 8) {
+      x = Math.max(8, vw - rect.width - 8)
+    }
+    // Adjust vertical overflow
+    if (y + rect.height > vh - 8) {
+      y = Math.max(8, vh - rect.height - 8)
+    }
+    if (x !== menu.x || y !== menu.y) {
+      setMenu((prev) => ({ ...prev, x, y }))
+    }
+  }, [menu])
 
   const hide = useCallback(() => {
     setMenu(null)
@@ -149,7 +169,7 @@ export function ContextMenuProvider({ children }) {
                     const idx = actionableItems.indexOf(item)
                     if (idx >= 0) setFocusIndex(idx)
                   }}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm font-medium transition outline-none ${
+                  className={`tap-feedback flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition outline-none ${
                     item.disabled
                       ? 'cursor-not-allowed opacity-45'
                       : item.danger

@@ -107,47 +107,82 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
         subtitle={`Criada em ${formatDate(task.createdAt)}`}
         disableDismiss={confirmDelete || cancelOpen}
         footer={
-          <>
-            <Button variant="ghost" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
-              Excluir
-            </Button>
-            <Button
-              variant="ghost"
-              icon={Copy}
-              onClick={() => {
-                dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                toast.success('Tarefa duplicada')
-              }}
-            >
-              Duplicar
-            </Button>
-            {!isDone && !isCancelled && (
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-1.5 sm:hidden">
+              <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
+                Excluir
+              </Button>
               <Button
                 variant="ghost"
-                icon={Ban}
+                size="sm"
+                icon={Copy}
                 onClick={() => {
-                  setCancelReason('')
-                  setCancelOpen(true)
+                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+                  toast.success('Tarefa duplicada')
                 }}
-                className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
               >
-                Cancelar
+                Duplicar
               </Button>
-            )}
-            <span className="flex-1" />
-            <Button variant="secondary" onClick={onClose}>
-              Fechar
-            </Button>
-            <Button
-              icon={Pencil}
-              onClick={() => {
-                onEdit?.(task)
-                onClose()
-              }}
-            >
-              Editar
-            </Button>
-          </>
+              {!isDone && !isCancelled && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Ban}
+                  onClick={() => {
+                    setCancelReason('')
+                    setCancelOpen(true)
+                  }}
+                  className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:gap-1.5">
+              <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
+                Excluir
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={Copy}
+                onClick={() => {
+                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+                  toast.success('Tarefa duplicada')
+                }}
+              >
+                Duplicar
+              </Button>
+              {!isDone && !isCancelled && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Ban}
+                  onClick={() => {
+                    setCancelReason('')
+                    setCancelOpen(true)
+                  }}
+                  className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                >
+                  Cancelar
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="secondary" onClick={onClose}>
+                Fechar
+              </Button>
+              <Button
+                icon={Pencil}
+                onClick={() => {
+                  onEdit?.(task)
+                  onClose()
+                }}
+              >
+                Editar
+              </Button>
+            </div>
+          </div>
         }
       >
         <div className="space-y-6 pb-4">

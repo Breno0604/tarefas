@@ -81,13 +81,13 @@ describe('TaskDetailDrawer – delete flow', () => {
 
   it('shows delete button in footer', async () => {
     await renderDrawer()
-    expect(screen.getByText('Excluir')).toBeTruthy()
+    expect(screen.getAllByText('Excluir').length).toBeGreaterThanOrEqual(1)
   })
 
   it('opens ConfirmDialog when delete button is clicked', async () => {
     await renderDrawer()
 
-    const deleteBtn = screen.getByText('Excluir').closest('button')
+    const deleteBtn = screen.getAllByText('Excluir')[0].closest('button')
     fireEvent.click(deleteBtn)
 
     expect(screen.getByText(/Tem certeza que deseja excluir/)).toBeTruthy()
@@ -98,7 +98,7 @@ describe('TaskDetailDrawer – delete flow', () => {
   it('dispatches DELETE_TASK when confirm button is clicked in ConfirmDialog', async () => {
     await renderDrawer()
 
-    const deleteBtn = screen.getByText('Excluir').closest('button')
+    const deleteBtn = screen.getAllByText('Excluir')[0].closest('button')
     fireEvent.click(deleteBtn)
 
     expect(screen.getByText(/Tem certeza que deseja excluir/)).toBeTruthy()
@@ -117,7 +117,7 @@ describe('TaskDetailDrawer – delete flow', () => {
   it('closes ConfirmDialog when cancel is clicked', async () => {
     await renderDrawer()
 
-    const deleteBtn = screen.getByText('Excluir').closest('button')
+    const deleteBtn = screen.getAllByText('Excluir')[0].closest('button')
     fireEvent.click(deleteBtn)
 
     expect(screen.getByText(/Tem certeza que deseja excluir/)).toBeTruthy()
@@ -134,7 +134,7 @@ describe('TaskDetailDrawer – delete flow', () => {
     const onClose = vi.fn()
     await renderDrawer({ onClose })
 
-    const deleteBtn = screen.getByText('Excluir').closest('button')
+    const deleteBtn = screen.getAllByText('Excluir')[0].closest('button')
     fireEvent.click(deleteBtn)
 
     expect(screen.getByText(/Tem certeza que deseja excluir/)).toBeTruthy()
@@ -211,7 +211,7 @@ describe('TaskDetailDrawer – personal actions', () => {
 
   it('shows optional cancel dialog without requiring reason', async () => {
     await renderDrawer()
-    fireEvent.click(screen.getByText('Cancelar'))
+    fireEvent.click(screen.getAllByText('Cancelar')[0])
     // Dialog opens; confirm button enabled even with empty reason
     const confirmBtn = screen.getAllByText('Cancelar tarefa').find((el) => el.tagName === 'BUTTON')
     expect(confirmBtn.disabled).toBeFalsy()

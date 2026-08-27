@@ -162,7 +162,8 @@ export function useTaskFilters(view) {
         (t) =>
           t.title.toLowerCase().includes(q) ||
           (t.description || '').toLowerCase().includes(q) ||
-          (t.tags || []).some((tag) => tag.toLowerCase().includes(q))
+          (t.tags || []).some((tag) => tag.toLowerCase().includes(q)) ||
+          (state.notes[t.id] || []).some((n) => (n.text || '').toLowerCase().includes(q))
       )
     }
     if (filters.status.length) list = list.filter((t) => filters.status.includes(t.status))
@@ -212,7 +213,7 @@ export function useTaskFilters(view) {
     const trimmed = name.trim()
     if (!trimmed) return
     const preset = {
-      id: `sf-${Date.now()}`,
+      id: `sf-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: trimmed,
       query,
       filters,

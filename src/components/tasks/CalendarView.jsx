@@ -71,7 +71,7 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
 
   return (
     <div className="card-base overflow-hidden">
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+      <div className="flex items-center justify-between border-b border-slate-100 px-3 sm:px-4 py-2.5 sm:py-3 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setMonthOffset((m) => m - 1)}
@@ -164,7 +164,7 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
         {daysList.map((d) => {
           const dayTasks = tasksByDay[d.toDateString()] || []
           return (
-            <div key={d.toDateString()} className="px-4 py-3">
+            <div key={d.toDateString()} className="px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download } from 'lucide-react'
+import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload } from 'lucide-react'
 import { useStore, useMe } from '../store/store'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
@@ -75,12 +75,52 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url)
       toast.success('Backup exportado')
     } catch {
-      toast.error?.('Não foi possível exportar os dados') || toast.info('Não foi possível exportar os dados')
+      toast.error('Não foi possível exportar os dados')
     }
   }
 
+  const fileInputRef = React.useRef(null)
+
+  const importData = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result)
+        // Validate structure
+        if (!data || typeof data !== 'object') throw new Error('Formato inválido')
+        if (!Array.isArray(data.tasks)) throw new Error('Arquivo não contém tarefas')
+        if (!Array.isArray(data.projects)) throw new Error('Arquivo não contém projetos')
+        if (!data.me) throw new Error('Arquivo não contém dados de perfil')
+        // Dispatch RESET with the imported data
+        dispatch({ type: 'RESET' })
+        // Then import each field
+        dispatch({ type: 'UPDATE_ME', patch: data.me })
+        if (data.theme) dispatch({ type: 'SET_THEME', theme: data.theme })
+        // Import tasks, projects, categories, notes, activities
+        // We need to dispatch each task individually since there's no bulk import action
+        data.tasks?.forEach((t) => {
+          dispatch({ type: 'CREATE_TASK', task: { ...t, id: undefined } })
+        })
+        data.projects?.forEach((p) => {
+          dispatch({ type: 'CREATE_PROJECT', name: p.name, description: p.description || '', color: p.color || '#6366f1', due: p.due || null })
+        })
+        data.categories?.forEach((c) => {
+          dispatch({ type: 'CREATE_CATEGORY', name: c.name, color: c.color || '#94a3b8' })
+        })
+        toast.success(`Backup importado: ${data.tasks?.length || 0} tarefas, ${data.projects?.length || 0} projetos`)
+      } catch (err) {
+        toast.error(`Erro ao importar: ${err.message || 'Formato inválido'}`)
+      }
+    }
+    reader.readAsText(file)
+    // Reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
   const SectionCard = ({ title, description, children }) => (
-    <div className="card-base p-5">
+    <div className="card-base p-4 sm:p-5">
       <div className="mb-4">
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h3>
         {description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{description}</p>}
@@ -163,9 +203,7 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="secondary" onClick={() => toast.success('Preferências salvas')}>Salvar</Button>
-            </div>
+            <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">As alterações são salvas automaticamente.</p>
           </SectionCard>
         )}
 
@@ -196,38 +234,20 @@ export default function SettingsPage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="Idioma e região" description="Configurações locais de exibição.">
-              <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-                Observação: idioma e fuso são apenas visuais. O início da semana é aplicado no calendário.
-              </p>
+            <SectionCard title="Início da semana" description="Defina qual dia marca o início da semana no calendário.">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="label-base">Idioma</label>
-                    <select className="input-base" value={appearanceState.language} onChange={(e) => setAppearanceState({ ...appearanceState, language: e.target.value })}>
-                      <option value="pt-BR">Português (Brasil)</option>
-                      <option value="en-US">English (US)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-base">Fuso horário</label>
-                    <select className="input-base" value={appearanceState.timezone} onChange={(e) => setAppearanceState({ ...appearanceState, timezone: e.target.value })}>
-                      <option value="America/Sao_Paulo">America/Sao_Paulo</option>
-                      <option value="America/New_York">America/New_York</option>
-                      <option value="Europe/Lisbon">Europe/Lisbon</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-base">Início da semana</label>
-                    <select className="input-base" value={appearanceState.firstDay} onChange={(e) => setAppearanceState({ ...appearanceState, firstDay: e.target.value })}>
-                      <option value="sunday">Domingo</option>
-                      <option value="monday">Segunda-feira</option>
-                    </select>
-                  </div>
+                <div className="max-w-xs">
+                  <select className="input-base" value={appearanceState.firstDay} onChange={(e) => {
+                    const val = e.target.value
+                    setAppearanceState((prev) => ({ ...prev, firstDay: val }))
+                    dispatch({ type: 'UPDATE_APPEARANCE', appearance: { firstDay: val } })
+                    localStorage.setItem('taskflow-first-day', val)
+                  }}>
+                    <option value="sunday">Domingo</option>
+                    <option value="monday">Segunda-feira</option>
+                  </select>
                 </div>
-                <div className="flex justify-end">
-                  <Button variant="secondary" onClick={saveAppearance}>Salvar</Button>
-                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Salvo automaticamente.</p>
               </div>
             </SectionCard>
           </>
@@ -267,6 +287,7 @@ export default function SettingsPage() {
                 ['/', 'Buscar tarefas'],
                 ['1 – 4', 'Alternar visão (Lista, Kanban, Tabela, Calendário)'],
                 ['?', 'Mostrar estes atalhos'],
+                ['T', 'Abrir Lixeira'],
                 ['Esc', 'Fechar janelas abertas']
               ].map(([keys, label]) => (
                 <li key={keys} className="flex items-center justify-between gap-4">
@@ -295,6 +316,23 @@ export default function SettingsPage() {
                 <span className="font-semibold text-slate-600 dark:text-slate-300">{state.projects.length} projetos</span> ·{' '}
                 <span className="font-semibold text-slate-600 dark:text-slate-300">{state.notes ? Object.keys(state.notes).length : 0} tarefas com notas</span> ·{' '}
                 <span className="font-semibold text-slate-600 dark:text-slate-300">{state.activities.length} atividades</span>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Importar backup" description="Restaure dados a partir de um arquivo JSON exportado anteriormente.">
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Importar arquivo</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Substitui todos os dados atuais pelos dados do arquivo.</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={importData}
+                  className="hidden"
+                />
+                <Button variant="secondary" icon={Upload} onClick={() => fileInputRef.current?.click()}>Importar</Button>
               </div>
             </SectionCard>
 

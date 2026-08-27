@@ -43,7 +43,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
         <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: PRIORITY[task.priority]?.hex || '#94a3b8' }} />
         <button
           onClick={onToggleFavorite}
-          className={`shrink-0 rounded-md p-1 transition ${
+          className={`tap-feedback shrink-0 rounded-md p-1.5 transition ${
             task.favorite
               ? 'text-amber-400 hover:text-amber-500'
               : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500 sm:opacity-0 sm:group-hover:opacity-100 dark:text-slate-600 dark:hover:bg-slate-800'
@@ -59,7 +59,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
           {task.title}
         </button>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
           <StatusBadge status={task.status} size="sm" />
           <PriorityBadge priority={task.priority} />
         </div>
@@ -70,7 +70,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
           </span>
         )}
 
-        <span className="hidden w-40 items-center gap-1.5 truncate text-xs font-medium text-slate-500 lg:flex dark:text-slate-400">
+        <span className="hidden shrink-0 w-40 items-center gap-1.5 truncate text-xs font-medium text-slate-500 lg:flex dark:text-slate-400">
           {project ? (
             <>
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
@@ -104,7 +104,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
           align="right"
           trigger={
             <button
-              className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-slate-800"
+              className="tap-feedback rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-slate-800"
               aria-label="Ações da tarefa"
             >
               <MoreHorizontal size={16} />

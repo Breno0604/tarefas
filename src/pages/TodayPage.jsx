@@ -107,7 +107,7 @@ function Section({ icon: Icon, iconClass, title, count, accent, children, empty 
   )
 }
 
-export default function TodayPage() {
+function TodayPage() {
   const { state, dispatch } = useStore()
   const navigate = useNavigate()
   const toast = useToast()
@@ -157,7 +157,10 @@ export default function TodayPage() {
   const submitQuickAdd = (e) => {
     e.preventDefault()
     const title = quickAdd.trim()
-    if (!title) return
+    if (!title) {
+      toast.error('Digite um título para a tarefa.')
+      return
+    }
     dispatch({
       type: 'CREATE_TASK',
       task: {
@@ -183,12 +186,12 @@ export default function TodayPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Cabeçalho */}
-      <div className="card-base flex flex-wrap items-center gap-4 p-5">
+      <div className="card-base flex flex-wrap items-center gap-4 p-4 sm:p-5">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm">
           <Sunrise size={22} />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold tracking-tight text-slate-900 sm:text-lg dark:text-white">
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </h2>
           <p className="text-xs capitalize text-slate-500 dark:text-slate-400">
@@ -198,7 +201,7 @@ export default function TodayPage() {
           </p>
         </div>
         {total > 0 && (
-          <Button variant="secondary" size="sm" onClick={() => navigate('/tarefas')}>
+          <Button variant="secondary" size="sm" onClick={() => navigate('/tarefas')} className="hidden sm:inline-flex">
             Ver todas as tarefas
           </Button>
         )}
@@ -270,3 +273,5 @@ export default function TodayPage() {
     </div>
   )
 }
+
+export default React.memo(TodayPage)

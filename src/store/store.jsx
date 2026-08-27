@@ -13,9 +13,15 @@ const StoreContext = createContext(null)
 
 const PERSIST_KEY = 'taskflow-state-v2'
 const PERSIST_VERSION = 2
+const MAX_ACTIVITIES = 500
 
-let seq = 0
-const nextSeq = () => ++seq
+/** Generate a unique ID with an optional prefix. Uses crypto.randomUUID() when available. */
+function uid(prefix = '') {
+  const id = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+  return prefix ? `${prefix}-${id}` : id
+}
 
 function loadPersistedState() {
   try {
@@ -48,8 +54,6 @@ const DEFAULT_NOTIF_PREFS = {
 }
 
 const DEFAULT_APPEARANCE = {
-  language: 'pt-BR',
-  timezone: 'America/Sao_Paulo',
   firstDay: localStorage.getItem('taskflow-first-day') || 'sunday'
 }
 
@@ -76,7 +80,7 @@ export { initialState }
 
 function activityEntry({ type, taskId, text }) {
   return {
-    id: `act-${Date.now()}-${nextSeq()}`,
+    id: uid('act'),
     type,
     taskId,
     text,
@@ -84,9 +88,14 @@ function activityEntry({ type, taskId, text }) {
   }
 }
 
+/** Trim activities to MAX_ACTIVITIES, keeping the most recent ones. */
+function trimActivities(activities) {
+  return activities.length > MAX_ACTIVITIES ? activities.slice(0, MAX_ACTIVITIES) : activities
+}
+
 function reminderEntry({ type, title, body, taskId }) {
   return {
-    id: `rem-${Date.now()}-${nextSeq()}`,
+    id: uid('rem'),
     type,
     title,
     body,
@@ -175,7 +184,7 @@ function spawnRecurrence(state, task) {
   if (!RECURRENCE[task.recurrence] || task.recurrence === 'none') return null
   const nextDue = nextRecurrenceDate(task.dueDate, task.recurrence)
   return {
-    id: `t-${Date.now()}-${nextSeq()}`,
+    id: uid('t'),
     title: task.title,
     description: task.description,
     status: 'todo',
@@ -189,7 +198,7 @@ function spawnRecurrence(state, task) {
     tags: [...(task.tags || [])],
     subtasks: (task.subtasks || []).map((s) => ({
       ...s,
-      id: `s-${Date.now()}-${nextSeq()}-${Math.floor(Math.random() * 1000)}`,
+      id: uid('s'),
       done: false
     })),
     favorite: false,
@@ -201,9 +210,23 @@ function spawnRecurrence(state, task) {
 function reducer(state, action) {
   switch (action.type) {
     case 'BOOT': {
-      const reminders = [...state.reminders]
       const now = Date.now()
       const day = 24 * 60 * 60 * 1000
+      // Clean orphan reminders: remove reminders whose task no longer exists
+      // or whose condition (overdue / upcoming) no longer applies
+      const taskIds = new Set(state.tasks.map((t) => t.id))
+      const reminders = state.reminders.filter((r) => {
+        if (!r.taskId || !taskIds.has(r.taskId)) return false
+        const task = state.tasks.find((t) => t.id === r.taskId)
+        if (!task || task.status === 'done' || task.status === 'cancelled') return false
+        if (!task.dueDate) return false
+        const diff = new Date(task.dueDate).getTime() - now
+        // Overdue reminders only make sense when actually overdue
+        if (r.type === 'due' && r.title === 'Tarefa atrasada' && diff >= 0) return false
+        // Upcoming reminders only make sense within the 3-day window
+        if (r.type === 'due' && r.title === 'Vencimento próximo' && (diff > 3 * day || diff < 0)) return false
+        return true
+      })
       const has = (type, taskId) =>
         reminders.some((r) => r.type === type && r.taskId === taskId)
       state.tasks.forEach((t) => {
@@ -258,7 +281,7 @@ function reducer(state, action) {
       const validationErrors = validateTaskPayload(action.task)
       if (validationErrors.length > 0) return state
       const task = {
-        id: `t-${Date.now()}-${nextSeq()}`,
+        id: uid('t'),
         title: action.task.title,
         description: action.task.description || '',
         status: action.task.status || 'todo',
@@ -285,7 +308,7 @@ function reducer(state, action) {
       return {
         ...state,
         tasks: [task, ...state.tasks],
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'UPDATE_TASK': {
@@ -303,7 +326,7 @@ function reducer(state, action) {
       return {
         ...state,
         tasks,
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'TOGGLE_TASK_DONE': {
@@ -352,7 +375,7 @@ function reducer(state, action) {
       return {
         ...state,
         tasks: spawned ? [spawned, ...tasks] : tasks,
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'CANCEL_TASK': {
@@ -385,16 +408,18 @@ function reducer(state, action) {
           text: `Você excluiu a tarefa "${task.title}"`
         })
       ]
+      // Capture notes BEFORE any mutation — state.notes references are shared
+      const taskNotes = state.notes[action.taskId] || []
       const notes = { ...state.notes }
       delete notes[action.taskId]
       return {
         ...state,
         tasks: state.tasks.filter((t) => t.id !== action.taskId),
         notes,
-        activities: [...acts, ...state.activities],
+        activities: trimActivities([...acts, ...state.activities]),
         trash: [
           ...state.trash,
-          { task, notes: state.notes[action.taskId] || [] }
+          { task, notes: taskNotes }
         ]
       }
     }
@@ -423,7 +448,7 @@ function reducer(state, action) {
         tasks: [...restored.map((r) => r.task), ...state.tasks],
         notes,
         trash: state.trash.filter((entry) => !restoredIds.has(entry.task.id)),
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'TOGGLE_FAVORITE': {
@@ -439,14 +464,14 @@ function reducer(state, action) {
       if (!source) return state
       const copy = {
         ...source,
-        id: `t-${Date.now()}-${nextSeq()}`,
+        id: uid('t'),
         title: `${source.title} (cópia)`,
         createdAt: new Date().toISOString(),
         status: 'todo',
         progress: 0,
         subtasks: (source.subtasks || []).map((s) => ({
           ...s,
-          id: `s-${Date.now()}-${nextSeq()}`,
+          id: uid('s'),
           done: false
         }))
       }
@@ -460,7 +485,7 @@ function reducer(state, action) {
       return {
         ...state,
         tasks: [copy, ...state.tasks],
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'TOGGLE_SUBTASK': {
@@ -483,7 +508,7 @@ function reducer(state, action) {
       const task = state.tasks.find((t) => t.id === action.taskId)
       if (!task || !String(action.text || '').trim()) return state
       const note = {
-        id: `n-${Date.now()}-${nextSeq()}`,
+        id: uid('n'),
         text: String(action.text).trim(),
         createdAt: new Date().toISOString()
       }
@@ -500,7 +525,7 @@ function reducer(state, action) {
           ...state.notes,
           [action.taskId]: [...(state.notes[action.taskId] || []), note]
         },
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'DELETE_NOTE': {
@@ -533,7 +558,7 @@ function reducer(state, action) {
     }
     case 'CREATE_PROJECT': {
       const project = {
-        id: `p-${Date.now()}-${nextSeq()}`,
+        id: uid('p'),
         name: action.name,
         description: action.description || '',
         color: action.color || '#6366f1',
@@ -549,12 +574,12 @@ function reducer(state, action) {
       return {
         ...state,
         projects: [...state.projects, project],
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
     }
     case 'CREATE_CATEGORY': {
       const category = {
-        id: `c-${Date.now()}-${nextSeq()}`,
+        id: uid('c'),
         name: action.name,
         color: action.color || '#94a3b8'
       }
@@ -568,8 +593,29 @@ function reducer(state, action) {
       return {
         ...state,
         categories: [...state.categories, category],
-        activities: [...acts, ...state.activities]
+        activities: trimActivities([...acts, ...state.activities])
       }
+    }
+    case 'IMPORT_DATA': {
+      const d = action.data || {}
+      return {
+        ...state,
+        me: d.me || state.me,
+        tasks: Array.isArray(d.tasks) ? d.tasks : state.tasks,
+        projects: Array.isArray(d.projects) ? d.projects : state.projects,
+        categories: Array.isArray(d.categories) ? d.categories : state.categories,
+        notes: d.notes && typeof d.notes === 'object' ? d.notes : state.notes,
+        activities: Array.isArray(d.activities) ? trimActivities(d.activities) : state.activities,
+        trash: Array.isArray(d.trash) ? d.trash : state.trash,
+        theme: d.theme || state.theme,
+        appearance: d.appearance ? { ...state.appearance, ...d.appearance } : state.appearance,
+        prefs: d.prefs ? { ...state.prefs, ...d.prefs } : state.prefs,
+        notifPrefs: d.notifPrefs ? { ...state.notifPrefs, ...d.notifPrefs } : state.notifPrefs,
+        reminders: Array.isArray(d.reminders) ? d.reminders : state.reminders
+      }
+    }
+    case 'CLEAR_TRASH': {
+      return { ...state, trash: [] }
     }
     case 'RESET': {
       return { ...initialState(), booted: true }
@@ -585,7 +631,7 @@ export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
 
   useEffect(() => {
-    const t = setTimeout(() => dispatch({ type: 'BOOT' }), 200)
+    const t = setTimeout(() => dispatch({ type: 'BOOT' }), 50)
     return () => clearTimeout(t)
   }, [])
 
@@ -599,8 +645,9 @@ export function StoreProvider({ children }) {
     const t = setTimeout(() => {
       try {
         localStorage.setItem(PERSIST_KEY, JSON.stringify({ ...state, __v: PERSIST_VERSION }))
-      } catch {
-        // ignora erros de cota/privacidade (localStorage indisponível)
+      } catch (e) {
+        console.warn('[TaskFlow] Não foi possível salvar no localStorage:', e?.message || e)
+        window.dispatchEvent(new CustomEvent('taskflow:storage-error', { detail: { error: e } }))
       }
     }, 400)
     return () => clearTimeout(t)

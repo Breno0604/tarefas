@@ -91,7 +91,7 @@ export default function TaskCard({
         onMouseEnter={queuePreview}
         onMouseLeave={cancelPreview}
         onContextMenu={(e) => show(e, menu)}
-        className="group cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800 dark:bg-slate-900"
+        className="tap-feedback group cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800 dark:bg-slate-900"
       >
         <div className={`h-1 w-full ${PRIORITY_BAR[task.priority]}`} />
         <div className="p-3">
@@ -104,7 +104,7 @@ export default function TaskCard({
             </button>
             <button
               onClick={onToggleFavorite}
-              className={`mt-0.5 shrink-0 rounded-md p-1 transition ${
+              className={`tap-feedback mt-0.5 shrink-0 rounded-md p-1.5 transition ${
                 task.favorite
                   ? 'text-amber-400 hover:text-amber-500'
                   : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500 sm:opacity-0 sm:group-hover:opacity-100 dark:text-slate-600 dark:hover:bg-slate-800'
@@ -117,7 +117,7 @@ export default function TaskCard({
               align="right"
               trigger={
                 <button
-                  className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-slate-800"
+                  className="tap-feedback rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-slate-800"
                   aria-label="Ações da tarefa"
                 >
                   <MoreHorizontal size={16} />

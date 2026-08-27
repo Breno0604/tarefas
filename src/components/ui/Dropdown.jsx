@@ -15,10 +15,12 @@ export default function Dropdown({
   const menuRef = useRef(null)
   const triggerRef = useRef(null)
   const [focusIndex, setFocusIndex] = useState(-1)
+  const [menuStyle, setMenuStyle] = useState({})
 
   const close = useCallback(() => {
     setOpen(false)
     setFocusIndex(-1)
+    setMenuStyle({})
     onOpenChange?.(false)
   }, [onOpenChange])
 
@@ -30,6 +32,38 @@ export default function Dropdown({
     onOpenChange?.(next)
     if (next) setFocusIndex(-1)
   }
+
+  // Viewport-aware positioning: adjust menu position after render
+  useEffect(() => {
+    if (!open || !menuRef.current || !triggerRef.current) return
+    const menu = menuRef.current
+    const trigger = triggerRef.current
+    const menuRect = menu.getBoundingClientRect()
+    const triggerRect = trigger.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const MARGIN = 8 // minimum distance from viewport edge
+
+    let left = align === 'right' ? triggerRect.right - menuRect.width : triggerRect.left
+    let top = triggerRect.bottom + 6 // mt-1.5 = 6px
+
+    // Horizontal: clamp to viewport
+    if (left < MARGIN) {
+      left = MARGIN
+    } else if (left + menuRect.width > vw - MARGIN) {
+      left = vw - menuRect.width - MARGIN
+    }
+
+    // Vertical: if menu would go below viewport, show above trigger
+    if (top + menuRect.height > vh - MARGIN) {
+      top = triggerRect.top - menuRect.height - 6
+    }
+
+    // Final clamp: ensure menu stays within viewport vertically
+    if (top < MARGIN) top = MARGIN
+
+    setMenuStyle({ position: 'fixed', left: `${left}px`, top: `${top}px` })
+  }, [open, align])
 
   // Get only actionable items (not dividers or labels) for keyboard nav
   const actionableItems = items.filter(
@@ -140,9 +174,8 @@ export default function Dropdown({
           role="menu"
           aria-orientation="vertical"
           onKeyDown={handleMenuKeyDown}
-          className={`absolute z-40 mt-1.5 min-w-[180px] rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900 ${
-            align === 'right' ? 'right-0' : 'left-0'
-          } ${triggerClassName}`}
+          style={menuStyle}
+          className={`z-40 max-w-[calc(100vw-2rem)] min-w-[160px] sm:min-w-[180px] overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900 ${triggerClassName}`}
         >
           {items.map((item, i) => {
             if (item.type === 'divider') {
@@ -181,7 +214,7 @@ export default function Dropdown({
                   const idx = actionableItems.indexOf(item)
                   if (idx >= 0) setFocusIndex(idx)
                 }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition outline-none ${
+                className={`tap-feedback flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-sm font-medium transition outline-none ${
                   item.disabled
                     ? 'cursor-not-allowed opacity-45'
                     : item.danger

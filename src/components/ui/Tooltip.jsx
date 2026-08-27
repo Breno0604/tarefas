@@ -7,6 +7,10 @@ export default function Tooltip({ content, children, side = 'top' }) {
     left: 'right-full top-1/2 mr-1.5 -translate-y-1/2',
     right: 'left-full top-1/2 ml-1.5 -translate-y-1/2'
   }
+  // Don't show tooltips on touch-only devices
+  if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
+    return children
+  }
   if (!content) return children
   return (
     <span className="group/tip relative inline-flex">

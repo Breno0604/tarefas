@@ -7,7 +7,7 @@ import { STATUS } from '../../lib/constants'
 export default function BulkTasksBar({ selected, onApplyStatus, onRequestDelete, onClear }) {
   if (selected.size === 0) return null
   return (
-    <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 dark:border-brand-500/30 dark:bg-brand-500/10">
+    <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-3 sm:px-4 py-2 sm:py-2.5 dark:border-brand-500/30 dark:bg-brand-500/10">
       <p className="text-sm font-bold text-brand-800 dark:text-brand-200">
         {selected.size} selecionada(s)
       </p>
