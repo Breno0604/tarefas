@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck, Trash2, CalendarClock } from 'lucide-react'
 import { useStore } from '../../store/store'
@@ -25,12 +25,45 @@ export default function NotificationsPanel({ open, onOpenChange }) {
     onOpenChange(false)
   }
 
+  const triggerRef = useRef(null)
+  const panelRef = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  // Viewport-aware positioning
+  useEffect(() => {
+    if (!open || !triggerRef.current || !panelRef.current) return
+    const position = () => {
+      const trigger = triggerRef.current
+      const panel = panelRef.current
+      if (!trigger || !panel) return
+      const tr = trigger.getBoundingClientRect()
+      const pr = panel.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const margin = 8
+      // Horizontal: align right edge of panel to right edge of trigger
+      let left = tr.right - pr.width
+      if (left < margin) left = margin
+      if (left + pr.width > vw - margin) left = vw - margin - pr.width
+      // Vertical: open below trigger, or above if no space
+      let top = tr.bottom + 8
+      if (top + pr.height > vh - margin) top = tr.top - pr.height - 8
+      if (top < margin) top = margin
+      setPos({ top, left })
+    }
+    // Run twice: once immediately to set a rough position, once after layout
+    position()
+    const raf = requestAnimationFrame(position)
+    return () => cancelAnimationFrame(raf)
+  }, [open])
+
   return (
     <div ref={ref} className="relative">
-      <Tooltip content="Lembretes">
+      <Tooltip content="Lembretes" side="bottom">
         <button
+          ref={triggerRef}
           onClick={() => onOpenChange(!open)}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           aria-label="Lembretes"
         >
           <Bell size={18} />
@@ -43,7 +76,11 @@ export default function NotificationsPanel({ open, onOpenChange }) {
       </Tooltip>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[min(380px,calc(100vw-24px))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900">
+        <div
+          ref={panelRef}
+          className="fixed z-[85] w-[min(380px,calc(100vw-24px))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900"
+          style={{ top: pos.top, left: pos.left }}
+        >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
             <div>
               <p className="text-sm font-bold text-slate-900 dark:text-white">Lembretes</p>

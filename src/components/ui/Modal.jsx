@@ -18,7 +18,8 @@ export default function Modal({
   children,
   footer,
   size = 'md',
-  closeOnOverlay = true
+  closeOnOverlay = true,
+  fullScreen = false
 }) {
   const ref = useRef(null)
   useDismissable(ref, () => onClose?.(), open && closeOnOverlay, open)
@@ -29,9 +30,12 @@ export default function Modal({
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  // Focus trap: keep focus within the modal
+  // Focus trap: keep focus within the modal (only on Tab, not when typing in inputs)
   const handleKeyDown = useCallback((e) => {
     if (e.key !== 'Tab' || !ref.current) return
+    // Don't trap focus when user is typing in an input/textarea
+    const active = document.activeElement
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return
     const focusable = ref.current.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
@@ -39,27 +43,29 @@ export default function Modal({
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
     if (e.shiftKey) {
-      if (document.activeElement === first) {
+      if (active === first) {
         e.preventDefault()
         last.focus()
       }
     } else {
-      if (document.activeElement === last) {
+      if (active === last) {
         e.preventDefault()
         first.focus()
       }
     }
   }, [])
 
-  // Auto-focus first focusable element when modal opens
+  // Auto-focus first input/textarea when modal opens (skip on touch devices to avoid keyboard popup)
   useEffect(() => {
     if (!open || !ref.current) return
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    if (isTouchDevice) return // Don't auto-focus on touch to avoid keyboard interference
     const timer = setTimeout(() => {
       const focusable = ref.current?.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'input:not([type="hidden"]), textarea, select'
       )
       if (focusable && focusable.length > 0) focusable[0].focus()
-    }, 50)
+    }, 100)
     return () => clearTimeout(timer)
   }, [open])
 
@@ -67,7 +73,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-slate-900/50 p-2 py-6 sm:p-4 sm:py-10 backdrop-blur-sm animate-fade-in sm:items-center"
+      className={`fixed inset-0 z-[80] flex bg-slate-900/50 backdrop-blur-sm animate-fade-in ${fullScreen ? 'flex-col p-0 sm:p-4 sm:py-10 sm:items-center sm:flex-row sm:overflow-y-auto' : 'items-start justify-center overflow-y-auto p-2 py-6 sm:p-4 sm:py-10 sm:flex-row'}`}
       onMouseDown={(e) => {
         if (closeOnOverlay && e.target === e.currentTarget) onClose?.()
       }}
@@ -77,7 +83,7 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         onKeyDown={handleKeyDown}
-        className={`relative w-full ${SIZES[size]} rounded-2xl border border-slate-200 bg-white shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900`}
+        className={`relative w-full ${fullScreen ? 'flex flex-col h-full max-h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl overflow-hidden' : SIZES[size] + ' sm:rounded-2xl'} rounded-none border border-slate-200 bg-white shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900`}
       >
         {(title || description) && (
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 dark:border-slate-800">
@@ -102,11 +108,11 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div className="max-h-[85vh] sm:max-h-[calc(100vh-12rem)] overflow-y-auto px-4 sm:px-6 py-4 sm:py-5">
+        <div className={`${fullScreen ? 'min-h-0 flex-1 overflow-y-auto' : 'max-h-[85vh] sm:max-h-[calc(100vh-12rem)] overflow-y-auto'} px-4 sm:px-6 py-4 sm:py-5`}>
           {children}
         </div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-4 sm:px-6 py-3 sm:py-4 dark:border-slate-800">
+          <div className={`flex items-center justify-end gap-2 border-t border-slate-100 px-4 sm:px-6 py-3 sm:py-4 dark:border-slate-800 ${fullScreen ? 'pb-[env(safe-area-inset-bottom)]' : ''}`}>
             {footer}
           </div>
         )}

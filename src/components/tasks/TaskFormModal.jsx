@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Save } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -25,9 +25,11 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
     recurrence: 'none'
   })
   const [errors, setErrors] = useState({})
+  const wasOpenRef = useRef(false)
 
+  // Only reset form when modal transitions from closed → open
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       if (task) {
         setForm({
           title: task.title,
@@ -57,7 +59,8 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
       }
       setErrors({})
     }
-  }, [open, task, defaults])
+    wasOpenRef.current = open
+  }, [open])
 
   const set = (key) => (e) => {
     setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -112,6 +115,16 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
     onClose()
   }
 
+  // Detect mobile for fullScreen modal
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  useEffect(() => {
+    if (!open) return
+    const check = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', check)
+    check()
+    return () => window.removeEventListener('resize', check)
+  }, [open])
+
   return (
     <Modal
       open={open}
@@ -121,6 +134,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
         isEdit ? 'Atualize as informações da tarefa.' : 'Preencha os dados para criar uma nova tarefa.'
       }
       size="md"
+      fullScreen={isMobile}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -139,7 +153,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
           value={form.title}
           onChange={set('title')}
           error={errors.title}
-          autoFocus
         />
         <Textarea
           label="Descrição"

@@ -462,9 +462,10 @@ function reducer(state, action) {
     case 'DUPLICATE_TASK': {
       const source = state.tasks.find((t) => t.id === action.taskId)
       if (!source) return state
+      const newId = uid('t')
       const copy = {
         ...source,
-        id: uid('t'),
+        id: newId,
         title: `${source.title} (cópia)`,
         createdAt: new Date().toISOString(),
         status: 'todo',
@@ -482,10 +483,12 @@ function reducer(state, action) {
           text: `Você duplicou a tarefa "${source.title}" para "${copy.title}"`
         })
       ]
+      // Store the new task ID so consumers can reference it (e.g. for undo)
       return {
         ...state,
         tasks: [copy, ...state.tasks],
-        activities: trimActivities([...acts, ...state.activities])
+        activities: trimActivities([...acts, ...state.activities]),
+        _lastDuplicatedId: newId
       }
     }
     case 'TOGGLE_SUBTASK': {

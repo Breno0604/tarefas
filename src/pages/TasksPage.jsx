@@ -42,6 +42,12 @@ export default function TasksPage() {
   const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const searchRef = useRef(null)
+  const lastDuplicatedIdRef = useRef(null)
+
+  // Keep ref in sync with reducer's _lastDuplicatedId
+  useEffect(() => {
+    if (state._lastDuplicatedId) lastDuplicatedIdRef.current = state._lastDuplicatedId
+  }, [state._lastDuplicatedId])
 
   const drawerTaskId = searchParams.get('task')
   const viewParam = searchParams.get('view')
@@ -170,7 +176,15 @@ export default function TasksPage() {
   }
   const duplicateTask = (task) => {
     dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-    toast.success('Tarefa duplicada')
+    toast.push(`"${task.title}" duplicada`, 'success', {
+      action: {
+        label: 'Desfazer',
+        onClick: () => {
+          const idToDelete = lastDuplicatedIdRef.current
+          if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
+        }
+      }
+    })
   }
   const requestCancel = (task) => {
     setCancelTarget(task)

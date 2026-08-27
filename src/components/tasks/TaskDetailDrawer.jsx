@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Pencil,
   Trash2,
@@ -59,12 +59,18 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const lastDuplicatedIdRef = useRef(null)
 
   useEffect(() => {
     setNoteText('')
     setCancelReason('')
     setCancelOpen(false)
   }, [taskId, open])
+
+  // Keep ref in sync with reducer's _lastDuplicatedId
+  useEffect(() => {
+    if (state._lastDuplicatedId) lastDuplicatedIdRef.current = state._lastDuplicatedId
+  }, [state._lastDuplicatedId])
 
   if (!open || !task) return null
 
@@ -118,7 +124,15 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                 icon={Copy}
                 onClick={() => {
                   dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                  toast.success('Tarefa duplicada')
+                  const newId = lastDuplicatedIdRef.current
+                  toast.push(`"${task.title}" duplicada`, 'success', {
+                    action: {
+                      label: 'Desfazer',
+                      onClick: () => {
+                        if (newId) dispatch({ type: 'DELETE_TASK', taskId: newId })
+                      }
+                    }
+                  })
                 }}
               >
                 Duplicar
@@ -148,7 +162,15 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                 icon={Copy}
                 onClick={() => {
                   dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                  toast.success('Tarefa duplicada')
+                  const newId = lastDuplicatedIdRef.current
+                  toast.push(`"${task.title}" duplicada`, 'success', {
+                    action: {
+                      label: 'Desfazer',
+                      onClick: () => {
+                        if (newId) dispatch({ type: 'DELETE_TASK', taskId: newId })
+                      }
+                    }
+                  })
                 }}
               >
                 Duplicar
