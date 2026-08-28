@@ -70,6 +70,15 @@
   .dark .text-secondary {
     color: #94a3b8;
   }
+  /* Context menu: hidden scrollbar but scrollable */
+  .ctx-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: pan-y;
+  }
+  .ctx-scroll::-webkit-scrollbar {
+    display: none;
+  }
   /* Tertiary/muted text */
   .text-muted {
     @apply text-slate-400;

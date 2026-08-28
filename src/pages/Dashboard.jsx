@@ -146,13 +146,13 @@ function Dashboard() {
                 <li key={t.id}>
                   <button
                     onClick={() => navigate(`/tarefas?task=${t.id}`)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800"
+                    className="flex w-full items-center gap-3 overflow-hidden rounded-lg border border-slate-100 px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-popover dark:border-slate-800"
                   >
-                    <span className="min-w-0 flex-1">
+                    <span className="min-w-0 flex-1 overflow-hidden">
                       <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                         {t.title}
                       </span>
-                      <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+                      <span className="mt-0.5 flex items-center gap-2 overflow-hidden whitespace-nowrap text-xs text-slate-400 dark:text-slate-500">
                         {project && (
                           <>
                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: project.color }} />
@@ -241,13 +241,13 @@ function Dashboard() {
                     <li key={t.id}>
                       <button
                         onClick={() => navigate(`/tarefas?task=${t.id}`)}
-                        className="flex w-full items-center gap-3 py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        className="flex w-full items-center gap-3 overflow-hidden py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       >
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-0 flex-1 overflow-hidden">
                           <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                             {t.title}
                           </span>
-                          <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+                          <span className="mt-0.5 flex items-center gap-2 overflow-hidden whitespace-nowrap text-xs text-slate-400 dark:text-slate-500">
                             {project && (
                               <>
                                 <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />

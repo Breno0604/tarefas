@@ -175,7 +175,7 @@ export default function Dropdown({
           aria-orientation="vertical"
           onKeyDown={handleMenuKeyDown}
           style={menuStyle}
-          className={`z-40 max-w-[calc(100vw-2rem)] min-w-[160px] sm:min-w-[180px] overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900 ${triggerClassName}`}
+          className={`z-40 max-w-[calc(100vw-2rem)] max-h-[260px] min-w-[160px] sm:min-w-[180px] overflow-y-auto overflow-x-hidden overscroll-contain ctx-scroll rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900 ${triggerClassName}`}
         >
           {items.map((item, i) => {
             if (item.type === 'divider') {
@@ -192,7 +192,7 @@ export default function Dropdown({
                 <div
                   key={i}
                   role="presentation"
-                  className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                  className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
                 >
                   {item.label}
                 </div>
@@ -213,8 +213,7 @@ export default function Dropdown({
                 onMouseEnter={() => {
                   const idx = actionableItems.indexOf(item)
                   if (idx >= 0) setFocusIndex(idx)
-                }}
-                className={`tap-feedback flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-sm font-medium transition outline-none ${
+                }}                  className={`tap-feedback flex w-full items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium leading-tight transition outline-none ${
                   item.disabled
                     ? 'cursor-not-allowed opacity-45'
                     : item.danger

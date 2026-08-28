@@ -35,13 +35,15 @@ export function ContextMenuProvider({ children }) {
     const vw = window.innerWidth
     const vh = window.innerHeight
     let { x, y } = menu
-    // Adjust horizontal overflow
-    if (x + rect.width > vw - 8) {
-      x = Math.max(8, vw - rect.width - 8)
+    // Clamp horizontal to viewport
+    const menuW = Math.min(rect.width, vw - 16)
+    if (x + menuW > vw - 8) {
+      x = Math.max(8, vw - menuW - 8)
     }
-    // Adjust vertical overflow
-    if (y + rect.height > vh - 8) {
-      y = Math.max(8, vh - rect.height - 8)
+    // Clamp vertical to viewport — if menu is taller than viewport, pin to top
+    const menuH = Math.min(rect.height, vh - 16)
+    if (y + menuH > vh - 8) {
+      y = Math.max(8, vh - menuH - 8)
     }
     if (x !== menu.x || y !== menu.y) {
       setMenu((prev) => ({ ...prev, x, y }))
@@ -60,12 +62,17 @@ export function ContextMenuProvider({ children }) {
     const close = () => hide()
     document.addEventListener('click', close)
     document.addEventListener('contextmenu', close)
-    document.addEventListener('scroll', close, true)
+    const onScroll = (e) => {
+      // Don't close if scrolling inside the menu itself
+      if (menuRef.current && menuRef.current.contains(e.target)) return
+      close()
+    }
+    document.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', close)
     return () => {
       document.removeEventListener('click', close)
       document.removeEventListener('contextmenu', close)
-      document.removeEventListener('scroll', close, true)
+      document.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', close)
     }
   }, [menu, hide])
@@ -136,7 +143,7 @@ export function ContextMenuProvider({ children }) {
             role="menu"
             aria-orientation="vertical"
             onKeyDown={handleKeyDown}
-            className="fixed z-[80] min-w-[200px] rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900"
+            className="fixed z-[80] min-w-[200px] max-w-[calc(100vw-2rem)] max-h-[260px] overflow-y-auto overflow-x-hidden overscroll-contain ctx-scroll rounded-xl border border-slate-200 bg-white p-1 shadow-popover animate-scale-in dark:border-slate-700 dark:bg-slate-900"
             style={{ left: menu.x, top: menu.y }}
             onContextMenu={(e) => e.preventDefault()}
           >
@@ -169,7 +176,7 @@ export function ContextMenuProvider({ children }) {
                     const idx = actionableItems.indexOf(item)
                     if (idx >= 0) setFocusIndex(idx)
                   }}
-                  className={`tap-feedback flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition outline-none ${
+                  className={`tap-feedback flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium leading-tight transition outline-none ${
                     item.disabled
                       ? 'cursor-not-allowed opacity-45'
                       : item.danger
