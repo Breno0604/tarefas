@@ -4,7 +4,7 @@ import { useStore } from '../store/store'
 import ActivityFeed from '../components/ActivityFeed'
 import Dropdown from '../components/ui/Dropdown'
 import EmptyState from '../components/ui/EmptyState'
-import { formatDay } from '../lib/format'
+import { formatDay, localDateKey } from '../lib/format'
 
 const TYPE_LABELS = {
   create: 'Criação',
@@ -36,7 +36,7 @@ function ActivitiesPage() {
   const grouped = useMemo(() => {
     const map = {}
     filtered.forEach((a) => {
-      const key = a.createdAt.slice(0, 10)
+      const key = localDateKey(a.createdAt) || a.createdAt.slice(0, 10)
       if (!map[key]) map[key] = []
       map[key].push(a)
     })

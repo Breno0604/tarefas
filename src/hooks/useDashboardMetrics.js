@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
 import { STATUS, PRIORITY } from '../lib/constants'
-import { isOverdue, startOfDay, endOfDay } from '../lib/format'
+import { isOverdue, startOfDay, endOfDay, localDateKey } from '../lib/format'
 
 /**
  * Centralized dashboard metrics — replaces 8+ inline useMemo calls
@@ -80,9 +80,9 @@ export default function useDashboardMetrics() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now)
       d.setDate(d.getDate() - i)
-      const key = d.toISOString().slice(0, 10)
+      const key = localDateKey(d.toISOString())
       const label = d.toLocaleDateString('pt-BR', { weekday: 'short' })
-      const count = state.activities.filter((a) => a.createdAt.slice(0, 10) === key).length
+      const count = state.activities.filter((a) => localDateKey(a.createdAt) === key).length
       days.push({ name: label, value: count, color: count > 0 ? '#6366f1' : '#e2e8f0' })
     }
     return days

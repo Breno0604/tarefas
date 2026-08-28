@@ -88,6 +88,23 @@ function activityEntry({ type, taskId, text }) {
   }
 }
 
+/**
+ * Normaliza a data de vencimento de um projeto:
+ * - datas "YYYY-MM-DD" (vindas de um input date) são tratadas como hora local
+ *   para evitar o deslocamento de um dia em fusos negativos (UTC-x);
+ * - valores inválidos resultam em null.
+ */
+function normalizeDueDate(value) {
+  const s = String(value)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number)
+    const dt = new Date(y, m - 1, d, 12, 0, 0, 0)
+    return isNaN(dt.getTime()) ? null : dt.toISOString()
+  }
+  const dt = new Date(s)
+  return isNaN(dt.getTime()) ? null : dt.toISOString()
+}
+
 /** Trim activities to MAX_ACTIVITIES, keeping the most recent ones. */
 function trimActivities(activities) {
   return activities.length > MAX_ACTIVITIES ? activities.slice(0, MAX_ACTIVITIES) : activities
@@ -227,6 +244,10 @@ function reducer(state, action) {
         if (r.type === 'due' && r.title === 'Vencimento próximo' && (diff > 3 * day || diff < 0)) return false
         return true
       })
+      // Trash retention: clear entries deleted more than 30 days ago
+      const trash = (state.trash || []).filter(
+        (e) => !e.deletedAt || Date.now() - new Date(e.deletedAt).getTime() < 30 * day
+      )
       const has = (type, taskId) =>
         reminders.some((r) => r.type === type && r.taskId === taskId)
       state.tasks.forEach((t) => {
@@ -245,19 +266,22 @@ function reducer(state, action) {
           }
         } else if (diff <= 3 * day && state.notifPrefs?.dueDates !== false) {
           if (!has('due', t.id)) {
-            const days = Math.max(1, Math.ceil(diff / day))
+            const days = Math.ceil(diff / day)
+            const body = days <= 1
+              ? `"${t.title}" vence hoje.`
+              : `"${t.title}" vence em ${days} dia(s).`
             reminders.push(
               reminderEntry({
                 type: 'due',
                 title: 'Vencimento próximo',
-                body: `"${t.title}" vence em ${days} dia(s).`,
+                body,
                 taskId: t.id
               })
             )
           }
         }
       })
-      return { ...state, booted: true, reminders }
+      return { ...state, booted: true, reminders, trash }
     }
     case 'SET_THEME': {
       return { ...state, theme: action.theme }
@@ -419,7 +443,7 @@ function reducer(state, action) {
         activities: trimActivities([...acts, ...state.activities]),
         trash: [
           ...state.trash,
-          { task, notes: taskNotes }
+          { task, notes: taskNotes, deletedAt: new Date().toISOString() }
         ]
       }
     }
@@ -565,7 +589,7 @@ function reducer(state, action) {
         name: action.name,
         description: action.description || '',
         color: action.color || '#6366f1',
-        due: action.due ? new Date(action.due).toISOString() : null
+        due: action.due ? normalizeDueDate(action.due) : null
       }
       const acts = [
         activityEntry({
@@ -647,7 +671,8 @@ export function StoreProvider({ children }) {
     if (!state.booted) return
     const t = setTimeout(() => {
       try {
-        localStorage.setItem(PERSIST_KEY, JSON.stringify({ ...state, __v: PERSIST_VERSION }))
+        const { _lastDuplicatedId, ...persisted } = state
+        localStorage.setItem(PERSIST_KEY, JSON.stringify({ ...persisted, __v: PERSIST_VERSION }))
       } catch (e) {
         console.warn('[TaskFlow] Não foi possível salvar no localStorage:', e?.message || e)
         window.dispatchEvent(new CustomEvent('taskflow:storage-error', { detail: { error: e } }))

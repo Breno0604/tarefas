@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/store'
 import { STATUS, PRIORITY, KANBAN_COLUMNS, PRIORITY_ORDER } from '../lib/constants'
@@ -63,7 +63,7 @@ function compareTasks(base, dir, a, b) {
 
 export function useTaskFilters(view) {
   const { state } = useStore()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
   const categoryParam = searchParams.get('category')
   const tagParam = searchParams.get('tag')
@@ -97,13 +97,18 @@ export function useTaskFilters(view) {
   const [selected, setSelected] = useState(new Set())
   const [page, setPage] = useState(savedState.page || 1)
 
+  // Deep-link params that were just applied; the URL cleanup effect must not
+  // remove them in the same commit they were applied (avoids a mount race).
+  const appliedParamsRef = useRef({})
+
   useEffect(() => {
     if (!projectParam) return
     setFilters((f) => {
       if (f.project.includes(projectParam)) return f
-      return { ...f, project: [...f.project, projectParam] }
+      return { ...f, project: [projectParam] }
     })
     setPage(1)
+    appliedParamsRef.current.project = projectParam
   }, [projectParam])
 
   useEffect(() => {
@@ -113,6 +118,7 @@ export function useTaskFilters(view) {
       return { ...f, category: [categoryParam] }
     })
     setPage(1)
+    appliedParamsRef.current.category = categoryParam
   }, [categoryParam])
 
   useEffect(() => {
@@ -124,6 +130,7 @@ export function useTaskFilters(view) {
       return { ...f, tags }
     })
     setPage(1)
+    appliedParamsRef.current.tag = tagParam
   }, [tagParam])
 
   useEffect(() => {
@@ -135,12 +142,14 @@ export function useTaskFilters(view) {
       return { ...f, status: statuses }
     })
     setPage(1)
+    appliedParamsRef.current.status = statusParam
   }, [statusParam])
 
   useEffect(() => {
     if (!favoritesParam) return
     setFavoritesOnly(true)
     setPage(1)
+    appliedParamsRef.current.favorites = favoritesParam
   }, [favoritesParam])
 
   useEffect(() => {
@@ -160,12 +169,51 @@ export function useTaskFilters(view) {
     setSelected(new Set())
   }, [query, filters, view, favoritesOnly])
 
+  /**
+   * Remove deep-link URL params (project/category/tag/status/favorites) that no
+   * longer match the active filters, so stale params don't re-apply on reload.
+   */
+  useEffect(() => {
+    const applied = appliedParamsRef.current
+    const next = new URLSearchParams(searchParams)
+    let changed = false
+    const drop = (name, stillActive) => {
+      if (!next.has(name)) return
+      const justApplied = applied[name]
+      if (justApplied !== undefined && next.get(name) === justApplied) {
+        delete applied[name]
+        return
+      }
+      if (!stillActive()) {
+        next.delete(name)
+        changed = true
+      }
+    }
+    drop('project', () => filters.project.includes(next.get('project')))
+    drop('category', () => filters.category.includes(next.get('category')))
+    drop('tag', () =>
+      (next.get('tag') || '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .every((t) => (filters.tags || []).includes(t))
+    )
+    drop('status', () =>
+      (next.get('status') || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .every((s) => filters.status.includes(s))
+    )
+    drop('favorites', () => favoritesOnly)
+    if (changed) setSearchParams(next, { replace: true })
+  }, [filters, favoritesOnly, searchParams, setSearchParams])
+
   const toggleFilter = (dim, key) => {
     setFilters((prev) => {
       const f = normalizeFilters(prev)
       const arr = f[dim] || []
-      const next = arr.includes(key) ? arr.filter((k) => k !== key) : [...arr, key]
-      return { ...f, [dim]: next }
+      return { ...f, [dim]: arr.includes(key) ? arr.filter((k) => k !== key) : [...arr, key] }
     })
   }
 
@@ -212,6 +260,11 @@ export function useTaskFilters(view) {
     [filtered, page]
   )
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+
+  // Keep page within bounds when results shrink (e.g. after deletions)
+  useEffect(() => {
+    setPage((p) => (pageCount >= 1 ? Math.min(p, pageCount) : p))
+  }, [pageCount])
 
   const activeFilters = [
     ...(favoritesOnly ? [{ dim: 'fav', key: 'fav', label: 'Favoritas' }] : []),

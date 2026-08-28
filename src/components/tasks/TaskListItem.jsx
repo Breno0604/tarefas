@@ -98,7 +98,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
             {noteCount}
           </span>
         )}
-        <DueDateBadge dueDate={task.dueDate} status={task.status} />
+        <DueDateBadge dueDate={task.dueDate} status={task.status} className="sm:hidden" />
 
         <Dropdown
           align="right"

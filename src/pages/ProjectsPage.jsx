@@ -72,7 +72,7 @@ function ProjectsPage() {
   const { state, dispatch } = useStore()
   const toast = useToast()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [form, setForm] = useState({ name: '', description: '', color: COLORS[0], due: '' })
@@ -84,6 +84,13 @@ function ProjectsPage() {
       setSelectedId(projParam)
     }
   }, [projParam, state.projects])
+
+  const closeDrawer = () => {
+    setSelectedId(null)
+    const next = new URLSearchParams(searchParams)
+    next.delete('proj')
+    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
+  }
 
   const stats = useMemo(() => {
     const m = {}
@@ -198,7 +205,7 @@ function ProjectsPage() {
 
       <Drawer
         open={Boolean(selectedProject)}
-        onClose={() => setSelectedId(null)}
+        onClose={closeDrawer}
         title={selectedProject?.name}
         subtitle={selectedProject?.description}
         width="max-w-xl"
@@ -206,7 +213,7 @@ function ProjectsPage() {
           <Button
             variant="secondary"
             onClick={() => {
-              setSelectedId(null)
+              closeDrawer()
               navigate(`/tarefas?project=${selectedProject.id}`)
             }}
           >
@@ -258,7 +265,7 @@ function ProjectsPage() {
                     <li key={t.id}>
                       <button
                         onClick={() => {
-                          setSelectedId(null)
+                          closeDrawer()
                           navigate(`/tarefas?task=${t.id}`)
                         }}
                         className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-800/50"

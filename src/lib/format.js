@@ -28,9 +28,32 @@ const MONTHS_FULL = [
   'Dezembro'
 ]
 
+/**
+ * Parses an ISO date/datetime into a local Date.
+ * Date-only strings (YYYY-MM-DD) are treated as local time instead of UTC
+ * to avoid off-by-one day shifts in negative UTC offsets.
+ */
+export function parseDate(iso) {
+  if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, d] = iso.split('-').map(Number)
+    return new Date(y, m - 1, d, 12, 0, 0, 0)
+  }
+  return new Date(iso)
+}
+
+/** Local calendar date key (YYYY-MM-DD) for a given ISO datetime. */
+export function localDateKey(iso) {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
 export function formatDate(iso, opts = {}) {
   if (!iso) return '—'
-  const d = new Date(iso)
+  const d = parseDate(iso)
+  if (isNaN(d.getTime())) return '—'
   const day = String(d.getDate()).padStart(2, '0')
   const month = MONTHS[d.getMonth()]
   const year = d.getFullYear()
@@ -42,13 +65,14 @@ export function formatDate(iso, opts = {}) {
 
 export function formatDay(iso) {
   if (!iso) return '—'
-  const d = new Date(iso)
+  const d = parseDate(iso)
+  if (isNaN(d.getTime())) return '—'
   return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]}`
 }
 
 export function isOverdue(iso, status) {
   if (!iso || status === 'done' || status === 'cancelled') return false
-  return new Date(iso).getTime() < Date.now()
+  return parseDate(iso).getTime() < Date.now()
 }
 
 export function formatRelative(iso) {

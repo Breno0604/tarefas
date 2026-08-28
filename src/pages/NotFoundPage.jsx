@@ -25,7 +25,7 @@ export default function NotFoundPage() {
           <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>
             Voltar
           </Button>
-          <Button icon={Home} onClick={() => navigate('/')}>
+          <Button icon={Home} onClick={() => navigate('/dashboard')}>
             Ir para o Dashboard
           </Button>
         </div>

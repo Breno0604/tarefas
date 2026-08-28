@@ -169,7 +169,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
             value={form.status}
             onChange={set('status')}
             options={Object.values(STATUS)
-              .filter((s) => s.key !== 'cancelled')
+              .filter((s) => s.key !== 'cancelled' || (isEdit && task?.status === 'cancelled'))
               .map((s) => ({ value: s.key, label: s.label }))}
           />
           <Select

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload } from 'lucide-react'
 import { useStore, useMe } from '../store/store'
@@ -26,6 +26,10 @@ export default function SettingsPage() {
   const tabParam = searchParams.get('tab')
   const [tab, setTab] = useState(tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'profile')
   const [confirmReset, setConfirmReset] = useState(false)
+
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam)) setTab(tabParam)
+  }, [tabParam])
 
   const [profile, setProfile] = useState({
     name: me?.name || '',
@@ -92,24 +96,14 @@ export default function SettingsPage() {
         if (!data || typeof data !== 'object') throw new Error('Formato inválido')
         if (!Array.isArray(data.tasks)) throw new Error('Arquivo não contém tarefas')
         if (!Array.isArray(data.projects)) throw new Error('Arquivo não contém projetos')
-        if (!data.me) throw new Error('Arquivo não contém dados de perfil')
-        // Dispatch RESET with the imported data
-        dispatch({ type: 'RESET' })
-        // Then import each field
-        dispatch({ type: 'UPDATE_ME', patch: data.me })
-        if (data.theme) dispatch({ type: 'SET_THEME', theme: data.theme })
-        // Import tasks, projects, categories, notes, activities
-        // We need to dispatch each task individually since there's no bulk import action
-        data.tasks?.forEach((t) => {
-          dispatch({ type: 'CREATE_TASK', task: { ...t, id: undefined } })
-        })
-        data.projects?.forEach((p) => {
-          dispatch({ type: 'CREATE_PROJECT', name: p.name, description: p.description || '', color: p.color || '#6366f1', due: p.due || null })
-        })
-        data.categories?.forEach((c) => {
-          dispatch({ type: 'CREATE_CATEGORY', name: c.name, color: c.color || '#94a3b8' })
-        })
-        toast.success(`Backup importado: ${data.tasks?.length || 0} tarefas, ${data.projects?.length || 0} projetos`)
+        if (!data.me || typeof data.me !== 'object') throw new Error('Arquivo não contém dados de perfil')
+        if (data.notes !== undefined && (typeof data.notes !== 'object' || Array.isArray(data.notes))) {
+          throw new Error('Notas inválidas no arquivo')
+        }
+        // Replace the whole state at once, preserving ids, notes, progress,
+        // activities, reminders, trash and references between entities.
+        dispatch({ type: 'IMPORT_DATA', data })
+        toast.success(`Backup importado: ${data.tasks.length} tarefas, ${data.projects.length} projetos`)
       } catch (err) {
         toast.error(`Erro ao importar: ${err.message || 'Formato inválido'}`)
       }

@@ -82,7 +82,7 @@ export default function TasksPage() {
     setView(viewParam)
   }, [viewParam])
 
-  // Sync view back to URL
+  // Sync view back to URL (guard avoids infinite loop: only sets when different)
   useEffect(() => {
     const next = new URLSearchParams(searchParams)
     if (view && view !== 'list') {
@@ -90,11 +90,10 @@ export default function TasksPage() {
     } else {
       next.delete('view')
     }
-    // Preserve task param if present
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true })
     }
-  }, [view])  // intentionally omit searchParams/setSearchParams to avoid loop
+  }, [view, searchParams, setSearchParams])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -125,7 +124,11 @@ export default function TasksPage() {
     }
   }, [])
 
-  const openTask = (id) => setSearchParams({ task: id })
+  const openTask = (id) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('task', id)
+    setSearchParams(next)
+  }
   const closeTask = () => {
     const next = new URLSearchParams(searchParams)
     next.delete('task')
@@ -510,8 +513,6 @@ export default function TasksPage() {
       <TasksDialogs
         cancelTarget={cancelTarget}
         onCloseCancel={() => setCancelTarget(null)}
-        cancelReason=""
-        setCancelReason={() => {}}
         onConfirmCancel={confirmCancel}
         saveFilterOpen={saveFilterOpen}
         onCloseSave={() => setSaveFilterOpen(false)}

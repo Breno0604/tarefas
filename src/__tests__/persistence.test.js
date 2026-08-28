@@ -295,6 +295,60 @@ describe('persistence – import cycle (simulating JSON import)', () => {
   let state
   beforeEach(() => { state = baseState() })
 
+  it('IMPORT_DATA replaces state preserving ids, notes and references', () => {
+    const imported = {
+      me: { id: 'me', name: 'Importado', bio: 'Bio' },
+      projects: [{ id: 'px', name: 'Proj X', color: '#0ea5e9', due: null }],
+      categories: [{ id: 'cx', name: 'Cat X', color: '#ef4444' }],
+      tasks: [
+        {
+          id: 'tx',
+          title: 'Tarefa importada',
+          description: 'd',
+          status: 'in_progress',
+          priority: 'high',
+          projectId: 'px',
+          categoryId: 'cx',
+          dueDate: '2026-09-01T12:00:00.000Z',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          estimatedHours: 5,
+          progress: 40,
+          tags: ['x'],
+          subtasks: [],
+          favorite: true,
+          recurrence: null,
+          cancelReason: null
+        }
+      ],
+      notes: { tx: [{ id: 'n1', text: 'nota', createdAt: '2026-01-01' }] },
+      activities: [{ id: 'a1', type: 'create', taskId: 'tx', text: 'x', createdAt: '2026-01-01' }],
+      reminders: [],
+      trash: [],
+      theme: 'dark',
+      prefs: { soundAlerts: true, compactMode: false },
+      notifPrefs: { dueDates: false },
+      appearance: { firstDay: 'monday' }
+    }
+    const next = reducer(state, { type: 'IMPORT_DATA', data: imported })
+    expect(next.tasks).toHaveLength(1)
+    expect(next.tasks[0].id).toBe('tx')
+    expect(next.tasks[0].projectId).toBe('px')
+    expect(next.tasks[0].progress).toBe(40)
+    expect(next.projects[0].id).toBe('px')
+    expect(next.notes.tx).toHaveLength(1)
+    expect(next.activities).toHaveLength(1)
+    expect(next.theme).toBe('dark')
+    expect(next.prefs.soundAlerts).toBe(true)
+    expect(next.appearance.firstDay).toBe('monday')
+  })
+
+  it('IMPORT_DATA keeps current values for missing optional fields', () => {
+    const imported = { me: { id: 'me', name: 'X' }, tasks: [], projects: [], categories: [] }
+    const next = reducer(state, { type: 'IMPORT_DATA', data: imported })
+    expect(next.theme).toBe('light')
+    expect(next.notes).toEqual(state.notes)
+  })
+
   it('RESET then CREATE_TASK replicates imported data', () => {
     // Simulate what the import function does
     let next = reducer(state, { type: 'RESET' })

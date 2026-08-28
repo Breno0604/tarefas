@@ -72,10 +72,10 @@ export function Checkbox({ label, className = '', ...props }) {
 
 export function Switch({ checked, onChange, label, description, disabled = false }) {
   return (
-    <label
+    <div
       className={`flex items-center justify-between gap-4 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
-      <span>
+      <span onClick={() => !disabled && onChange(!checked)}>
         {label && (
           <span className="block text-sm font-medium text-slate-800 dark:text-slate-200">
             {label}
@@ -101,7 +101,7 @@ export function Switch({ checked, onChange, label, description, disabled = false
           }`}
         />
       </button>
-    </label>
+    </div>
   )
 }
 

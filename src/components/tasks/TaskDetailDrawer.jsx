@@ -124,12 +124,12 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                 icon={Copy}
                 onClick={() => {
                   dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                  const newId = lastDuplicatedIdRef.current
                   toast.push(`"${task.title}" duplicada`, 'success', {
                     action: {
                       label: 'Desfazer',
                       onClick: () => {
-                        if (newId) dispatch({ type: 'DELETE_TASK', taskId: newId })
+                        const idToDelete = lastDuplicatedIdRef.current
+                        if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
                       }
                     }
                   })
@@ -162,12 +162,12 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }) {
                 icon={Copy}
                 onClick={() => {
                   dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                  const newId = lastDuplicatedIdRef.current
                   toast.push(`"${task.title}" duplicada`, 'success', {
                     action: {
                       label: 'Desfazer',
                       onClick: () => {
-                        if (newId) dispatch({ type: 'DELETE_TASK', taskId: newId })
+                        const idToDelete = lastDuplicatedIdRef.current
+                        if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
                       }
                     }
                   })

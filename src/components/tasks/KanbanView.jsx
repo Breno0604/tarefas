@@ -6,7 +6,8 @@ import {
   useSensor,
   useSensors,
   closestCorners,
-  KeyboardSensor
+  KeyboardSensor,
+  useDroppable
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -47,8 +48,13 @@ function SortableTaskCard({ task, ...props }) {
 }
 
 function KanbanColumn({ column, tasks, isOver, cancelled, children }) {
+  const { setNodeRef, isOver: columnOver } = useDroppable({
+    id: column.key,
+    data: { type: 'column', key: column.key }
+  })
+  const highlight = isOver || columnOver
   return (
-    <div className={`flex w-64 shrink-0 flex-col sm:w-72${cancelled ? ' opacity-50' : ''}`}>
+    <div ref={setNodeRef} className={`flex w-64 shrink-0 flex-col sm:w-72${cancelled ? ' opacity-50' : ''}`}>
       <div className="mb-3 flex items-center gap-2 px-1">
         {column.colorStyle ? (
           <span className="h-2.5 w-2.5 rounded-full" style={column.colorStyle} />
@@ -65,13 +71,13 @@ function KanbanColumn({ column, tasks, isOver, cancelled, children }) {
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div
           className={`flex-1 space-y-2.5 rounded-xl p-2 transition-colors ${
-            isOver
+            highlight
               ? 'bg-brand-50 ring-2 ring-brand-200 dark:bg-brand-500/10 dark:ring-brand-500/40'
               : 'bg-slate-100/70 dark:bg-slate-800/40'
           }`}
         >
           {children}
-          {tasks.length === 0 && !isOver && column.key !== 'cancelled' && (
+          {tasks.length === 0 && !highlight && column.key !== 'cancelled' && (
             <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-xs font-medium text-slate-400 dark:border-slate-700 dark:text-slate-500">
               Solte tarefas aqui
             </div>

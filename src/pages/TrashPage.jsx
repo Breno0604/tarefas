@@ -120,7 +120,7 @@ function TrashPage() {
         <div className="card-base overflow-hidden">
           <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/40">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              As tarefas são restauradas para "A fazer" automaticamente
+              As tarefas restauradas voltam com o status anterior
             </p>
           </div>
           <ul>
@@ -156,7 +156,7 @@ function TrashPage() {
         onClose={() => setConfirmClear(false)}
         onConfirm={clearTrash}
         title="Limpar lixeira"
-        message="As tarefas serão restauradas para 'A fazer'. Deseja continuar?"
+        message="Todas as tarefas na lixeira serão excluídas permanentemente. Essa ação não pode ser desfeita."
         confirmLabel="Esvaziar lixeira"
         confirmVariant="primary"
       />
