@@ -12,24 +12,30 @@ import useDashboardMetrics from '../hooks/useDashboardMetrics'
 
 function StatCard({ icon: Icon, iconClass, label, value, sub, trend, trendUp, onClick }) {
   return (
-    <button onClick={onClick} className="card-base flex w-full items-start gap-4 p-5 text-left transition hover:-translate-y-0.5 hover:shadow-popover">
-      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconClass}`}>
-        <Icon size={20} />
+    <button onClick={onClick} className="card-base flex w-full items-start gap-2.5 p-3 sm:p-4 text-left transition hover:-translate-y-0.5 hover:shadow-popover min-w-0 overflow-hidden">
+      <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${iconClass}`}>
+        <Icon size={18} className="sm:hidden" />
+        <Icon size={20} className="hidden sm:block" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 sm:text-[11px]">
           {label}
         </p>
-        <p className="mt-0.5 text-2xl font-extrabold text-slate-900 dark:text-white">{value}</p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{sub}</p>
+        <p className="mt-0.5 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">{value}</p>
+        <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400 sm:mt-1 sm:text-xs">{sub}</p>
         {trend && (
-          <p className={`mt-1 text-xs font-semibold ${trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+          <p className={`mt-0.5 text-[11px] font-semibold sm:mt-1 sm:text-xs ${trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
             {trend}
           </p>
         )}
       </div>
     </button>
   )
+}
+
+function navigateWithClearFilters(navigate, path) {
+  sessionStorage.setItem('taskflow:clear-filters', '1')
+  navigate(path)
 }
 
 function Dashboard() {
@@ -53,14 +59,14 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={ListTodo}
           iconClass="bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
           label="Tarefas ativas"
           value={metrics.activeCount}
           sub={`de ${metrics.total} no total`}
-          onClick={() => navigate('/tarefas')}
+          onClick={() => navigateWithClearFilters(navigate, '/tarefas')}
         />
         <StatCard
           icon={CheckCircle2}
@@ -84,7 +90,7 @@ function Dashboard() {
           label="Vencendo hoje"
           value={metrics.dueTodayCount}
           sub="Agenda do dia"
-          onClick={() => navigate('/tarefas')}
+          onClick={() => navigateWithClearFilters(navigate, '/tarefas')}
         />
       </div>
 
@@ -116,7 +122,7 @@ function Dashboard() {
               <span className={`h-1.5 w-1.5 rounded-full ${today.overdue > 0 ? 'bg-red-500' : 'bg-slate-400'}`} />
               {today.overdue} atrasadas
             </span>
-            <Button variant="secondary" size="sm" icon={ArrowRight} onClick={() => navigate('/tarefas')}>
+            <Button variant="secondary" size="sm" icon={ArrowRight} onClick={() => navigateWithClearFilters(navigate, '/tarefas?status=todo,in_progress')}>
               Ver tarefas
             </Button>
           </div>
@@ -216,7 +222,7 @@ function Dashboard() {
           <div className="card-base p-5">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Em aberto</h3>
-              <Button variant="ghost" size="sm" icon={ArrowRight} onClick={() => navigate('/tarefas')}>
+              <Button variant="ghost" size="sm" icon={ArrowRight} onClick={() => navigateWithClearFilters(navigate, '/tarefas?status=todo,in_progress')}>
                 Ver todas
               </Button>
             </div>
@@ -237,25 +243,27 @@ function Dashboard() {
                         onClick={() => navigate(`/tarefas?task=${t.id}`)}
                         className="flex w-full items-center gap-3 py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       >
-                        <span className="flex-1">
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                             {t.title}
                           </span>
                           <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                             {project && (
                               <>
-                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: project.color }} />
-                                {project.name}
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
+                                <span className="truncate">{project.name}</span>
                               </>
                             )}
                             {t.dueDate && (
-                              <span className={isOverdue(t.dueDate, t.status) ? 'font-semibold text-red-500' : ''}>
+                              <span className={`shrink-0 ${isOverdue(t.dueDate, t.status) ? 'font-semibold text-red-500' : ''}`}>
                                 {isOverdue(t.dueDate, t.status) ? `Atrasada · ${formatDay(t.dueDate)}` : formatDay(t.dueDate)}
                               </span>
                             )}
                           </span>
                         </span>
-                        <StatusBadge status={t.status} size="sm" />
+                        <span className="shrink-0">
+                          <StatusBadge status={t.status} size="sm" />
+                        </span>
                       </button>
                     </li>
                   )
@@ -270,7 +278,7 @@ function Dashboard() {
                 <Star size={15} className="text-amber-400" fill="currentColor" />
                 Favoritas
               </h3>
-              <Button variant="ghost" size="sm" icon={ArrowRight} onClick={() => navigate('/tarefas')}>
+              <Button variant="ghost" size="sm" icon={ArrowRight} onClick={() => navigateWithClearFilters(navigate, '/tarefas?favorites=1')}>
                 Ver todas
               </Button>
             </div>
@@ -301,14 +309,16 @@ function Dashboard() {
                           <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                             {project && (
                               <>
-                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: project.color }} />
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
                                 <span className="truncate">{project.name}</span>
                               </>
                             )}
-                            {t.dueDate && formatDay(t.dueDate)}
+                            {t.dueDate && <span className="shrink-0">{formatDay(t.dueDate)}</span>}
                           </span>
                         </span>
-                        <StatusBadge status={t.status} size="sm" />
+                        <span className="shrink-0">
+                          <StatusBadge status={t.status} size="sm" />
+                        </span>
                       </button>
                     </li>
                   )
@@ -349,7 +359,7 @@ function Dashboard() {
               </ul>
             )}
             <button
-              onClick={() => navigate('/tarefas?view=calendar')}
+              onClick={() => navigateWithClearFilters(navigate, '/tarefas?view=calendar')}
               className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-200 py-2 text-xs font-semibold text-slate-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:hover:border-brand-500/50 dark:hover:text-brand-300"
             >
               <Plus size={13} /> Ver calendário de prazos

@@ -67,8 +67,16 @@ export function useTaskFilters(view) {
   const projectParam = searchParams.get('project')
   const categoryParam = searchParams.get('category')
   const tagParam = searchParams.get('tag')
+  const statusParam = searchParams.get('status')
+  const favoritesParam = searchParams.get('favorites')
 
   const [savedState] = useState(() => {
+    // If a external navigation signals to clear filters, skip saved state
+    if (sessionStorage.getItem('taskflow:clear-filters')) {
+      sessionStorage.removeItem('taskflow:clear-filters')
+      localStorage.removeItem(TASK_FILTERS_KEY)
+      return {}
+    }
     try {
       return JSON.parse(localStorage.getItem(TASK_FILTERS_KEY) || '{}')
     } catch {
@@ -117,6 +125,23 @@ export function useTaskFilters(view) {
     })
     setPage(1)
   }, [tagParam])
+
+  useEffect(() => {
+    if (!statusParam) return
+    const statuses = statusParam.split(',').map((s) => s.trim()).filter(Boolean)
+    if (statuses.length === 0) return
+    setFilters((f) => {
+      if (statuses.every((s) => f.status.includes(s))) return f
+      return { ...f, status: statuses }
+    })
+    setPage(1)
+  }, [statusParam])
+
+  useEffect(() => {
+    if (!favoritesParam) return
+    setFavoritesOnly(true)
+    setPage(1)
+  }, [favoritesParam])
 
   useEffect(() => {
     localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(savedFilters))
