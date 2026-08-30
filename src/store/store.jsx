@@ -3,11 +3,12 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useReducer
+  useReducer,
+  useRef
 } from 'react'
 import { MOCK_STATE } from '../data/mock'
 import { STATUS, PRIORITY, RECURRENCE, nextRecurrenceDate } from '../lib/constants'
-import { formatDate } from '../lib/format'
+import { formatDate, localDateKey, todayKey, isPastDateKey } from '../lib/format'
 
 const StoreContext = createContext(null)
 
@@ -89,20 +90,23 @@ function activityEntry({ type, taskId, text }) {
 }
 
 /**
- * Normaliza a data de vencimento de um projeto:
- * - datas "YYYY-MM-DD" (vindas de um input date) são tratadas como hora local
- *   para evitar o deslocamento de um dia em fusos negativos (UTC-x);
- * - valores inválidos resultam em null.
+ * Normaliza a data de vencimento para 'YYYY-MM-DD' (local date key).
+ * Evita o deslocamento de um dia em fusos negativos (UTC-x).
+ * Valores inválidos resultam em null.
  */
 function normalizeDueDate(value) {
+  if (!value) return null
   const s = String(value)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split('-').map(Number)
-    const dt = new Date(y, m - 1, d, 12, 0, 0, 0)
-    return isNaN(dt.getTime()) ? null : dt.toISOString()
-  }
+  // Already a date key — return as-is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  // Try parsing ISO datetime or other formats
   const dt = new Date(s)
-  return isNaN(dt.getTime()) ? null : dt.toISOString()
+  if (isNaN(dt.getTime())) return null
+  // Store as local date key to avoid timezone shifts
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const d = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 /** Trim activities to MAX_ACTIVITIES, keeping the most recent ones. */
@@ -196,10 +200,21 @@ export function validateTaskPayload(task) {
 
 /**
  * Cria a próxima ocorrência de uma tarefa recorrente recém-concluída.
+ * A data base é sempre a data de conclusão (hoje), não a data original.
+ * Se a próxima ocorrência ficar no passado (tarefa concluída com atraso),
+ * ela é gerada a partir de hoje para nascer no futuro.
  */
 function spawnRecurrence(state, task) {
   if (!RECURRENCE[task.recurrence] || task.recurrence === 'none') return null
-  const nextDue = nextRecurrenceDate(task.dueDate, task.recurrence)
+  // Use the task's due date as the base for the next occurrence
+  const taskDateKey = localDateKey(task.dueDate) || todayKey()
+  let nextDue = nextRecurrenceDate(taskDateKey, task.recurrence)
+  if (!nextDue) return null
+  // If the next occurrence would be in the past (overdue task), base from today instead
+  if (isPastDateKey(nextDue)) {
+    nextDue = nextRecurrenceDate(todayKey(), task.recurrence)
+  }
+  if (!nextDue || isPastDateKey(nextDue)) return null
   return {
     id: uid('t'),
     title: task.title,
@@ -224,64 +239,247 @@ function spawnRecurrence(state, task) {
   }
 }
 
+/**
+ * Domain function: mark a task as complete.
+ * All completion flows (button, kanban, batch, keyboard, context menu)
+ * must route through this to ensure consistent behavior:
+ * - status → done
+ * - progress → 100
+ * - spawn next recurrence if applicable
+ * @returns {{ tasks, activities, spawned }}
+ */
+function completeTask(state, taskId) {
+  const idx = state.tasks.findIndex((t) => t.id === taskId)
+  if (idx === -1) return { tasks: state.tasks, activities: state.activities, spawned: null }
+  const task = state.tasks[idx]
+  const tasks = state.tasks.slice()
+  tasks[idx] = { ...task, status: 'done', progress: 100 }
+  const spawned = spawnRecurrence(state, task)
+  const acts = [
+    activityEntry({
+      type: 'status',
+      taskId: task.id,
+      text: `Você concluiu "${task.title}"`
+    })
+  ]
+  if (spawned) {
+    acts.unshift(
+      activityEntry({
+        type: 'create',
+        taskId: spawned.id,
+        text: `Próxima ocorrência de "${task.title}" criada para ${formatDate(spawned.dueDate)}`
+      })
+    )
+  }
+  return {
+    tasks: spawned ? [spawned, ...tasks] : tasks,
+    activities: trimActivities([...acts, ...state.activities]),
+    spawned
+  }
+}
+
+/**
+ * Domain function: reopen a task that was done.
+ * @returns {{ tasks, activities }}
+ */
+function reopenTask(state, taskId) {
+  const idx = state.tasks.findIndex((t) => t.id === taskId)
+  if (idx === -1) return { tasks: state.tasks, activities: state.activities }
+  const task = state.tasks[idx]
+  const tasks = state.tasks.slice()
+  tasks[idx] = { ...task, status: 'in_progress', progress: Math.min(task.progress || 0, 99) }
+  return {
+    tasks,
+    activities: [
+      activityEntry({
+        type: 'status',
+        taskId: task.id,
+        text: `Você reabriu "${task.title}"`
+      }),
+      ...state.activities
+    ]
+  }
+}
+
+/**
+ * Reconcilia lembretes: cria lembretes faltantes e remove obsoletos.
+ * Idempotente — pode ser chamado repetidamente sem duplicar.
+ */
+function reconcileReminders(state) {
+  const now = Date.now()
+  const day = 24 * 60 * 60 * 1000
+  const taskIds = new Set(state.tasks.map((t) => t.id))
+  const today = todayKey()
+
+  // Start with current reminders, removing orphans and stale ones
+  let reminders = state.reminders.filter((r) => {
+    if (!r.taskId || !taskIds.has(r.taskId)) return false
+    const task = state.tasks.find((t) => t.id === r.taskId)
+    if (!task || task.status === 'done' || task.status === 'cancelled') return false
+    if (!task.dueDate) return false
+    const taskDateKey = localDateKey(task.dueDate)
+    // Overdue reminder only valid while actually past due
+    if (r.type === 'due' && r.title === 'Tarefa atrasada' && !(taskDateKey < today)) return false
+    // Upcoming reminder only valid within 3-day window
+    if (r.type === 'due' && r.title === 'Vencimento próximo') {
+      if (taskDateKey < today) return false // now overdue, different reminder
+      const taskDate = new Date(taskDateKey)
+      const todayDate = new Date(today)
+      const diffDays = Math.round((taskDate - todayDate) / day)
+      if (diffDays > 3 || diffDays < 0) return false
+    }
+    return true
+  })
+
+  const has = (type, taskId) =>
+    reminders.some((r) => r.type === type && r.taskId === taskId)
+
+  // Create missing reminders using calendar date comparison
+  state.tasks.forEach((t) => {
+    if (!t.dueDate || t.status === 'done' || t.status === 'cancelled') return
+    const taskDateKey = localDateKey(t.dueDate)
+    if (taskDateKey < today) {
+      // Overdue
+      if (!has('due', t.id)) {
+        reminders.push(
+          reminderEntry({
+            type: 'due',
+            title: 'Tarefa atrasada',
+            body: `"${t.title}" está atrasada.`,
+            taskId: t.id
+          })
+        )
+      }
+    } else if (taskDateKey === today) {
+      // Due today — no reminder needed (already visible on Today page)
+    } else if (state.notifPrefs?.dueDates !== false) {
+      // Due in the future — check if within 3-day window
+      const taskDate = new Date(taskDateKey)
+      const todayDate = new Date(today)
+      const diffDays = Math.round((taskDate - todayDate) / day)
+      if (diffDays <= 3 && !has('due', t.id)) {
+        const body = diffDays === 1
+          ? `"${t.title}" vence amanhã.`
+          : `"${t.title}" vence em ${diffDays} dia(s).`
+        reminders.push(
+          reminderEntry({
+            type: 'due',
+            title: 'Vencimento próximo',
+            body,
+            taskId: t.id
+          })
+        )
+      }
+    }
+  })
+
+  return reminders
+}
+
+/**
+ * Normaliza e valida dados importados.
+ * Preenche defaults, remove campos inválidos, corrige referências quebradas.
+ */
+function normalizeImportedData(d, currentState) {
+  const VALID_STATUS = new Set(['todo', 'in_progress', 'done', 'cancelled'])
+  const VALID_PRIORITY = new Set(['low', 'medium', 'high', 'urgent'])
+  const VALID_RECURRENCE = new Set(['none', 'daily', 'weekly', 'monthly'])
+
+  const tasks = Array.isArray(d.tasks) ? d.tasks.map((t) => {
+    if (!t || typeof t !== 'object') return null
+    const id = t.id || uid('t')
+    return {
+      id,
+      title: String(t.title || 'Sem título').trim(),
+      description: String(t.description || ''),
+      status: VALID_STATUS.has(t.status) ? t.status : 'todo',
+      priority: VALID_PRIORITY.has(t.priority) ? t.priority : 'medium',
+      projectId: t.projectId || null,
+      categoryId: t.categoryId || null,
+      dueDate: t.dueDate || null,
+      createdAt: t.createdAt || new Date().toISOString(),
+      estimatedHours: Number(t.estimatedHours) || 0,
+      progress: Math.max(0, Math.min(100, Number(t.progress) || 0)),
+      tags: Array.isArray(t.tags) ? t.tags.filter((tag) => typeof tag === 'string') : [],
+      subtasks: Array.isArray(t.subtasks) ? t.subtasks.map((s) => ({
+        id: s?.id || uid('s'),
+        title: String(s?.title || ''),
+        done: Boolean(s?.done)
+      })) : [],
+      favorite: Boolean(t.favorite),
+      recurrence: VALID_RECURRENCE.has(t.recurrence) ? t.recurrence : null,
+      cancelReason: t.cancelReason || null
+    }
+  }).filter(Boolean) : currentState.tasks
+
+  const projects = Array.isArray(d.projects) ? d.projects.map((p) => {
+    if (!p || typeof p !== 'object') return null
+    return {
+      id: p.id || uid('p'),
+      name: String(p.name || 'Sem nome').trim(),
+      description: String(p.description || ''),
+      color: typeof p.color === 'string' ? p.color : '#6366f1',
+      due: p.due || null
+    }
+  }).filter(Boolean) : currentState.projects
+
+  const categories = Array.isArray(d.categories) ? d.categories.map((c) => {
+    if (!c || typeof c !== 'object') return null
+    return {
+      id: c.id || uid('c'),
+      name: String(c.name || 'Sem nome').trim(),
+      color: typeof c.color === 'string' ? c.color : '#94a3b8'
+    }
+  }).filter(Boolean) : currentState.categories
+
+  // Fix broken project/category references
+  const projectIds = new Set(projects.map((p) => p.id))
+  const categoryIds = new Set(categories.map((c) => c.id))
+  const cleanedTasks = tasks.map((t) => ({
+    ...t,
+    projectId: t.projectId && projectIds.has(t.projectId) ? t.projectId : null,
+    categoryId: t.categoryId && categoryIds.has(t.categoryId) ? t.categoryId : null
+  }))
+
+  // Normalize notes: only replace if imported data has actual notes content
+  const notes = d.notes && typeof d.notes === 'object' && !Array.isArray(d.notes) && Object.keys(d.notes).length > 0
+    ? d.notes
+    : currentState.notes
+
+  // Normalize activities
+  const activities = Array.isArray(d.activities)
+    ? d.activities.filter((a) => a && typeof a === 'object' && a.id)
+    : currentState.activities
+
+  return {
+    me: d.me && typeof d.me === 'object' ? { ...currentState.me, ...d.me } : currentState.me,
+    tasks: cleanedTasks,
+    projects,
+    categories,
+    notes,
+    activities: trimActivities(activities),
+    trash: Array.isArray(d.trash) ? d.trash : currentState.trash,
+    theme: d.theme || currentState.theme,
+    appearance: d.appearance ? { ...currentState.appearance, ...d.appearance } : currentState.appearance,
+    prefs: d.prefs ? { ...currentState.prefs, ...d.prefs } : currentState.prefs,
+    notifPrefs: d.notifPrefs ? { ...currentState.notifPrefs, ...d.notifPrefs } : currentState.notifPrefs
+  }
+}
+
 function reducer(state, action) {
   switch (action.type) {
     case 'BOOT': {
-      const now = Date.now()
       const day = 24 * 60 * 60 * 1000
-      // Clean orphan reminders: remove reminders whose task no longer exists
-      // or whose condition (overdue / upcoming) no longer applies
-      const taskIds = new Set(state.tasks.map((t) => t.id))
-      const reminders = state.reminders.filter((r) => {
-        if (!r.taskId || !taskIds.has(r.taskId)) return false
-        const task = state.tasks.find((t) => t.id === r.taskId)
-        if (!task || task.status === 'done' || task.status === 'cancelled') return false
-        if (!task.dueDate) return false
-        const diff = new Date(task.dueDate).getTime() - now
-        // Overdue reminders only make sense when actually overdue
-        if (r.type === 'due' && r.title === 'Tarefa atrasada' && diff >= 0) return false
-        // Upcoming reminders only make sense within the 3-day window
-        if (r.type === 'due' && r.title === 'Vencimento próximo' && (diff > 3 * day || diff < 0)) return false
-        return true
-      })
       // Trash retention: clear entries deleted more than 30 days ago
       const trash = (state.trash || []).filter(
         (e) => !e.deletedAt || Date.now() - new Date(e.deletedAt).getTime() < 30 * day
       )
-      const has = (type, taskId) =>
-        reminders.some((r) => r.type === type && r.taskId === taskId)
-      state.tasks.forEach((t) => {
-        if (!t.dueDate || t.status === 'done' || t.status === 'cancelled') return
-        const diff = new Date(t.dueDate).getTime() - now
-        if (diff < 0) {
-          if (!has('due', t.id)) {
-            reminders.push(
-              reminderEntry({
-                type: 'due',
-                title: 'Tarefa atrasada',
-                body: `"${t.title}" está atrasada.`,
-                taskId: t.id
-              })
-            )
-          }
-        } else if (diff <= 3 * day && state.notifPrefs?.dueDates !== false) {
-          if (!has('due', t.id)) {
-            const days = Math.ceil(diff / day)
-            const body = days <= 1
-              ? `"${t.title}" vence hoje.`
-              : `"${t.title}" vence em ${days} dia(s).`
-            reminders.push(
-              reminderEntry({
-                type: 'due',
-                title: 'Vencimento próximo',
-                body,
-                taskId: t.id
-              })
-            )
-          }
-        }
-      })
+      const reminders = reconcileReminders(state)
       return { ...state, booted: true, reminders, trash }
+    }
+    case 'RECONCILE_REMINDERS': {
+      const reminders = reconcileReminders(state)
+      return { ...state, reminders }
     }
     case 'SET_THEME': {
       return { ...state, theme: action.theme }
@@ -312,7 +510,7 @@ function reducer(state, action) {
         priority: action.task.priority || 'medium',
         projectId: action.task.projectId || null,
         categoryId: action.task.categoryId || null,
-        dueDate: action.task.dueDate || null,
+        dueDate: normalizeDueDate(action.task.dueDate),
         createdAt: new Date().toISOString(),
         estimatedHours: Number(action.task.estimatedHours) || 0,
         progress: 0,
@@ -343,6 +541,33 @@ function reducer(state, action) {
       const idx = state.tasks.findIndex((t) => t.id === action.taskId)
       if (idx === -1) return state
       const old = state.tasks[idx]
+      // If patch sets status to 'done', route through completeTask
+      if (action.patch?.status === 'done' && old.status !== 'done') {
+        const result = completeTask(state, old.id)
+        // Apply remaining patch fields (non-status) on top
+        if (action.patch && Object.keys(action.patch).length > 1) {
+          const remainingPatch = { ...action.patch }
+          delete remainingPatch.status
+          delete remainingPatch.progress
+          const taskIdx = result.tasks.findIndex((t) => t.id === old.id)
+          if (taskIdx !== -1) {
+            result.tasks[taskIdx] = { ...result.tasks[taskIdx], ...remainingPatch }
+          }
+        }
+        return { ...state, tasks: result.tasks, activities: result.activities }
+      }
+      // If patch moves from 'done' to another status, route through reopenTask
+      if (old.status === 'done' && action.patch?.status && action.patch.status !== 'done') {
+        const result = reopenTask(state, old.id)
+        const taskIdx = result.tasks.findIndex((t) => t.id === old.id)
+        if (taskIdx !== -1) {
+          const remainingPatch = { ...action.patch }
+          delete remainingPatch.status
+          result.tasks[taskIdx] = { ...result.tasks[taskIdx], ...remainingPatch, status: action.patch.status }
+        }
+        return { ...state, tasks: result.tasks, activities: result.activities }
+      }
+      // Simple update (no status change to/from done)
       const next = { ...old, ...action.patch }
       const tasks = state.tasks.slice()
       tasks[idx] = next
@@ -354,51 +579,62 @@ function reducer(state, action) {
       }
     }
     case 'TOGGLE_TASK_DONE': {
-      const idx = state.tasks.findIndex((t) => t.id === action.taskId)
-      if (idx === -1) return state
-      const task = state.tasks[idx]
-      const isDone = task.status === 'done'
-      const tasks = state.tasks.slice()
-
-      if (isDone) {
-        // Reabrir
-        tasks[idx] = { ...task, status: 'in_progress', progress: Math.min(task.progress, 99) }
-        return {
-          ...state,
-          tasks,
-          activities: [
-            activityEntry({
-              type: 'status',
-              taskId: task.id,
-              text: `Você reabriu "${task.title}"`
-            }),
-            ...state.activities
-          ]
-        }
+      const task = state.tasks.find((t) => t.id === action.taskId)
+      if (!task) return state
+      if (task.status === 'done') {
+        // Reabrir — use domain function
+        const result = reopenTask(state, task.id)
+        return { ...state, tasks: result.tasks, activities: result.activities }
       }
-
-      // Concluir
-      tasks[idx] = { ...task, status: 'done', progress: 100 }
-      const spawned = spawnRecurrence(state, task)
+      // Concluir — use unified domain function
+      const result = completeTask(state, task.id)
+      return { ...state, tasks: result.tasks, activities: result.activities }
+    }
+    case 'COMPLETE_TASK': {
+      const task = state.tasks.find((t) => t.id === action.taskId)
+      if (!task || task.status === 'done' || task.status === 'cancelled') return state
+      const result = completeTask(state, task.id)
+      return { ...state, tasks: result.tasks, activities: result.activities }
+    }
+    case 'REOPEN_TASK': {
+      const task = state.tasks.find((t) => t.id === action.taskId)
+      if (!task || task.status !== 'done') return state
+      const result = reopenTask(state, task.id)
+      return { ...state, tasks: result.tasks, activities: result.activities }
+    }
+    case 'SET_TASK_STATUS': {
+      const task = state.tasks.find((t) => t.id === action.taskId)
+      if (!task) return state
+      const newStatus = action.status
+      if (!STATUS[newStatus]) return state
+      // If moving to done, use the completeTask domain function
+      if (newStatus === 'done') {
+        const result = completeTask(state, task.id)
+        return { ...state, tasks: result.tasks, activities: result.activities }
+      }
+      // If moving away from done to another status, just update
+      if (task.status === 'done' && newStatus !== 'done') {
+        const result = reopenTask(state, task.id)
+        // If newStatus is not in_progress, override after reopen
+        if (newStatus !== 'in_progress') {
+          const idx = result.tasks.findIndex((t) => t.id === task.id)
+          if (idx !== -1) {
+            result.tasks[idx] = { ...result.tasks[idx], status: newStatus }
+          }
+        }
+        return { ...state, tasks: result.tasks, activities: result.activities }
+      }
+      // Simple status change
       const acts = [
         activityEntry({
           type: 'status',
           taskId: task.id,
-          text: `Você concluiu "${task.title}"`
+          text: `Você moveu "${task.title}" para ${STATUS[newStatus].label}`
         })
       ]
-      if (spawned) {
-        acts.unshift(
-          activityEntry({
-            type: 'create',
-            taskId: spawned.id,
-            text: `Próxima ocorrência de "${task.title}" criada${spawned.dueDate ? ` para ${formatDate(spawned.dueDate)}` : ''}`
-          })
-        )
-      }
       return {
         ...state,
-        tasks: spawned ? [spawned, ...tasks] : tasks,
+        tasks: state.tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)),
         activities: trimActivities([...acts, ...state.activities])
       }
     }
@@ -625,20 +861,12 @@ function reducer(state, action) {
     }
     case 'IMPORT_DATA': {
       const d = action.data || {}
+      const normalized = normalizeImportedData(d, state)
       return {
         ...state,
-        me: d.me || state.me,
-        tasks: Array.isArray(d.tasks) ? d.tasks : state.tasks,
-        projects: Array.isArray(d.projects) ? d.projects : state.projects,
-        categories: Array.isArray(d.categories) ? d.categories : state.categories,
-        notes: d.notes && typeof d.notes === 'object' ? d.notes : state.notes,
-        activities: Array.isArray(d.activities) ? trimActivities(d.activities) : state.activities,
-        trash: Array.isArray(d.trash) ? d.trash : state.trash,
-        theme: d.theme || state.theme,
-        appearance: d.appearance ? { ...state.appearance, ...d.appearance } : state.appearance,
-        prefs: d.prefs ? { ...state.prefs, ...d.prefs } : state.prefs,
-        notifPrefs: d.notifPrefs ? { ...state.notifPrefs, ...d.notifPrefs } : state.notifPrefs,
-        reminders: Array.isArray(d.reminders) ? d.reminders : state.reminders
+        ...normalized,
+        // Always reconcile reminders after import
+        reminders: reconcileReminders({ ...state, ...normalized })
       }
     }
     case 'CLEAR_TRASH': {
@@ -656,11 +884,45 @@ export { reducer }
 
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState)
+  const prevDayRef = useRef(null)
 
   useEffect(() => {
     const t = setTimeout(() => dispatch({ type: 'BOOT' }), 50)
     return () => clearTimeout(t)
   }, [])
+
+  // Real-time clock: reconcile reminders and detect day transitions
+  useEffect(() => {
+    if (!state.booted) return
+    prevDayRef.current = todayKey()
+
+    const reconcile = () => {
+      const currentDay = todayKey()
+      if (currentDay !== prevDayRef.current) {
+        prevDayRef.current = currentDay
+      }
+      dispatch({ type: 'RECONCILE_REMINDERS' })
+    }
+
+    // Reconcile every 60 seconds
+    const intervalId = setInterval(reconcile, 60_000)
+
+    // Reconcile when tab becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') reconcile()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    // Reconcile when window regains focus
+    const onFocus = () => reconcile()
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [state.booted])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', state.theme === 'dark')

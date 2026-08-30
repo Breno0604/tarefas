@@ -41,9 +41,55 @@ export function parseDate(iso) {
   return new Date(iso)
 }
 
-/** Local calendar date key (YYYY-MM-DD) for a given ISO datetime. */
+/**
+ * Converts a 'YYYY-MM-DD' date key to a local Date object.
+ * Avoids timezone shifts that occur when using `new Date('2026-08-30')`.
+ */
+export function dateKeyToLocalDate(key) {
+  if (!key || typeof key !== 'string') return new Date(NaN)
+  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return new Date(NaN)
+  const [, y, m, d] = match.map(Number)
+  return new Date(y, m - 1, d)
+}
+
+/**
+ * Converts a Date object (or ISO string) to a local 'YYYY-MM-DD' date key.
+ * Uses local calendar fields, never toISOString(), to avoid timezone shifts.
+ */
+export function localDateToKey(date) {
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Today's date key in local time (YYYY-MM-DD). */
+export function todayKey() {
+  return localDateToKey(new Date())
+}
+
+/** Check if an ISO date string represents today. */
+export function isTodayKey(iso) {
+  if (!iso) return false
+  return localDateKey(iso) === todayKey()
+}
+
+/**
+ * Check if a due date is in the past (before today).
+ * Uses calendar date comparison, not timestamps.
+ */
+export function isPastDateKey(iso) {
+  if (!iso) return false
+  return localDateKey(iso) < todayKey()
+}
+
+/** Local calendar date key (YYYY-MM-DD) for a given ISO datetime or date key. */
 export function localDateKey(iso) {
-  const d = new Date(iso)
+  // Use parseDate to correctly handle date-only strings as local time
+  const d = parseDate(iso)
   if (isNaN(d.getTime())) return ''
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
@@ -72,7 +118,7 @@ export function formatDay(iso) {
 
 export function isOverdue(iso, status) {
   if (!iso || status === 'done' || status === 'cancelled') return false
-  return parseDate(iso).getTime() < Date.now()
+  return isPastDateKey(iso)
 }
 
 export function formatRelative(iso) {

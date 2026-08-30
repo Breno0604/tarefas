@@ -97,7 +97,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }) {
       priority: form.priority,
       projectId: form.projectId || null,
       categoryId: form.categoryId || null,
-      dueDate: form.dueDate ? new Date(form.dueDate + 'T12:00:00').toISOString() : null,
+      dueDate: form.dueDate || null,
       estimatedHours: form.estimatedHours ? Number(form.estimatedHours) : 0,
       tags: form.tagsText
         .split(',')

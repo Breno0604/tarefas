@@ -14,7 +14,7 @@ import {
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
 import { PRIORITY, RECURRENCE } from '../lib/constants'
-import { formatDay, isOverdue, startOfDay, endOfDay } from '../lib/format'
+import { formatDay, isOverdue, startOfDay, endOfDay, localDateToKey, todayKey } from '../lib/format'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 
@@ -115,30 +115,33 @@ function TodayPage() {
 
   const sections = useMemo(() => {
     const open = state.tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress')
-    const start = startOfDay().getTime()
-    const end = endOfDay().getTime()
-    const in7Days = end + 7 * 86400000
+    const today = todayKey()
+
+    // Calculate the key for 7 days from now using local date math
+    const todayDate = new Date(today + 'T12:00:00')
+    const in7DaysDate = new Date(todayDate)
+    in7DaysDate.setDate(in7DaysDate.getDate() + 7)
+    const in7Days = localDateToKey(in7DaysDate)
 
     const overdue = open
       .filter((t) => isOverdue(t.dueDate, t.status))
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-    const today = open
+      .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
+    const dueToday = open
       .filter((t) => {
         if (!t.dueDate) return false
-        const ts = new Date(t.dueDate).getTime()
-        return ts >= start && ts <= end
+        return localDateToKey(t.dueDate) === today
       })
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
     const upcoming = open
       .filter((t) => {
         if (!t.dueDate) return false
-        const ts = new Date(t.dueDate).getTime()
-        return ts > end && ts <= in7Days
+        const key = localDateToKey(t.dueDate)
+        return key > today && key <= in7Days
       })
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
     const undated = open.filter((t) => !t.dueDate)
 
-    return { overdue, today, upcoming, undated }
+    return { overdue, today: dueToday, upcoming, undated }
   }, [state.tasks])
 
   const total = sections.overdue.length + sections.today.length + sections.upcoming.length + sections.undated.length
@@ -166,7 +169,7 @@ function TodayPage() {
       task: {
         title,
         status: 'todo',
-        dueDate: new Date().toISOString(),
+        dueDate: todayKey(),
         priority: 'medium'
       }
     })

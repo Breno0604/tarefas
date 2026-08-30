@@ -73,25 +73,51 @@ export const RECURRENCE_KEYS = ['none', 'daily', 'weekly', 'monthly']
 
 /**
  * Calcula a data da próxima ocorrência de uma tarefa recorrente.
- * @param {string|null} dueDate Data base (ISO). Se nula, usa agora.
+ * Trata datas como calendário (YYYY-MM-DD) para evitar deslocamentos de fuso.
+ * Para recorrência mensal, preserva o dia ou usa o último dia do mês
+ * quando o dia original não existe no próximo mês (ex: 31 jan → 28/29 fev).
+ * @param {string|null} dueDate Data base (ISO date or datetime). Se nula, usa hoje.
  * @param {'daily'|'weekly'|'monthly'} recurrence
- * @returns {string} ISO string
+ * @returns {string} 'YYYY-MM-DD' date key
  */
 export function nextRecurrenceDate(dueDate, recurrence) {
-  const base = dueDate && !isNaN(new Date(dueDate).getTime()) ? new Date(dueDate) : new Date()
-  const next = new Date(base.getTime())
+  let year, month, day
+  if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    const parts = dueDate.split('-').map(Number)
+    year = parts[0]
+    month = parts[1] - 1
+    day = parts[2]
+  } else if (dueDate && !isNaN(new Date(dueDate).getTime())) {
+    const d = new Date(dueDate)
+    year = d.getFullYear()
+    month = d.getMonth()
+    day = d.getDate()
+  } else {
+    const now = new Date()
+    year = now.getFullYear()
+    month = now.getMonth()
+    day = now.getDate()
+  }
+
   switch (recurrence) {
-    case 'daily':
-      next.setDate(next.getDate() + 1)
-      break
-    case 'weekly':
-      next.setDate(next.getDate() + 7)
-      break
-    case 'monthly':
-      next.setMonth(next.getMonth() + 1)
-      break
+    case 'daily': {
+      const next = new Date(year, month, day + 1)
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+    }
+    case 'weekly': {
+      const next = new Date(year, month, day + 7)
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+    }
+    case 'monthly': {
+      const nextMonth = month + 1
+      const nextYear = nextMonth > 11 ? year + 1 : year
+      const normalizedMonth = nextMonth % 12
+      // Use the same day, but clamp to last day of month
+      const maxDay = new Date(nextYear, normalizedMonth + 1, 0).getDate()
+      const clampedDay = Math.min(day, maxDay)
+      return `${nextYear}-${String(normalizedMonth + 1).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+    }
     default:
       return null
   }
-  return next.toISOString()
 }

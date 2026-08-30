@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
 import { STATUS, PRIORITY } from '../lib/constants'
-import { isOverdue, startOfDay, endOfDay, localDateKey } from '../lib/format'
+import { isOverdue, startOfDay, endOfDay, localDateKey, localDateToKey, todayKey } from '../lib/format'
 
 /**
  * Centralized dashboard metrics — replaces 8+ inline useMemo calls
@@ -15,12 +15,10 @@ export default function useDashboardMetrics() {
     const open = tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress')
     const done = tasks.filter((t) => t.status === 'done')
     const overdue = tasks.filter((t) => isOverdue(t.dueDate, t.status))
-    const start = startOfDay().getTime()
-    const end = endOfDay().getTime()
+    const today = todayKey()
     const dueToday = open.filter((t) => {
       if (!t.dueDate) return false
-      const ts = new Date(t.dueDate).getTime()
-      return ts >= start && ts <= end
+      return localDateToKey(t.dueDate) === today
     })
     return {
       total: tasks.length,
@@ -98,20 +96,19 @@ export default function useDashboardMetrics() {
   )
 
   const today = useMemo(() => {
-    const start = startOfDay().getTime()
-    const end = endOfDay().getTime()
-    const dueTodayOpen = tasks.filter((t) => {
+    const todayK = todayKey()
+    const open = tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress')
+    const dueTodayOpen = open.filter((t) => {
       if (!t.dueDate) return false
-      const ts = new Date(t.dueDate).getTime()
-      return ts >= start && ts <= end && (t.status === 'todo' || t.status === 'in_progress')
+      return localDateToKey(t.dueDate) === todayK
     })
-    const overdueOpen = tasks.filter((t) => isOverdue(t.dueDate, t.status))
+    const overdueOpen = open.filter((t) => isOverdue(t.dueDate, t.status))
     const agenda = [
       ...overdueOpen,
       ...dueTodayOpen.filter((t) => !isOverdue(t.dueDate, t.status))
     ]
       .filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
-      .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
+      .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
     return {
       dueToday: dueTodayOpen.length,
       overdue: overdueOpen.length,

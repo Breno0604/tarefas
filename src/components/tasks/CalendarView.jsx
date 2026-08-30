@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { monthName, weekdayShort, startOfDay } from '../../lib/format'
+import { monthName, weekdayShort, startOfDay, localDateToKey, dateKeyToLocalDate } from '../../lib/format'
 import { PRIORITY } from '../../lib/constants'
 import { useStore } from '../../store/store'
 
@@ -39,9 +39,11 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
     const map = {}
     tasks.forEach((t) => {
       if (!t.dueDate) return
-      const d = startOfDay(new Date(t.dueDate)).toDateString()
-      if (!map[d]) map[d] = []
-      map[d].push(t)
+      // Use local date key to avoid timezone shifts
+      const key = localDateToKey(t.dueDate)
+      if (!key) return
+      if (!map[key]) map[key] = []
+      map[key].push(t)
     })
     return map
   }, [tasks])
@@ -116,12 +118,13 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
         <div key={monthOffset} className="grid grid-cols-7 animate-fade-in">
           {grid.map((d, i) => {
             const key = d ? d.toDateString() : `empty-${i}`
-            const dayTasks = d ? tasksByDay[d.toDateString()] || [] : []
+            const dayKey = d ? localDateToKey(d) : null
+            const dayTasks = dayKey ? tasksByDay[dayKey] || [] : []
             const inMonth = isCurrentMonth(d)
             return (
               <div
                 key={key}
-                onClick={() => d && onNewTask({ dueDate: d.toISOString().slice(0, 10) })}
+                onClick={() => d && onNewTask({ dueDate: localDateToKey(d) })}
                 className={`min-h-[104px] border-b border-r border-slate-100 p-1.5 transition dark:border-slate-800/70 ${
                   d && inMonth ? 'hover:bg-slate-50 dark:hover:bg-slate-800/40' : ''
                 } ${d ? 'cursor-pointer' : ''} ${!inMonth ? 'bg-slate-50/60 dark:bg-slate-900/40' : ''}`}
@@ -163,8 +166,9 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
       <div className="divide-y divide-slate-100 sm:hidden dark:divide-slate-800">
         {daysList.map((d) => {
           const dayTasks = tasksByDay[d.toDateString()] || []
+          const dayKey = localDateToKey(d)
           return (
-            <div key={d.toDateString()} className="px-3 sm:px-4 py-2.5 sm:py-3">
+            <div key={dayKey} className="px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
@@ -183,7 +187,7 @@ export default function CalendarView({ tasks, onOpenTask, onNewTask }) {
               <div className="mt-2 space-y-1 pl-9">
                 {dayTasks.length === 0 ? (
                   <button
-                    onClick={() => onNewTask({ dueDate: d.toISOString().slice(0, 10) })}
+                    onClick={() => onNewTask({ dueDate: localDateToKey(d) })}
                     className="w-full rounded-lg px-2 py-1 text-left text-xs text-slate-300 transition hover:bg-slate-50 hover:text-brand-600 dark:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-brand-300"
                   >
                     + Adicionar tarefa
