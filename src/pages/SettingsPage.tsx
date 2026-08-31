@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload, LogOut } from 'lucide-react'
+import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload, LogOut, Link } from 'lucide-react'
 import { useStore, useMe } from '../store/store'
+import { useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { getAnonymousUserId, USE_CONVEX } from '../components/ConvexProvider'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -26,6 +29,9 @@ export default function SettingsPage() {
   const tabParam = searchParams.get('tab')
   const [tab, setTab] = useState(tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'profile')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
+  const [pairingLoading, setPairingLoading] = useState(false)
+  const generatePairingCode = useMutation(api.pairing.generateCode)
 
   useEffect(() => {
     if (tabParam && VALID_TABS.includes(tabParam)) setTab(tabParam)
@@ -337,6 +343,36 @@ export default function SettingsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Substitui todas as suas tarefas e projetos atuais pelos dados de exemplo.</p>
                 </div>
                 <Button variant="danger" icon={RotateCcw} onClick={() => setConfirmReset(true)}>Restaurar</Button>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Parear novo dispositivo" description="Gere um código para sincronizar outro dispositivo com estes mesmos dados.">
+              <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                {pairingCode ? (
+                  <div className="text-center">
+                    <p className="mb-2 text-sm text-slate-600 dark:text-slate-400">Mostre este código no novo dispositivo:</p>
+                    <div className="mb-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50 px-6 py-4 dark:border-brand-600 dark:bg-brand-950/30">
+                      <span className="text-3xl font-mono font-bold tracking-[0.3em] text-brand-600 dark:text-brand-400">{pairingCode}</span>
+                    </div>
+                    <p className="mb-3 text-xs text-slate-400">Código válido por 10 minutos</p>
+                    <Button onClick={() => setPairingCode(null)}>Fechar</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Gerar código</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Use este código em outro dispositivo para parear.</p>
+                    </div>
+                    <Button variant="secondary" icon={Link} loading={pairingLoading} onClick={async () => {
+                      setPairingLoading(true)
+                      try {
+                        const code = await generatePairingCode({ userId: getAnonymousUserId() })
+                        setPairingCode(code)
+                      } catch { /* ignore */ }
+                      setPairingLoading(false)
+                    }}>Gerar código</Button>
+                  </div>
+                )}
               </div>
             </SectionCard>
 
