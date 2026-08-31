@@ -144,4 +144,11 @@ export default defineSchema({
     firstDay: v.union(v.literal("sunday"), v.literal("monday")),
     theme: v.union(v.literal("light"), v.literal("dark")),
   }).index("by_user", ["userId"]),
+
+  pairing_codes: defineTable({
+    code: v.string(),
+    userId: v.string(),
+    createdAt: v.string(),
+    expiresAt: v.string(),
+  }).index("by_code", ["code"]),
 });

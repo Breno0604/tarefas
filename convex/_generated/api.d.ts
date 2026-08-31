@@ -12,6 +12,7 @@ import type * as activities from "../activities.js";
 import type * as categories from "../categories.js";
 import type * as helpers from "../helpers.js";
 import type * as notes from "../notes.js";
+import type * as pairing from "../pairing.js";
 import type * as preferences from "../preferences.js";
 import type * as profiles from "../profiles.js";
 import type * as projects from "../projects.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   categories: typeof categories;
   helpers: typeof helpers;
   notes: typeof notes;
+  pairing: typeof pairing;
   preferences: typeof preferences;
   profiles: typeof profiles;
   projects: typeof projects;
