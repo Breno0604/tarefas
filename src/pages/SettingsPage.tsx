@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload } from 'lucide-react'
+import { User, SlidersHorizontal, Palette, Bell, Database, Save, RotateCcw, Sun, Moon, Keyboard, Download, Upload, LogOut } from 'lucide-react'
 import { useStore, useMe } from '../store/store'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
@@ -337,6 +337,19 @@ export default function SettingsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Substitui todas as suas tarefas e projetos atuais pelos dados de exemplo.</p>
                 </div>
                 <Button variant="danger" icon={RotateCcw} onClick={() => setConfirmReset(true)}>Restaurar</Button>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Sair / Trocar conta" description="Desconecta deste dispositivo e volta para a tela de pareamento.">
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Sair da conta</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Seus dados continuam no Convex. Use o mesmo código para entrar novamente.</p>
+                </div>
+                <Button variant="danger" icon={LogOut} onClick={() => {
+                  localStorage.removeItem('taskflow-anonymous-user-id')
+                  window.location.reload()
+                }}>Sair</Button>
               </div>
             </SectionCard>
           </>
