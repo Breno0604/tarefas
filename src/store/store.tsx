@@ -18,7 +18,7 @@ import type {
   TaskStatus, TaskPriority, RecurrenceType, Subtask, StoreContextValue, Appearance
 } from '../types'
 
-const StoreContext = createContext<StoreContextValue | null>(null as StoreContextValue | null)
+export const StoreContext = createContext<StoreContextValue | null>(null as StoreContextValue | null)
 
 const PERSIST_KEY = 'taskflow-state-v3'
 const MAX_ACTIVITIES = 500

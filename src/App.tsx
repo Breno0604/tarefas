@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
+import ConvexProvider, { USE_CONVEX } from './components/ConvexProvider'
 import { StoreProvider } from './store/store'
+import { ConvexStoreProvider } from './components/ConvexStoreProvider'
 import { ToastProvider } from './store/toast'
 import { ContextMenuProvider } from './components/ui/ContextMenu'
 import AppLayout from './components/layout/AppLayout'
@@ -25,10 +27,39 @@ function PageLoader() {
   )
 }
 
+/**
+ * Error boundary that catches ConvexStoreProvider crashes
+ * and falls back to StoreProvider.
+ */
+class ConvexFallback extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(err: Error) { console.warn('[ConvexFallback] ConvexStoreProvider failed, using localStorage:', err.message) }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
+}
+
+/** Wraps children with the correct store provider based on USE_CONVEX flag. */
+function DataProvider({ children }: { children: React.ReactNode }) {
+  if (USE_CONVEX) {
+    return (
+      <ConvexFallback fallback={<StoreProvider>{children}</StoreProvider>}>
+        <ConvexStoreProvider>{children}</ConvexStoreProvider>
+      </ConvexFallback>
+    )
+  }
+  return <StoreProvider>{children}</StoreProvider>
+}
+
 export default function App() {
   return (
+    <ConvexProvider>
     <ErrorBoundary>
-      <StoreProvider>
+      <DataProvider>
         <ToastProvider>
           <ContextMenuProvider>
             <HashRouter>
@@ -50,7 +81,8 @@ export default function App() {
             </HashRouter>
           </ContextMenuProvider>
         </ToastProvider>
-      </StoreProvider>
+      </DataProvider>
     </ErrorBoundary>
+    </ConvexProvider>
   )
 }

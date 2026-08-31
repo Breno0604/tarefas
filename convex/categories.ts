@@ -1,53 +1,32 @@
-/**
- * Category mutations and queries.
- * Maps to: CREATE_CATEGORY action.
- */
-
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-/** Create a category. */
 export const create = mutation({
-  args: {
-    name: v.string(),
-    color: v.optional(v.string()),
-  },
+  args: { userId: v.string(), name: v.string(), color: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject ?? "anonymous";
-
-    const categoryId = await ctx.db.insert("categories", {
-      userId,
-      name: args.name,
-      color: args.color ?? "#94a3b8",
-    });
-
-    await ctx.db.insert("activities", {
-      userId,
-      type: "category",
-      text: `Você criou a categoria "${args.name}"`,
-      createdAt: new Date().toISOString(),
-    });
-
+    const categoryId = await ctx.db.insert("categories", { userId: args.userId, name: args.name, color: args.color ?? "#94a3b8" });
+    await ctx.db.insert("activities", { userId: args.userId, type: "category", text: `Você criou a categoria "${args.name}"`, createdAt: new Date().toISOString() });
     return categoryId;
   },
 });
 
-/** List all categories. */
-export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = (await ctx.auth.getUserIdentity())?.subject ?? "anonymous";
-    return await ctx.db
-      .query("categories")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect();
+export const update = mutation({
+  args: { categoryId: v.string(), patch: v.object({ name: v.optional(v.string()), color: v.optional(v.string()) }) },
+  handler: async (ctx, args) => {
+    const updates: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(args.patch)) { if (val !== undefined) updates[k] = val; }
+    await ctx.db.patch(args.categoryId as any, updates);
   },
 });
 
-/** Delete a category. */
 export const remove = mutation({
   args: { categoryId: v.string() },
+  handler: async (ctx, args) => { await ctx.db.delete(args.categoryId as any); },
+});
+
+export const list = query({
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.categoryId as any);
+    return await ctx.db.query("categories").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect();
   },
 });
