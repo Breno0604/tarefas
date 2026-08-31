@@ -161,10 +161,10 @@ export const remove = mutation({
 });
 
 export const toggleFavorite = mutation({
-  args: { taskId: v.string() },
+  args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task) return;
+    if (!task || task.userId !== args.userId) return;
     await ctx.db.patch(args.taskId as any, { favorite: !task.favorite });
   },
 });
@@ -186,10 +186,10 @@ export const duplicate = mutation({
 });
 
 export const toggleSubtask = mutation({
-  args: { taskId: v.string(), subtaskId: v.string() },
+  args: { userId: v.string(), taskId: v.string(), subtaskId: v.string() },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task) return;
+    if (!task || task.userId !== args.userId) return;
     const subtasks = task.subtasks.map((s: any) => s.id === args.subtaskId ? { ...s, done: !s.done } : s);
     const doneCount = subtasks.filter((s: any) => s.done).length;
     const progress = subtasks.length > 0 ? Math.round((doneCount / subtasks.length) * 100) : 0;

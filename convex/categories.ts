@@ -11,8 +11,10 @@ export const create = mutation({
 });
 
 export const update = mutation({
-  args: { categoryId: v.string(), patch: v.object({ name: v.optional(v.string()), color: v.optional(v.string()) }) },
+  args: { userId: v.string(), categoryId: v.string(), patch: v.object({ name: v.optional(v.string()), color: v.optional(v.string()) }) },
   handler: async (ctx, args) => {
+    const category = await ctx.db.get(args.categoryId as any) as any;
+    if (!category || category.userId !== args.userId) return;
     const updates: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(args.patch)) { if (val !== undefined) updates[k] = val; }
     await ctx.db.patch(args.categoryId as any, updates);
@@ -20,8 +22,12 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { categoryId: v.string() },
-  handler: async (ctx, args) => { await ctx.db.delete(args.categoryId as any); },
+  args: { userId: v.string(), categoryId: v.string() },
+  handler: async (ctx, args) => {
+    const category = await ctx.db.get(args.categoryId as any) as any;
+    if (!category || category.userId !== args.userId) return;
+    await ctx.db.delete(args.categoryId as any);
+  },
 });
 
 export const list = query({

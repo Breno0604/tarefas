@@ -184,21 +184,21 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
         restoreTasksMut({ userId, taskIds: ids }); return;
       }
       case "TOGGLE_FAVORITE":
-        toggleFavMut({ taskId: action.taskId }); return;
+        toggleFavMut({ userId, taskId: action.taskId }); return;
       case "DUPLICATE_TASK":
         duplicateTaskMut({ userId, taskId: action.taskId }); return;
       case "TOGGLE_SUBTASK":
-        toggleSubMut({ taskId: action.taskId, subtaskId: action.subtaskId }); return;
+        toggleSubMut({ userId, taskId: action.taskId, subtaskId: action.subtaskId }); return;
 
       // ── Notes ──
       case "ADD_NOTE":
         addNoteMut({ userId, taskId: action.taskId, text: action.text }); return;
       case "DELETE_NOTE":
-        deleteNoteMut({ taskId: action.taskId, noteId: action.noteId }); return;
+        deleteNoteMut({ userId, taskId: action.taskId, noteId: action.noteId }); return;
 
       // ── Reminders ──
       case "MARK_REMINDER_READ":
-        markReadMut({ id: action.id }); return;
+        markReadMut({ userId, id: action.id }); return;
       case "MARK_ALL_REMINDERS_READ":
         markAllReadMut({ userId }); return;
       case "CLEAR_REMINDERS":

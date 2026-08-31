@@ -11,17 +11,23 @@ export const create = mutation({
 });
 
 export const update = mutation({
-  args: { projectId: v.string(), patch: v.object({ name: v.optional(v.string()), description: v.optional(v.string()), color: v.optional(v.string()), due: v.optional(v.string()) }) },
+  args: { userId: v.string(), projectId: v.string(), patch: v.object({ name: v.optional(v.string()), description: v.optional(v.string()), color: v.optional(v.string()), due: v.optional(v.string()) }) },
   handler: async (ctx, args) => {
+    const project = await ctx.db.get(args.projectId as any) as any;
+    if (!project || project.userId !== args.userId) return;
     const updates: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(args.patch)) { if (v !== undefined) updates[k] = v; }
+    for (const [k, val] of Object.entries(args.patch)) { if (val !== undefined) updates[k] = val; }
     await ctx.db.patch(args.projectId as any, updates);
   },
 });
 
 export const remove = mutation({
-  args: { projectId: v.string() },
-  handler: async (ctx, args) => { await ctx.db.delete(args.projectId as any); },
+  args: { userId: v.string(), projectId: v.string() },
+  handler: async (ctx, args) => {
+    const project = await ctx.db.get(args.projectId as any) as any;
+    if (!project || project.userId !== args.userId) return;
+    await ctx.db.delete(args.projectId as any);
+  },
 });
 
 export const list = query({

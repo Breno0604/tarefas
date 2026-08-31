@@ -190,13 +190,13 @@ export function useConvexStore() {
         return;
       }
       case "TOGGLE_FAVORITE":
-        toggleFav({ taskId: action.taskId });
+        toggleFav({ userId, taskId: action.taskId });
         return;
       case "DUPLICATE_TASK":
         duplicateTask({ userId, taskId: action.taskId });
         return;
       case "TOGGLE_SUBTASK":
-        toggleSub({ taskId: action.taskId, subtaskId: action.subtaskId });
+        toggleSub({ userId, taskId: action.taskId, subtaskId: action.subtaskId });
         return;
 
       // ── Notes ──
@@ -204,12 +204,12 @@ export function useConvexStore() {
         addNote({ userId, taskId: action.taskId, text: action.text });
         return;
       case "DELETE_NOTE":
-        deleteNote({ taskId: action.taskId, noteId: action.noteId });
+        deleteNote({ userId, taskId: action.taskId, noteId: action.noteId });
         return;
 
       // ── Reminders ──
       case "MARK_REMINDER_READ":
-        markRead({ id: action.id });
+        markRead({ userId, id: action.id });
         return;
       case "MARK_ALL_REMINDERS_READ":
         markAllRead({ userId });

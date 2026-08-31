@@ -2,8 +2,12 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const markRead = mutation({
-  args: { id: v.string() },
-  handler: async (ctx, args) => { await ctx.db.patch(args.id as any, { read: true }); },
+  args: { userId: v.string(), id: v.string() },
+  handler: async (ctx, args) => {
+    const reminder = await ctx.db.get(args.id as any) as any;
+    if (!reminder || reminder.userId !== args.userId) return;
+    await ctx.db.patch(args.id as any, { read: true });
+  },
 });
 
 export const markAllRead = mutation({
