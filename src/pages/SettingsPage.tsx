@@ -348,6 +348,7 @@ export default function SettingsPage() {
                 </div>
                 <Button variant="danger" icon={LogOut} onClick={() => {
                   localStorage.removeItem('taskflow-anonymous-user-id')
+                  document.cookie = 'taskflow-anonymous-user-id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
                   window.location.reload()
                 }}>Sair</Button>
               </div>

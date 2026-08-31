@@ -9,6 +9,7 @@
 import React, { useState, useCallback } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { saveUserId } from "./ConvexProvider";
 
 interface Props {
   onPaired: (userId: string) => void;
@@ -51,7 +52,7 @@ export default function PairingScreen({ onPaired }: Props) {
   const handleConfirmNew = useCallback(() => {
     const tempId = sessionStorage.getItem("taskflow-temp-user-id");
     if (tempId) {
-      localStorage.setItem("taskflow-anonymous-user-id", tempId);
+      saveUserId(tempId);
       sessionStorage.removeItem("taskflow-temp-user-id");
       onPaired(tempId);
     }
@@ -68,7 +69,7 @@ export default function PairingScreen({ onPaired }: Props) {
     try {
       const result = await claimCode({ code });
       if (result && result.userId) {
-        localStorage.setItem("taskflow-anonymous-user-id", result.userId);
+        saveUserId(result.userId);
         onPaired(result.userId);
       } else {
         setError("Código inválido ou expirado. Verifique e tente novamente.");
@@ -111,7 +112,7 @@ export default function PairingScreen({ onPaired }: Props) {
               onClick={() => {
                 // Skip pairing — use a random userId (data won't sync)
                 const id = crypto.randomUUID();
-                localStorage.setItem("taskflow-anonymous-user-id", id);
+                saveUserId(id);
                 onPaired(id);
               }}
               className="w-full px-4 py-2 text-xs text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
