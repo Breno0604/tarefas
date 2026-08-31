@@ -26,9 +26,11 @@ export const create = mutation({
     recurrence: v.optional(v.union(v.literal("none"), v.literal("daily"), v.literal("weekly"), v.literal("monthly"))),
   },
   handler: async (ctx, args) => {
+    // Validate title is not empty
+    if (!args.title || !args.title.trim()) return;
     const doc = {
       userId: args.userId,
-      title: args.title,
+      title: args.title.trim(),
       description: args.description ?? "",
       status: args.status ?? "todo",
       priority: args.priority ?? "medium",

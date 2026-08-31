@@ -25,8 +25,20 @@ export const generateCode = mutation({
       }
     }
 
-    // Generate 6-digit code
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    // Generate unique 6-digit code (retry up to 5 times on collision)
+    let code = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = String(Math.floor(100000 + Math.random() * 900000));
+      const existing = await ctx.db
+        .query("pairing_codes")
+        .withIndex("by_code", (q) => q.eq("code", candidate))
+        .first();
+      if (!existing) {
+        code = candidate;
+        break;
+      }
+    }
+    if (!code) return null; // collision after 5 attempts (extremely unlikely)
     const now = new Date();
     const expires = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
 

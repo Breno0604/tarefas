@@ -74,6 +74,12 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
 
   const upsertProfileMut = useMutation(api.profiles.upsert);
   const upsertPrefsMut = useMutation(api.preferences.upsert);
+  const cleanAllMut = useMutation(api.cleanup.cleanAll);
+
+  // ── Cleanup: run once on boot ──
+  useEffect(() => {
+    cleanAllMut({ userId }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Theme (kept in localStorage for immediate effect) ──
   const [theme, setTheme] = React.useState<"light" | "dark">(() =>
