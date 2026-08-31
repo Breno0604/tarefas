@@ -10,6 +10,7 @@
 import { ConvexProvider as ConvexReactProvider, ConvexReactClient } from "convex/react";
 import React, { useCallback, useState } from "react";
 import PairingScreen from "./PairingScreen";
+import PasswordScreen from "./PasswordScreen";
 
 const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 
@@ -49,6 +50,11 @@ export function getAnonymousUserId(): string {
   return id;
 }
 
+/** Check if password is verified. */
+export function isPasswordVerified(): boolean {
+  return localStorage.getItem("taskflow-password-verified") === "true";
+}
+
 /** Check if user has paired (has a userId stored). */
 export function isPaired(): boolean {
   return Boolean(localStorage.getItem(USER_ID_KEY) || getCookie(USER_ID_KEY));
@@ -59,6 +65,7 @@ interface Props {
 }
 
 export default function ConvexProvider({ children }: Props) {
+  const [passwordOk, setPasswordOk] = useState(() => isPasswordVerified());
   const [userId, setUserId] = useState<string | null>(() =>
     isPaired() ? getAnonymousUserId() : null
   );
@@ -68,11 +75,19 @@ export default function ConvexProvider({ children }: Props) {
   }, []);
 
   if (!convexClient) {
-    // No Convex configured — just render children (localStorage mode)
     return <>{children}</>;
   }
 
-  // Not paired yet — show pairing screen
+  // Step 1: password check
+  if (!passwordOk) {
+    return (
+      <ConvexReactProvider client={convexClient}>
+        <PasswordScreen onAuthenticated={() => setPasswordOk(true)} />
+      </ConvexReactProvider>
+    );
+  }
+
+  // Step 2: pairing check
   if (!userId) {
     return (
       <ConvexReactProvider client={convexClient}>

@@ -347,7 +347,7 @@ export default function SettingsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Seus dados continuam no Convex. Use o mesmo código para entrar novamente.</p>
                 </div>
                 <Button variant="danger" icon={LogOut} onClick={() => {
-                  localStorage.removeItem('taskflow-anonymous-user-id')
+                  localStorage.removeItem('taskflow-anonymous-user-id'); localStorage.removeItem('taskflow-password-verified')
                   document.cookie = 'taskflow-anonymous-user-id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
                   window.location.reload()
                 }}>Sair</Button>
