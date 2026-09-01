@@ -245,7 +245,7 @@ export function useTaskFilters(view: string) {
     (favoritesOnly ? 1 : 0)
 
   const filtered = useMemo(() => {
-    let list = state.tasks
+    let list = state.tasks.filter((t) => !t.archived)
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(

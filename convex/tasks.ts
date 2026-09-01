@@ -252,8 +252,8 @@ export const reopen = mutation({
   args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task || task.status !== "done") return;
-    await ctx.db.patch(args.taskId as any, { status: "in_progress", progress: Math.min(task.progress, 99) });
+    if (!task || task.userId !== args.userId || task.status !== "done") return;
+    await ctx.db.patch(args.taskId as any, { status: "todo", progress: 0 });
     await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: `Você reabriu "${task.title}"`, createdAt: new Date().toISOString() });
   },
 });
@@ -288,10 +288,10 @@ export const remove = mutation({
     const task = await ctx.db.get(args.taskId as any) as any;
     if (!task || task.userId !== args.userId) return;
     const notes = await ctx.db.query("notes").withIndex("by_task", (q) => q.eq("taskId", args.taskId)).collect();
-    // Store only the fields defined in the trash schema
+    // Store only the fields defined in the trash schema (keep userId inside task for restore)
     const { _id: _tId, _creationTime: _tCt, userId: _tUid, ...taskData } = task;
     const trashNotes = notes.map((n) => { const { _id, _creationTime, userId: _nUid, taskId: _nTid, ...noteData } = n; return noteData; });
-    await ctx.db.insert("trash", { userId: args.userId, originalTaskId: task._id.toString(), task: taskData, notes: trashNotes, deletedAt: new Date().toISOString() });
+    await ctx.db.insert("trash", { userId: args.userId, originalTaskId: task._id.toString(), task: { ...taskData, userId: args.userId }, notes: trashNotes, deletedAt: new Date().toISOString() });
     for (const note of notes) await ctx.db.delete(note._id);
     await ctx.db.delete(args.taskId as any);
     await ctx.db.insert("activities", { userId: args.userId, type: "delete", text: `Você excluiu a tarefa "${task.title}"`, createdAt: new Date().toISOString() });
@@ -304,6 +304,23 @@ export const toggleFavorite = mutation({
     const task = await ctx.db.get(args.taskId as any) as any;
     if (!task || task.userId !== args.userId) return;
     await ctx.db.patch(args.taskId as any, { favorite: !task.favorite });
+  },
+});
+
+export const toggleArchive = mutation({
+  args: { userId: v.string(), taskId: v.string() },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.taskId as any) as any;
+    if (!task || task.userId !== args.userId) return;
+    const newArchived = !task.archived;
+    await ctx.db.patch(args.taskId as any, { archived: newArchived });
+    await ctx.db.insert("activities", {
+      userId: args.userId,
+      type: "status",
+      taskId: args.taskId,
+      text: newArchived ? `Você arquivou "${task.title}"` : `Você desarquivou "${task.title}"`,
+      createdAt: new Date().toISOString(),
+    });
   },
 });
 

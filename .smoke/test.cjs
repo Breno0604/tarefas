@@ -69,7 +69,7 @@ let done = state.tasks.find((t) => t.id === openTask.id)
 if (done.status !== 'done' || done.progress !== 100) throw new Error('TOGGLE_TASK_DONE não concluiu')
 state = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: openTask.id })
 done = state.tasks.find((t) => t.id === openTask.id)
-if (done.status !== 'in_progress') throw new Error('TOGGLE_TASK_DONE não reabriu')
+if (done.status !== 'todo') throw new Error('TOGGLE_TASK_DONE não reabriu')
 
 // 8. Recorrência: concluir gera próxima ocorrência com subtarefas zeradas
 const recurring = state.tasks.find((t) => t.recurrence && t.recurrence !== 'none')

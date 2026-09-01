@@ -99,13 +99,13 @@ describe('reducer', () => {
       expect(task.progress).toBe(100)
     })
 
-    it('reopens a done task as in_progress', () => {
+    it('reopens a done task as todo', () => {
       state.tasks[0].status = 'done'
       state.tasks[0].progress = 100
       const next = reducer(state, { type: 'TOGGLE_TASK_DONE', taskId: 't1' })
       const task = next.tasks.find((t) => t.id === 't1')
-      expect(task.status).toBe('in_progress')
-      expect(task.progress).toBe(99)
+      expect(task.status).toBe('todo')
+      expect(task.progress).toBe(0)
     })
 
     it('spawns next occurrence for recurring task', () => {

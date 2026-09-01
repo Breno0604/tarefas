@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ListTodo, CheckCircle2, AlertTriangle, CalendarClock, ArrowRight, Plus, Star } from 'lucide-react'
+import { ListTodo, CheckCircle2, AlertTriangle, CalendarClock, ArrowRight, Plus, Star, Zap } from 'lucide-react'
 import * as DashboardCharts from '../components/DashboardCharts'
 import { useStore } from '../store/store'
 import { formatDay, isOverdue } from '../lib/format'
@@ -57,6 +57,21 @@ function Dashboard() {
 
   const recentActivities = useMemo(() => state.activities.slice(0, 7), [state.activities])
 
+  // Tasks that need immediate attention
+  const urgentTasks = useMemo(() => {
+    const open = tasks.filter((t) => t.status === 'todo' || t.status === 'in_progress')
+    const overdue = open.filter((t) => isOverdue(t.dueDate, t.status)).slice(0, 3)
+    const dueToday = open.filter((t) => {
+      if (!t.dueDate) return false
+      const key = t.dueDate.slice(0, 10)
+      const today = new Date()
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      return key === todayKey
+    }).slice(0, 3)
+    const undated = open.filter((t) => !t.dueDate).slice(0, 2)
+    return { overdue, dueToday, undated, total: overdue.length + dueToday.length + undated.length }
+  }, [tasks])
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
@@ -93,6 +108,56 @@ function Dashboard() {
           onClick={() => navigateWithClearFilters(navigate, '/tarefas')}
         />
       </div>
+
+      {/* Precisa de ação — only shown when there are urgent items */}
+      {urgentTasks.total > 0 && (
+        <div className="card-base border-l-4 border-l-amber-400 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+              <Zap size={16} />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Precisa de ação</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Tarefas que precisam da sua atenção</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {urgentTasks.overdue.map((t: any) => (
+              <button
+                key={t.id}
+                onClick={() => navigate(`/tarefas?task=${t.id}`)}
+                className="flex w-full items-center gap-3 rounded-lg bg-red-50 px-3 py-2 text-left transition hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20"
+              >
+                <AlertTriangle size={14} className="shrink-0 text-red-500" />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{t.title}</span>
+                <span className="shrink-0 text-xs font-bold text-red-600 dark:text-red-400">Atrasada</span>
+              </button>
+            ))}
+            {urgentTasks.dueToday.map((t: any) => (
+              <button
+                key={t.id}
+                onClick={() => navigate(`/tarefas?task=${t.id}`)}
+                className="flex w-full items-center gap-3 rounded-lg bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              >
+                <CalendarClock size={14} className="shrink-0 text-amber-500" />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{t.title}</span>
+                <span className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400">Vence hoje</span>
+              </button>
+            ))}
+            {urgentTasks.undated.map((t: any) => (
+              <button
+                key={t.id}
+                onClick={() => navigate(`/tarefas?task=${t.id}`)}
+                className="flex w-full items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-left transition hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/60"
+              >
+                <ListTodo size={14} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{t.title}</span>
+                <span className="shrink-0 text-xs font-medium text-slate-400 dark:text-slate-500">Sem data</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card-base p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

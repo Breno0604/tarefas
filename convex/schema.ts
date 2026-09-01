@@ -60,6 +60,7 @@ export default defineSchema({
       )
     ),
     cancelReason: v.optional(v.string()),
+    archived: v.optional(v.boolean()),
   })
     .index("by_user", ["userId"])
     .index("by_user_status", ["userId", "status"])
@@ -126,6 +127,7 @@ export default defineSchema({
     userId: v.string(),
     originalTaskId: v.string(),
     task: v.object({
+      userId: v.string(),
       title: v.string(),
       description: v.optional(v.string()),
       status: v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled")),
@@ -141,6 +143,7 @@ export default defineSchema({
       favorite: v.boolean(),
       recurrence: v.optional(v.union(v.literal("none"), v.literal("daily"), v.literal("weekly"), v.literal("monthly"))),
       cancelReason: v.optional(v.string()),
+      archived: v.optional(v.boolean()),
     }),
     notes: v.array(v.object({
       text: v.string(),

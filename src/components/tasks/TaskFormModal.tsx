@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Save } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { Save, ChevronDown } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { Input, Textarea, Select, Field } from '../ui/Inputs'
@@ -11,6 +11,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
   const { state, dispatch } = useStore()
   const toast = useToast()
   const isEdit = Boolean(task)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [form, setForm] = useState({
     title: '',
@@ -27,7 +28,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const wasOpenRef = useRef(false)
 
-  // Only reset form when modal transitions from closed → open
   useEffect(() => {
     if (open && !wasOpenRef.current) {
       if (task) {
@@ -43,6 +43,8 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
           tagsText: (task.tags || []).join(', '),
           recurrence: task.recurrence || 'none'
         })
+        // Auto-expand if task has advanced fields set
+        setShowAdvanced(Boolean(task.categoryId || task.recurrence || task.estimatedHours || task.tags?.length))
       } else {
         setForm({
           title: '',
@@ -56,6 +58,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
           tagsText: '',
           recurrence: 'none'
         })
+        setShowAdvanced(false)
       }
       setErrors({})
     }
@@ -115,7 +118,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
     onClose()
   }
 
-  // Detect mobile for fullScreen modal
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
   useEffect(() => {
     if (!open) return
@@ -147,6 +149,7 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
       }
     >
       <form id="task-form" onSubmit={handleSubmit} className="space-y-5">
+        {/* Essential fields — always visible */}
         <Input
           label="Título"
           placeholder="Ex.: Renovar assinatura da academia"
@@ -162,70 +165,84 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
           maxLength={500}
           hint={`${form.description.length}/500 caracteres`}
         />
+        <Field label="Vencimento">
+          <Input
+            type="date"
+            value={form.dueDate}
+            onChange={set('dueDate')}
+            error={errors.dueDate}
+          />
+        </Field>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label="Status"
-            value={form.status}
-            onChange={set('status')}
-            options={Object.values(STATUS)
-              .filter((s: any) => s.key !== 'cancelled' || (isEdit && task?.status === 'cancelled'))
-              .map((s: any) => ({ value: s.key, label: s.label }))}
-          />
-          <Select
-            label="Prioridade"
-            value={form.priority}
-            onChange={set('priority')}
-            options={Object.values(PRIORITY).map((p: any) => ({ value: p.key, label: p.label }))}
-          />
-          <Select
-            label="Projeto"
-            value={form.projectId}
-            onChange={set('projectId')}
-            placeholder="Sem projeto"
-            options={state.projects.map((p: any) => ({ value: p.id, label: p.name }))}
-          />
-          <Select
-            label="Categoria"
-            value={form.categoryId}
-            onChange={set('categoryId')}
-            placeholder="Sem categoria"
-            options={state.categories.map((c: any) => ({ value: c.id, label: c.name }))}
-          />
-          <Field label="Vencimento">
-            <Input
-              type="date"
-              value={form.dueDate}
-              onChange={set('dueDate')}
-              error={errors.dueDate}
+        {/* Advanced fields — collapsible */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-brand-500/50 dark:hover:text-brand-300"
+        >
+          <ChevronDown size={16} className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+          {showAdvanced ? 'Ocultar detalhes' : 'Detalhes avançados'}
+        </button>
+
+        {showAdvanced && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 animate-scale-in">
+            <Select
+              label="Status"
+              value={form.status}
+              onChange={set('status')}
+              options={Object.values(STATUS)
+                .filter((s: any) => s.key !== 'cancelled' || (isEdit && task?.status === 'cancelled'))
+                .map((s: any) => ({ value: s.key, label: s.label }))}
             />
-          </Field>
-          <Field label="Horas estimadas">
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Ex.: 8"
-              value={form.estimatedHours}
-              onChange={set('estimatedHours')}
-              error={errors.estimatedHours}
+            <Select
+              label="Prioridade"
+              value={form.priority}
+              onChange={set('priority')}
+              options={Object.values(PRIORITY).map((p: any) => ({ value: p.key, label: p.label }))}
             />
-          </Field>
-          <Field label="Tags">
-            <Input
-              placeholder="Ex.: casa, urgente"
-              value={form.tagsText}
-              onChange={set('tagsText')}
+            <Select
+              label="Projeto"
+              value={form.projectId}
+              onChange={set('projectId')}
+              placeholder="Sem projeto"
+              options={state.projects.map((p: any) => ({ value: p.id, label: p.name }))}
             />
-          </Field>
-          <Select
-            label="Repetir"
-            value={form.recurrence}
-            onChange={set('recurrence')}
-            hint={form.recurrence !== 'none' ? 'Ao concluir, a próxima ocorrência é criada automaticamente.' : undefined}
-            options={Object.values(RECURRENCE).map((r: any) => ({ value: r.key, label: r.label }))}
-          />
-        </div>
+            <Select
+              label="Categoria"
+              value={form.categoryId}
+              onChange={set('categoryId')}
+              placeholder="Sem categoria"
+              options={state.categories.map((c: any) => ({ value: c.id, label: c.name }))}
+            />
+            <Field label="Horas estimadas">
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Ex.: 8"
+                value={form.estimatedHours}
+                onChange={set('estimatedHours')}
+                error={errors.estimatedHours}
+              />
+            </Field>
+            <Field label="Tags">
+              <Input
+                placeholder="Ex.: casa, urgente"
+                value={form.tagsText}
+                onChange={set('tagsText')}
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Select
+                label="Repetir"
+                value={form.recurrence}
+                onChange={set('recurrence')}
+                hint={form.recurrence !== 'none' ? 'Ao concluir, a próxima ocorrência é criada automaticamente.' : undefined}
+                options={Object.values(RECURRENCE).map((r: any) => ({ value: r.key, label: r.label }))}
+              />
+            </div>
+          </div>
+        )}
       </form>
     </Modal>
   )

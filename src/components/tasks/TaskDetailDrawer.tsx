@@ -17,7 +17,9 @@ import {
   Copy,
   Ban,
   Repeat,
-  Trash
+  Trash,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react'
 import Drawer from '../ui/Drawer'
 import Dropdown from '../ui/Dropdown'
@@ -115,6 +117,17 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
         footer={
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex flex-wrap items-center gap-1.5 sm:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={task.archived ? ArchiveRestore : Archive}
+                onClick={() => {
+                  dispatch({ type: 'TOGGLE_ARCHIVE', taskId: task.id })
+                  toast.success(task.archived ? 'Tarefa desarquivada' : 'Tarefa arquivada')
+                }}
+              >
+                {task.archived ? 'Desarquivar' : 'Arquivar'}
+              </Button>
               <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
                 Excluir
               </Button>
@@ -153,6 +166,17 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
               )}
             </div>
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={task.archived ? ArchiveRestore : Archive}
+                onClick={() => {
+                  dispatch({ type: 'TOGGLE_ARCHIVE', taskId: task.id })
+                  toast.success(task.archived ? 'Tarefa desarquivada' : 'Tarefa arquivada')
+                }}
+              >
+                {task.archived ? 'Desarquivar' : 'Arquivar'}
+              </Button>
               <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
                 Excluir
               </Button>

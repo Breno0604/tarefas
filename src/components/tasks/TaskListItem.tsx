@@ -9,7 +9,7 @@ import { buildTaskMenu } from './taskMenu'
 import { PRIORITY } from '../../lib/constants'
 import { formatDay, isOverdue } from '../../lib/format'
 
-export default function TaskListItem({ task, project, noteCount, selected, onToggleSelect, onChange, onOpen, onEdit, onDelete, onToggleFavorite, onDuplicate, onToggleDone, onCancel }: any) {
+export default function TaskListItem({ task, project, noteCount, selected, onToggleSelect, onChange, onOpen, onEdit, onDelete, onToggleFavorite, onDuplicate, onToggleDone, onCancel, onReschedule }: any) {
   const { show } = useContextMenu()
   const [confirm, setConfirm] = useState(false)
 
@@ -22,6 +22,7 @@ export default function TaskListItem({ task, project, noteCount, selected, onTog
     onDuplicate,
     onToggleDone: onToggleDone ? () => onToggleDone(task) : undefined,
     onCancel: onCancel ? () => onCancel(task) : undefined,
+    onReschedule: onReschedule ? (date: string) => onReschedule(task, date) : undefined,
     allowEdit: true,
     allowDelete: true,
     allowCreate: true

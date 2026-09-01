@@ -27,6 +27,7 @@ export interface Task {
   favorite: boolean
   recurrence: RecurrenceType | null
   cancelReason: string | null
+  archived?: boolean
 }
 
 export interface Project {
@@ -149,6 +150,7 @@ export type AppAction =
   | { type: "DELETE_CATEGORY"; categoryId: string }
   | { type: "EDIT_PROJECT"; projectId: string; name: string; description: string; color: string; due?: string | null }
   | { type: "DELETE_PROJECT"; projectId: string }
+  | { type: "TOGGLE_ARCHIVE"; taskId: string }
   | { type: "CLEAR_TRASH" }
   | { type: "RESET" }
 

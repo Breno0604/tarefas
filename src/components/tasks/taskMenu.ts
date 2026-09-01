@@ -1,11 +1,16 @@
-import { Eye, Pencil, Trash2, Flag, CheckCircle2, RotateCcw, Star, Copy, Ban, Repeat } from 'lucide-react'
-import { STATUS, PRIORITY, RECURRENCE } from '../../lib/constants'
+import { Eye, Pencil, Trash2, CheckCircle2, RotateCcw, Star, Copy, Ban, CalendarClock, Archive, ArchiveRestore } from 'lucide-react'
+import { STATUS } from '../../lib/constants'
 
-const MOVE_STATUSES = Object.values(STATUS).filter((s: any) => s.key !== 'cancelled')
+/** Compute a YYYY-MM-DD date key offset from today. */
+function offsetDateKey(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 export function buildTaskMenu(
   task: any,
-  { onOpen, onEdit, onDelete, onChange, onFavorite, onDuplicate, onToggleDone, onCancel, allowEdit = true, allowDelete = true, allowCreate = true }: any
+  { onOpen, onEdit, onDelete, onChange, onFavorite, onDuplicate, onToggleDone, onCancel, onReschedule, allowEdit = true, allowDelete = true, allowCreate = true }: any
 ) {
   const items: any[] = [
     { label: 'Abrir detalhes', icon: Eye, onClick: onOpen }
@@ -35,37 +40,29 @@ export function buildTaskMenu(
         onClick: () => onChange({ status: 'done' })
       })
     }
-    if (task.recurrence && task.recurrence !== 'none') {
-      items.push({
-        label: `Repete ${(RECURRENCE as Record<string, any>)[task.recurrence]?.label?.toLowerCase() || ''}`,
-        icon: Repeat,
-        disabled: true
-      })
-    }
+  }
+
+  // Quick reschedule — only for active tasks with a due date
+  if (allowEdit && onReschedule && task.status !== 'done' && task.status !== 'cancelled') {
     items.push({ type: 'divider' })
-    items.push({ type: 'label', label: 'Mover para' })
-    MOVE_STATUSES.forEach((s: any) => {
-      items.push({
-        label: s.label,
-        active: task.status === s.key,
-        onClick: () => {
-          if (task.status !== s.key) onChange({ status: s.key })
-        }
-      })
+    items.push({ type: 'label', label: 'Adiar' })
+    items.push({
+      label: 'Amanhã',
+      icon: CalendarClock,
+      onClick: () => onReschedule(offsetDateKey(1))
     })
-    items.push({ type: 'divider' })
-    items.push({ type: 'label', label: 'Prioridade' })
-    Object.values(PRIORITY).forEach((p: any) => {
-      items.push({
-        label: p.label,
-        icon: Flag,
-        active: task.priority === p.key,
-        onClick: () => {
-          if (task.priority !== p.key) onChange({ priority: p.key })
-        }
-      })
+    items.push({
+      label: '3 dias',
+      icon: CalendarClock,
+      onClick: () => onReschedule(offsetDateKey(3))
+    })
+    items.push({
+      label: '1 semana',
+      icon: CalendarClock,
+      onClick: () => onReschedule(offsetDateKey(7))
     })
   }
+
   if (allowEdit && onCancel && task.status !== 'done' && task.status !== 'cancelled') {
     items.push({ type: 'divider' })
     items.push({
@@ -73,6 +70,15 @@ export function buildTaskMenu(
       icon: Ban,
       danger: true,
       onClick: onCancel
+    })
+  }
+  if (allowEdit && onToggleDone && task.status !== 'cancelled') {
+    items.push({
+      label: task.archived ? 'Desarquivar tarefa' : 'Arquivar tarefa',
+      icon: task.archived ? ArchiveRestore : Archive,
+      onClick: () => {
+        if (onReschedule) onReschedule('__archive__')
+      }
     })
   }
   if (allowDelete) {

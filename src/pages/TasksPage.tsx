@@ -202,6 +202,21 @@ export default function TasksPage() {
     toast.success('Tarefa cancelada')
     setCancelTarget(null)
   }
+  const rescheduleTask = (task: any, newDate: string) => {
+    if (newDate === '__archive__') {
+      dispatch({ type: 'TOGGLE_ARCHIVE', taskId: task.id })
+      toast.success(task.archived ? 'Tarefa desarquivada' : 'Tarefa arquivada')
+      return
+    }
+    const oldDate = task.dueDate
+    dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch: { dueDate: newDate } })
+    toast.push(`Vencimento alterado`, 'success', {
+      action: {
+        label: 'Desfazer',
+        onClick: () => dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch: { dueDate: oldDate } })
+      }
+    })
+  }
 
   const saveCurrentFilters = () => {
     const name = saveName.trim()
@@ -412,6 +427,7 @@ export default function TasksPage() {
                     onToggleDone={toggleDoneTask}
                     onCancel={requestCancel}
                     onChange={changeTask}
+                    onReschedule={rescheduleTask}
                   />
                 ))}
               </ul>
@@ -477,6 +493,7 @@ export default function TasksPage() {
               onDuplicateTask={duplicateTask}
               onToggleDone={toggleDoneTask}
               onCancelTask={requestCancel}
+              onRescheduleTask={rescheduleTask}
             />
             </React.Suspense>
           )}

@@ -97,7 +97,8 @@ export default function KanbanView({
   onToggleFavorite,
   onDuplicateTask,
   onToggleDone,
-  onCancelTask
+  onCancelTask,
+  onRescheduleTask
 }: any) {
   const { state, dispatch } = useStore()
   const toast = useToast()
@@ -239,8 +240,9 @@ export default function KanbanView({
     onToggleFavorite: () => onToggleFavorite(t),
     onDuplicate: () => onDuplicateTask(t),
     onToggleDone,
-    onCancel: onCancelTask
-  }), [state.projects, state.notes, onChange, onOpenTask, onEditTask, onDeleteTask, onToggleFavorite, onDuplicateTask, onToggleDone, onCancelTask])
+    onCancel: onCancelTask,
+    onReschedule: onRescheduleTask ? (t: any, d: string) => onRescheduleTask(t, d) : undefined
+  }), [state.projects, state.notes, onChange, onOpenTask, onEditTask, onDeleteTask, onToggleFavorite, onDuplicateTask, onToggleDone, onCancelTask, onRescheduleTask])
 
   return (
     <div>

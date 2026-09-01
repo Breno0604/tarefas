@@ -325,7 +325,8 @@ function reopenTask(state: AppState, taskId: string): ReopenTaskResult {
   if (idx === -1) return { tasks: state.tasks, activities: state.activities }
   const task = state.tasks[idx]
   const tasks = state.tasks.slice()
-  tasks[idx] = { ...task, status: 'in_progress', progress: Math.min(task.progress || 0, 99) }
+  // Restore to 'todo' (safer default — user consciously moves to in_progress)
+  tasks[idx] = { ...task, status: 'todo', progress: 0 }
   return {
     tasks,
     activities: [
@@ -906,6 +907,25 @@ function reducer(state: AppState, action: AppAction): AppState {
         ...normalized,
         // Always reconcile reminders after import
         reminders: reconcileReminders({ ...state, ...normalized })
+      }
+    }
+    case 'TOGGLE_ARCHIVE': {
+      const idx = state.tasks.findIndex((t) => t.id === action.taskId)
+      if (idx === -1) return state
+      const task = state.tasks[idx]
+      const tasks = state.tasks.slice()
+      tasks[idx] = { ...task, archived: !task.archived }
+      return {
+        ...state,
+        tasks,
+        activities: trimActivities([
+          activityEntry({
+            type: 'status',
+            taskId: task.id,
+            text: task.archived ? `Você arquivou "${task.title}"` : `Você desarquivou "${task.title}"`
+          }),
+          ...state.activities
+        ])
       }
     }
     case 'CLEAR_TRASH': {

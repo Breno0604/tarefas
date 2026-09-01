@@ -57,6 +57,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
   const cancelTaskMut = useMutation(api.tasks.cancel);
   const deleteTaskMut = useMutation(api.tasks.remove);
   const toggleFavMut = useMutation(api.tasks.toggleFavorite);
+  const toggleArchiveMut = useMutation(api.tasks.toggleArchive);
   const duplicateTaskMut = useMutation(api.tasks.duplicate);
   const toggleSubMut = useMutation(api.tasks.toggleSubtask);
 
@@ -124,6 +125,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
         tags: t.tags ?? [], subtasks: t.subtasks ?? [],
         favorite: t.favorite ?? false, recurrence: (t.recurrence ?? null) as RecurrenceType | null,
         cancelReason: t.cancelReason ?? null,
+        archived: t.archived ?? false,
       })),
       projects: (projectsRaw as any[]).map((p: any) => ({
         id: p._id.toString(), name: p.name, description: p.description ?? "",
@@ -202,6 +204,8 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       }
       case "TOGGLE_FAVORITE":
         toggleFavMut({ userId, taskId: action.taskId }); return;
+      case "TOGGLE_ARCHIVE":
+        toggleArchiveMut({ userId, taskId: action.taskId }); return;
       case "DUPLICATE_TASK":
         duplicateTaskMut({ userId, taskId: action.taskId }).then((newId: any) => {
           if (newId) setLastDuplicatedId(newId.toString());

@@ -27,6 +27,7 @@ export default function TaskCard({
   onDuplicate,
   onToggleDone,
   onCancel,
+  onReschedule,
   draggable = true,
   onDragStart
 }: any) {
@@ -53,6 +54,7 @@ export default function TaskCard({
     onDuplicate,
     onToggleDone: onToggleDone ? () => onToggleDone(task) : undefined,
     onCancel: onCancel ? () => onCancel(task) : undefined,
+    onReschedule: onReschedule ? (date: string) => onReschedule(task, date) : undefined,
     allowEdit: true,
     allowDelete: true,
     allowCreate: true
