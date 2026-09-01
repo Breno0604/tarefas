@@ -1,19 +1,20 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, CalendarClock, ListTodo, FolderKanban, TrendingUp, AlertTriangle, XCircle } from 'lucide-react'
+import { Plus, CalendarClock, ListTodo, FolderKanban, TrendingUp, AlertTriangle, XCircle, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Drawer from '../components/ui/Drawer'
 import ProgressBar from '../components/ui/ProgressBar'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Inputs'
 import { formatDay, isOverdue } from '../lib/format'
 
 const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#f43f5e', '#10b981']
 
-function ProjectCard({ project, stats, onOpen }: { project: any; stats: any; onOpen: (...args: any[]) => void }) {
+function ProjectCard({ project, stats, onOpen, onEdit, onDelete }: { project: any; stats: any; onOpen: (...args: any[]) => void; onEdit: () => void; onDelete: () => void }) {
   const health = stats.overdue > 0 ? 'Atrasado' : stats.pct < 40 && stats.dueSoon ? 'Em risco' : 'No prazo'
   const healthStyle =
     health === 'Atrasado'
@@ -36,6 +37,22 @@ function ProjectCard({ project, stats, onOpen }: { project: any; stats: any; onO
           <Icon size={12} />
           {health}
         </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="rounded p-1 text-slate-300 opacity-0 transition hover:text-slate-600 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-slate-300"
+            aria-label="Editar projeto"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="rounded p-1 text-slate-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
+            aria-label="Excluir projeto"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
 
       <h3 className="mt-3 text-sm font-bold text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">
@@ -75,6 +92,9 @@ function ProjectsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<any>(null)
+  const [editForm, setEditForm] = useState({ name: '', description: '', color: COLORS[0], due: '' })
   const [form, setForm] = useState({ name: '', description: '', color: COLORS[0], due: '' })
 
   const projParam = searchParams.get('proj')
@@ -138,6 +158,8 @@ function ProjectsPage() {
               project={p}
               stats={(stats as any)[p.id]}
               onOpen={() => setSelectedId(p.id)}
+              onEdit={() => { setEditForm({ name: p.name, description: p.description, color: p.color, due: p.due || '' }); setSelectedId(p.id); setEditOpen(true); }}
+              onDelete={() => setDeleteTarget(p)}
             />
           ))}
         </div>
@@ -282,6 +304,19 @@ function ProjectsPage() {
           </div>
         )}
       </Drawer>
+
+      <Modal open={editOpen} onClose={() => { setEditOpen(false); setSelectedId(null) }} title="Editar projeto" description="Altere as informacoes do projeto." size="md" footer={<><Button variant="secondary" onClick={() => { setEditOpen(false); setSelectedId(null) }}>Cancelar</Button><Button onClick={() => { if (!editForm.name.trim()) { toast.error('Informe o nome do projeto'); return } dispatch({ type: 'EDIT_PROJECT', projectId: selectedId!, name: editForm.name.trim(), description: editForm.description.trim(), color: editForm.color, due: editForm.due || undefined }); toast.success('Projeto atualizado'); setEditOpen(false); setSelectedId(null) }}>Salvar</Button></>}>
+        <div className="space-y-4">
+          <Input label="Nome do projeto" value={editForm.name} onChange={(e: any) => setEditForm((f: any) => ({ ...f, name: e.target.value }))} />
+          <Input label="Descricao" value={editForm.description} onChange={(e: any) => setEditForm((f: any) => ({ ...f, description: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label-base">Cor</label><div className="flex flex-wrap gap-2 pt-1">{COLORS.map((c: string) => (<button key={c} onClick={() => setEditForm((f: any) => ({ ...f, color: c }))} className={'h-7 w-7 rounded-full transition ' + (editForm.color === c ? 'ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-110')} style={{ backgroundColor: c }} />))}</div></div>
+            <div><label className="label-base">Prazo</label><Input type="date" value={editForm.due} onChange={(e: any) => setEditForm((f: any) => ({ ...f, due: e.target.value }))} /></div>
+          </div>
+        </div>
+      </Modal>
+
+      <ConfirmDialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} onConfirm={() => { dispatch({ type: 'DELETE_PROJECT', projectId: deleteTarget.id }); toast.success('Projeto excluido'); setDeleteTarget(null) }} title="Excluir projeto" message={'Tem certeza que deseja excluir "' + (deleteTarget?.name || '') + '"? As tarefas desse projeto nao serao excluidas - apenas perdem a referencia.'} confirmLabel="Excluir projeto" />
     </div>
   )
 }

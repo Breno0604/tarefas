@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Tags, ListTodo } from 'lucide-react'
+import { Plus, Tags, ListTodo, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store/store'
 import { useToast } from '../store/toast'
 import { STATUS } from '../lib/constants'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Drawer from '../components/ui/Drawer'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import EmptyState from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Inputs'
 import { formatDay, isOverdue } from '../lib/format'
@@ -19,7 +20,10 @@ function CategoriesPage() {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<any>(null)
   const [form, setForm] = useState({ name: '', color: COLORS[0] })
+  const [editForm, setEditForm] = useState({ name: '', color: COLORS[0] })
 
   const stats = useMemo(() => {
     const m: Record<string, any> = {}
@@ -61,9 +65,25 @@ function CategoriesPage() {
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: `${c.color}1f` }}>
                     <Tags size={20} style={{ color: c.color }} />
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    <ListTodo size={12} /> {s.total}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <ListTodo size={12} /> {s.total}
+                    </span>
+                    <button
+                      onClick={() => { setEditForm({ name: c.name, color: c.color }); setSelectedId(c.id); setEditOpen(true) }}
+                      className="rounded p-1 text-slate-300 opacity-0 transition hover:text-slate-600 group-hover:opacity-100 dark:text-slate-600 dark:hover:text-slate-300"
+                      aria-label="Editar categoria"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(c)}
+                      className="rounded p-1 text-slate-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
+                      aria-label="Excluir categoria"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="mt-3 text-sm font-bold text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">
                   {c.name}
@@ -219,6 +239,15 @@ function CategoriesPage() {
           </div>
         </div>
       </Modal>
+
+      <Modal open={editOpen} onClose={() => { setEditOpen(false); setSelectedId(null) }} title="Editar categoria" description="Altere o nome ou cor da categoria." size="md" footer={<><Button variant="secondary" onClick={() => { setEditOpen(false); setSelectedId(null) }}>Cancelar</Button><Button onClick={() => { if (!editForm.name.trim()) { toast.error('Informe o nome da categoria'); return } dispatch({ type: 'EDIT_CATEGORY', categoryId: selectedId!, name: editForm.name.trim(), color: editForm.color }); toast.success('Categoria atualizada'); setEditOpen(false); setSelectedId(null) }}>Salvar</Button></>}>
+        <div className="space-y-4">
+          <Input label="Nome" value={editForm.name} onChange={(e: any) => setEditForm((f: any) => ({ ...f, name: e.target.value }))} />
+          <div><label className="label-base">Cor</label><div className="flex flex-wrap gap-2 pt-1">{COLORS.map((c: string) => (<button key={c} onClick={() => setEditForm((f: any) => ({ ...f, color: c }))} className={'h-7 w-7 rounded-full transition ' + (editForm.color === c ? 'ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-110')} style={{ backgroundColor: c }} />))}</div></div>
+        </div>
+      </Modal>
+
+      <ConfirmDialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} onConfirm={() => { dispatch({ type: 'DELETE_CATEGORY', categoryId: deleteTarget.id }); toast.success('Categoria excluida'); setDeleteTarget(null) }} title="Excluir categoria" message={'Tem certeza que deseja excluir "' + (deleteTarget?.name || '') + '"? As tarefas dessa categoria nao serao excluidas - apenas perdem a referencia.'} confirmLabel="Excluir categoria" />
     </div>
   )
 }
