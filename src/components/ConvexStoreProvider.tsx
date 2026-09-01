@@ -218,10 +218,22 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       // ── Projects ──
       case "CREATE_PROJECT":
         createProjectMut({ userId, name: action.name, description: action.description, color: action.color, due: action.due }); return;
+      case "EDIT_PROJECT":
+        updateProjectMut({ userId, projectId: action.projectId, patch: { name: action.name, description: action.description, color: action.color, due: action.due ?? undefined } }); return;
+      case "DELETE_PROJECT":
+        removeProjectMut({ userId, projectId: action.projectId }); return;
 
       // ── Categories ──
       case "CREATE_CATEGORY":
         createCategoryMut({ userId, name: action.name, color: action.color }); return;
+      case "EDIT_CATEGORY":
+        updateCategoryMut({ userId, categoryId: action.categoryId, patch: { name: action.name, color: action.color } }); return;
+      case "DELETE_CATEGORY":
+        removeCategoryMut({ userId, categoryId: action.categoryId }); return;
+
+      // ── Activities ──
+      case "DELETE_ACTIVITY":
+        deleteActivityMut({ userId, activityId: action.activityId as any }); return;
 
       // ── Trash ──
       case "CLEAR_TRASH":
