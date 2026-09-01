@@ -6,7 +6,7 @@ import Dropdown from '../components/ui/Dropdown'
 import EmptyState from '../components/ui/EmptyState'
 import { formatDay, localDateKey } from '../lib/format'
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<string, string> = {
   create: 'Criação',
   note: 'Notas',
   status: 'Status',
@@ -21,7 +21,7 @@ const TYPE_LABELS = {
 }
 
 function ActivitiesPage() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const [query, setQuery] = useState('')
   const [type, setType] = useState('')
 
@@ -37,11 +37,15 @@ function ActivitiesPage() {
     const map: Record<string, any[]> = {}
     filtered.forEach((a: any) => {
       const key = localDateKey(a.createdAt) || a.createdAt.slice(0, 10)
-      if (!(map as any)[key]) map[key] = []
+      if (!map[key]) map[key] = []
       map[key].push(a)
     })
     return Object.entries(map)
   }, [filtered])
+
+  const handleDelete = (activityId: string) => {
+    dispatch({ type: 'DELETE_ACTIVITY', activityId })
+  }
 
   return (
     <div className="space-y-5">
@@ -64,7 +68,7 @@ function ActivitiesPage() {
           align="right"
           trigger={
             <button className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${type ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
-              {type ? (TYPE_LABELS as any)[type] : 'Tipo'}
+              {type ? TYPE_LABELS[type] : 'Tipo'}
             </button>
           }
           items={[
@@ -98,7 +102,7 @@ function ActivitiesPage() {
                 </p>
                 <span className="h-px flex-1 bg-slate-100 dark:bg-slate-800" />
               </div>
-              <ActivityFeed items={items} compact />
+              <ActivityFeed items={items} compact onDelete={handleDelete} />
             </div>
           ))}
         </div>

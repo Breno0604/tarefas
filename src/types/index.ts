@@ -144,6 +144,11 @@ export type AppAction =
   | { type: "CREATE_PROJECT"; name: string; description?: string; color?: string; due?: string }
   | { type: "CREATE_CATEGORY"; name: string; color?: string }
   | { type: "IMPORT_DATA"; data: Partial<AppState> }
+  | { type: "DELETE_ACTIVITY"; activityId: string }
+  | { type: "EDIT_CATEGORY"; categoryId: string; name: string; color: string }
+  | { type: "DELETE_CATEGORY"; categoryId: string }
+  | { type: "EDIT_PROJECT"; projectId: string; name: string; description: string; color: string; due?: string | null }
+  | { type: "DELETE_PROJECT"; projectId: string }
   | { type: "CLEAR_TRASH" }
   | { type: "RESET" }
 

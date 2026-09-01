@@ -16,14 +16,14 @@ const TYPE_ICON = {
   cancel: { icon: Ban, cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' }
 }
 
-export default function ActivityFeed({ items, compact = false }: any) {
+export default function ActivityFeed({ items, compact = false, onDelete }: any) {
   return (
     <ul className="space-y-1">
       {items.map((a: any) => {
         const cfg = (TYPE_ICON as any)[a.type] || TYPE_ICON.status
         const Icon = cfg.icon
         return (
-          <li key={a.id} className={`flex items-start gap-3 ${compact ? 'py-2' : 'py-2.5'}`}>
+          <li key={a.id} className={`group flex items-start gap-3 ${compact ? 'py-2' : 'py-2.5'}`}>
             <span className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${cfg.cls}`}>
               <Icon size={14} />
             </span>
@@ -35,6 +35,15 @@ export default function ActivityFeed({ items, compact = false }: any) {
                 {formatRelative(a.createdAt)}
               </span>
             </span>
+            {onDelete && (
+              <button
+                onClick={() => onDelete(a.id)}
+                className="mt-1 shrink-0 rounded p-1 text-slate-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100 dark:text-slate-600"
+                aria-label="Excluir atividade"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </li>
         )
       })}

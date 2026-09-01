@@ -135,11 +135,7 @@ export default function AppLayout() {
             className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400 transition hover:border-slate-300 hover:text-slate-600 md:flex dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
           >
             <Search size={15} />
-            <span>Buscar...</span>
-            <kbd className="ml-4 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-400 dark:border-slate-600 dark:bg-slate-800">
-              Ctrl K
-            </kbd>
-          </button>
+            </button>
           <button
             onClick={() => setPaletteOpen(true)}
             className="tap-feedback rounded-lg p-2.5 text-slate-500 hover:bg-slate-100 sm:p-3 md:hidden dark:text-slate-400 dark:hover:bg-slate-800"

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Sunrise,
@@ -29,12 +29,6 @@ export default function Sidebar({ mobileOpen, onClose }: any) {
   const me = useMe()
   const navigate = useNavigate()
   const openTasks = state.tasks.filter((t: any) => t.status === 'todo' || t.status === 'in_progress').length
-  const completion = useMemo(() => {
-    const total = state.tasks.length
-    if (!total) return 0
-    const done = state.tasks.filter((t: any) => t.status === 'done').length
-    return Math.round((done / total) * 100)
-  }, [state.tasks])
 
   const initial = (me?.name || 'V').trim().charAt(0).toUpperCase()
 
@@ -120,19 +114,12 @@ export default function Sidebar({ mobileOpen, onClose }: any) {
       </div>
 
       <div className="mt-auto p-3">
-        <div className="rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 p-4 text-white">
-          <p className="text-xs font-bold">Meu progresso</p>
-          <p className="mt-0.5 text-[11px] opacity-80">{completion}% das tarefas concluídas</p>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
-            <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${completion}%` }} />
-          </div>
-        </div>
         <button
           onClick={() => {
             onClose()
             navigate('/configuracoes')
           }}
-          className="mt-3 flex w-full items-center gap-3 rounded-lg p-2 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
             {initial}

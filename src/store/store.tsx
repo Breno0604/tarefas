@@ -914,6 +914,72 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'RESET': {
       return { ...initialState(), booted: true }
     }
+    case 'EDIT_CATEGORY': {
+      const idx = state.categories.findIndex((c) => c.id === action.categoryId)
+      if (idx === -1) return state
+      const updated = state.categories.slice()
+      updated[idx] = { ...updated[idx], name: action.name, color: action.color }
+      return {
+        ...state,
+        categories: updated,
+        activities: trimActivities([
+          activityEntry({ type: 'category', taskId: null, text: 'Voce editou a categoria "' + action.name + '"' }),
+          ...state.activities
+        ])
+      }
+    }
+    case 'DELETE_CATEGORY': {
+      const cat = state.categories.find((c) => c.id === action.categoryId)
+      if (!cat) return state
+      return {
+        ...state,
+        categories: state.categories.filter((c) => c.id !== action.categoryId),
+        tasks: state.tasks.map((t) =>
+          t.categoryId === action.categoryId ? { ...t, categoryId: null } : t
+        ),
+        activities: trimActivities([
+          activityEntry({ type: 'category', taskId: null, text: 'Voce excluiu a categoria "' + cat.name + '" - tarefas mantidas sem categoria' }),
+          ...state.activities
+        ])
+      }
+    }
+    case 'EDIT_PROJECT': {
+      const pidx = state.projects.findIndex((p) => p.id === action.projectId)
+      if (pidx === -1) return state
+      const projs = state.projects.slice()
+      projs[pidx] = { ...projs[pidx], name: action.name, description: action.description, color: action.color, due: action.due || null }
+      return {
+        ...state,
+        projects: projs,
+        activities: trimActivities([
+          activityEntry({ type: 'project', taskId: null, text: 'Voce editou o projeto "' + action.name + '"' }),
+          ...state.activities
+        ])
+      }
+    }
+    case 'DELETE_PROJECT': {
+      const proj = state.projects.find((p) => p.id === action.projectId)
+      if (!proj) return state
+      return {
+        ...state,
+        projects: state.projects.filter((p) => p.id !== action.projectId),
+        tasks: state.tasks.map((t) =>
+          t.projectId === action.projectId ? { ...t, projectId: null } : t
+        ),
+        activities: trimActivities([
+          activityEntry({ type: 'project', taskId: null, text: 'Voce excluiu o projeto "' + proj.name + '" - tarefas mantidas sem projeto' }),
+          ...state.activities
+        ])
+      }
+    }
+    case 'DELETE_ACTIVITY': {
+      const id = action.activityId
+      if (!id) return state
+      return {
+        ...state,
+        activities: state.activities.filter((a: any) => a.id !== id)
+      }
+    }
     default:
       return state
   }

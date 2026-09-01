@@ -61,7 +61,11 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
   const toggleSubMut = useMutation(api.tasks.toggleSubtask);
 
   const createProjectMut = useMutation(api.projects.create);
+  const updateProjectMut = useMutation(api.projects.update);
+  const removeProjectMut = useMutation(api.projects.remove);
   const createCategoryMut = useMutation(api.categories.create);
+  const updateCategoryMut = useMutation(api.categories.update);
+  const removeCategoryMut = useMutation(api.categories.remove);
   const addNoteMut = useMutation(api.notes.add);
   const deleteNoteMut = useMutation(api.notes.remove);
 
@@ -71,6 +75,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
 
   const restoreTasksMut = useMutation(api.trash.restore);
   const clearTrashMut = useMutation(api.trash.clear);
+  const deleteActivityMut = useMutation(api.activities.remove);
 
   const upsertProfileMut = useMutation(api.profiles.upsert);
   const upsertPrefsMut = useMutation(api.preferences.upsert);
@@ -232,7 +237,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       default:
         console.warn("[ConvexStore] Unknown action:", (action as any).type);
     }
-  }, [userId, theme, prefsRaw, createTask, updateTask, toggleDoneMut, completeTaskMut, reopenTaskMut, setStatusMut, cancelTaskMut, deleteTaskMut, toggleFavMut, duplicateTaskMut, toggleSubMut, addNoteMut, deleteNoteMut, markReadMut, markAllReadMut, clearRemindersMut, createProjectMut, createCategoryMut, restoreTasksMut, clearTrashMut, upsertProfileMut, upsertPrefsMut]);
+  }, [userId, theme, prefsRaw, deleteActivityMut, updateCategoryMut, removeCategoryMut, updateProjectMut, removeProjectMut, createTask, updateTask, toggleDoneMut, completeTaskMut, reopenTaskMut, setStatusMut, cancelTaskMut, deleteTaskMut, toggleFavMut, duplicateTaskMut, toggleSubMut, addNoteMut, deleteNoteMut, markReadMut, markAllReadMut, clearRemindersMut, createProjectMut, createCategoryMut, restoreTasksMut, clearTrashMut, upsertProfileMut, upsertPrefsMut]);
 
   const value = useMemo<StoreContextValue>(() => ({ state, dispatch }), [state, dispatch]);
 

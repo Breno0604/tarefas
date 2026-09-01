@@ -292,7 +292,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
             <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
               Informações
             </p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {task.projectId && (
                 <MetaRow
                   icon={FolderKanban}
@@ -338,7 +338,10 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
                   title="Alterar status"
                   className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  Alterar status
+                  {(() => {
+                    const currentStatus = Object.values(STATUS).find((s: any) => s.key === task.status)
+                    return currentStatus ? currentStatus.label : "Alterar status"
+                  })()}
                   <ChevronDown size={15} className="text-slate-400" />
                 </button>
               }
