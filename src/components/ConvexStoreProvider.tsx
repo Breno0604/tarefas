@@ -80,6 +80,8 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
   const upsertProfileMut = useMutation(api.profiles.upsert);
   const upsertPrefsMut = useMutation(api.preferences.upsert);
   const cleanAllMut = useMutation(api.cleanup.cleanAll);
+  const importAllMut = useMutation(api.importData.importAll);
+  const resetAllMut = useMutation(api.importData.resetAll);
 
   // ── Cleanup: run once on boot ──
   useEffect(() => {
@@ -245,11 +247,64 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       case "CLEAR_TRASH":
         clearTrashMut({ userId }); return;
 
+      // ── Import / Reset ──
+      case "IMPORT_DATA": {
+        const d = action.data || {};
+        importAllMut({
+          userId,
+          tasks: (d.tasks || []).map((t: any) => ({
+            title: t.title || "Sem título",
+            description: t.description || "",
+            status: t.status || "todo",
+            priority: t.priority || "medium",
+            projectId: t.projectId || undefined,
+            categoryId: t.categoryId || undefined,
+            dueDate: t.dueDate || undefined,
+            createdAt: t.createdAt || new Date().toISOString(),
+            estimatedHours: Number(t.estimatedHours) || 0,
+            progress: Math.max(0, Math.min(100, Number(t.progress) || 0)),
+            tags: Array.isArray(t.tags) ? t.tags : [],
+            subtasks: Array.isArray(t.subtasks) ? t.subtasks.map((s: any) => ({ id: s.id || crypto.randomUUID(), title: s.title || "", done: Boolean(s.done) })) : [],
+            favorite: Boolean(t.favorite),
+            recurrence: t.recurrence || undefined,
+            cancelReason: t.cancelReason || undefined,
+          })),
+          projects: (d.projects || []).map((p: any) => ({
+            name: p.name || "Sem nome",
+            description: p.description || "",
+            color: p.color || "#6366f1",
+            due: p.due || undefined,
+          })),
+          categories: (d.categories || []).map((c: any) => ({
+            name: c.name || "Sem nome",
+            color: c.color || "#94a3b8",
+          })),
+          notes: (() => {
+            const raw = d.notes;
+            if (Array.isArray(raw)) {
+              return raw.map((n: any) => ({ taskId: n.taskId || "", text: n.text || "", createdAt: n.createdAt || new Date().toISOString() }));
+            }
+            if (raw && typeof raw === 'object') {
+              const arr: any[] = [];
+              for (const [taskId, notes] of Object.entries(raw)) {
+                if (Array.isArray(notes)) {
+                  for (const n of notes) arr.push({ taskId, text: (n as any).text || "", createdAt: (n as any).createdAt || new Date().toISOString() });
+                }
+              }
+              return arr;
+            }
+            return [];
+          })(),
+        }).catch(() => {});
+        return;
+      }
+      case "RESET":
+        resetAllMut({ userId }).catch(() => {});
+        return;
+
       // ── No-ops (Convex is always current) ──
       case "BOOT":
       case "RECONCILE_REMINDERS":
-      case "IMPORT_DATA":
-      case "RESET":
         return;
 
       default:

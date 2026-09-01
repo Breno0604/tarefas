@@ -125,8 +125,27 @@ export default defineSchema({
   trash: defineTable({
     userId: v.string(),
     originalTaskId: v.string(),
-    task: v.any(),       // Serialized Task object
-    notes: v.any(),      // Serialized Note[] array
+    task: v.object({
+      title: v.string(),
+      description: v.optional(v.string()),
+      status: v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled")),
+      priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent")),
+      projectId: v.optional(v.string()),
+      categoryId: v.optional(v.string()),
+      dueDate: v.optional(v.string()),
+      createdAt: v.string(),
+      estimatedHours: v.optional(v.number()),
+      progress: v.number(),
+      tags: v.array(v.string()),
+      subtasks: v.array(v.object({ id: v.string(), title: v.string(), done: v.boolean() })),
+      favorite: v.boolean(),
+      recurrence: v.optional(v.union(v.literal("none"), v.literal("daily"), v.literal("weekly"), v.literal("monthly"))),
+      cancelReason: v.optional(v.string()),
+    }),
+    notes: v.array(v.object({
+      text: v.string(),
+      createdAt: v.string(),
+    })),
     deletedAt: v.string(),
   }).index("by_user", ["userId"]),
 

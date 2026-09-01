@@ -122,9 +122,38 @@ export const update = mutation({
       if (value !== undefined) updates[key] = value;
     }
     await ctx.db.patch(args.taskId as any, updates);
+    // Generate detailed activity entries for each changed field
+    const LABELS: Record<string, string> = { todo: "A fazer", in_progress: "Em andamento", done: "Concluída", cancelled: "Cancelada" };
+    const PRIO_LABELS: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta", urgent: "Urgente" };
+    const now = new Date().toISOString();
     if (args.patch.status && args.patch.status !== task.status) {
-      const LABELS: Record<string, string> = { todo: "A fazer", in_progress: "Em andamento", done: "Concluída", cancelled: "Cancelada" };
-      await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: `Você moveu "${task.title}" para ${LABELS[args.patch.status]}`, createdAt: new Date().toISOString() });
+      await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: `Você moveu "${task.title}" para ${LABELS[args.patch.status]}`, createdAt: now });
+    }
+    if (args.patch.priority && args.patch.priority !== task.priority) {
+      const ranks: Record<string, number> = { low: 0, medium: 1, high: 2, urgent: 3 };
+      const dir = (ranks[args.patch.priority] || 0) > (ranks[task.priority] || 0) ? "aumentou" : "reduziu";
+      await ctx.db.insert("activities", { userId: args.userId, type: "priority", taskId: args.taskId, text: `Você ${dir} a prioridade de "${task.title}" para ${PRIO_LABELS[args.patch.priority]}`, createdAt: now });
+    }
+    if (args.patch.dueDate !== undefined && args.patch.dueDate !== task.dueDate) {
+      const text = args.patch.dueDate
+        ? `Você alterou o vencimento de "${task.title}" para ${args.patch.dueDate}`
+        : `Você removeu o vencimento de "${task.title}"`;
+      await ctx.db.insert("activities", { userId: args.userId, type: "due", taskId: args.taskId, text, createdAt: now });
+    }
+    if (args.patch.projectId !== undefined && args.patch.projectId !== task.projectId) {
+      const text = args.patch.projectId
+        ? `Você moveu "${task.title}" para um projeto`
+        : `Você removeu "${task.title}" do projeto`;
+      await ctx.db.insert("activities", { userId: args.userId, type: "project", taskId: args.taskId, text, createdAt: now });
+    }
+    if (args.patch.title && args.patch.title !== task.title) {
+      await ctx.db.insert("activities", { userId: args.userId, type: "title", taskId: args.taskId, text: `Você renomeou a tarefa "${task.title}" para "${args.patch.title}"`, createdAt: now });
+    }
+    if (args.patch.categoryId !== undefined && args.patch.categoryId !== task.categoryId) {
+      const text = args.patch.categoryId
+        ? `Você moveu "${task.title}" para uma categoria`
+        : `Você removeu "${task.title}" da categoria`;
+      await ctx.db.insert("activities", { userId: args.userId, type: "category", taskId: args.taskId, text, createdAt: now });
     }
   },
 });
@@ -233,7 +262,7 @@ export const setStatus = mutation({
   args: { userId: v.string(), taskId: v.string(), status: v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled")) },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task) return;
+    if (!task || task.userId !== args.userId) return;
     const LABELS: Record<string, string> = { todo: "A fazer", in_progress: "Em andamento", done: "Concluída", cancelled: "Cancelada" };
     const updates: Record<string, unknown> = { status: args.status };
     if (args.status === "done") updates.progress = 100;
@@ -246,7 +275,7 @@ export const cancel = mutation({
   args: { userId: v.string(), taskId: v.string(), reason: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task || task.status === "done" || task.status === "cancelled") return;
+    if (!task || task.userId !== args.userId || task.status === "done" || task.status === "cancelled") return;
     await ctx.db.patch(args.taskId as any, { status: "cancelled", cancelReason: args.reason ?? undefined });
     const text = args.reason ? `Você cancelou "${task.title}": "${args.reason}"` : `Você cancelou "${task.title}"`;
     await ctx.db.insert("activities", { userId: args.userId, type: "cancel", taskId: args.taskId, text, createdAt: new Date().toISOString() });
@@ -257,9 +286,12 @@ export const remove = mutation({
   args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task) return;
+    if (!task || task.userId !== args.userId) return;
     const notes = await ctx.db.query("notes").withIndex("by_task", (q) => q.eq("taskId", args.taskId)).collect();
-    await ctx.db.insert("trash", { userId: args.userId, originalTaskId: task._id.toString(), task: { ...task, _id: undefined, _creationTime: undefined }, notes: notes.map((n) => ({ ...n, _id: undefined, _creationTime: undefined })), deletedAt: new Date().toISOString() });
+    // Store only the fields defined in the trash schema
+    const { _id: _tId, _creationTime: _tCt, userId: _tUid, ...taskData } = task;
+    const trashNotes = notes.map((n) => { const { _id, _creationTime, userId: _nUid, taskId: _nTid, ...noteData } = n; return noteData; });
+    await ctx.db.insert("trash", { userId: args.userId, originalTaskId: task._id.toString(), task: taskData, notes: trashNotes, deletedAt: new Date().toISOString() });
     for (const note of notes) await ctx.db.delete(note._id);
     await ctx.db.delete(args.taskId as any);
     await ctx.db.insert("activities", { userId: args.userId, type: "delete", text: `Você excluiu a tarefa "${task.title}"`, createdAt: new Date().toISOString() });
@@ -313,8 +345,10 @@ export const list = query({
 });
 
 export const get = query({
-  args: { taskId: v.string() },
+  args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.taskId as any) as any;
+    const task = await ctx.db.get(args.taskId as any) as any;
+    if (!task || task.userId !== args.userId) return null;
+    return task;
   },
 });

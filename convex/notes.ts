@@ -22,9 +22,9 @@ export const remove = mutation({
 });
 
 export const listByTask = query({
-  args: { taskId: v.string() },
+  args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db.query("notes").withIndex("by_task", (q) => q.eq("taskId", args.taskId)).collect();
+    return await ctx.db.query("notes").withIndex("by_user_task", (q) => q.eq("userId", args.userId).eq("taskId", args.taskId)).collect();
   },
 });
 
