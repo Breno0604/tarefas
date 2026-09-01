@@ -56,7 +56,7 @@ export function bulkDeleteWithUndo({ dispatch, toast, taskIds }: { dispatch: Dis
     toast.push(`${taskIds.length} tarefa(s) excluída(s)`, 'success', {
       action: {
         label: 'Desfazer',
-        onClick: () => dispatch({ type: 'RESTORE_TASK', taskId: taskIds[0] })
+        onClick: () => dispatch({ type: 'RESTORE_TASK', taskId: '', taskIds })
       }
     })
   } catch (e) {

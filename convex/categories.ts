@@ -26,7 +26,21 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const category = await ctx.db.get(args.categoryId as any) as any;
     if (!category || category.userId !== args.userId) return;
+    // Unlink all tasks from this category before deleting
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user_category", (q) => q.eq("userId", args.userId).eq("categoryId", args.categoryId))
+      .collect();
+    for (const task of tasks) {
+      await ctx.db.patch(task._id, { categoryId: undefined });
+    }
     await ctx.db.delete(args.categoryId as any);
+    await ctx.db.insert("activities", {
+      userId: args.userId,
+      type: "category",
+      text: `Você excluiu a categoria "${category.name}" (${tasks.length} tarefa(s) desvinculada(s))`,
+      createdAt: new Date().toISOString(),
+    });
   },
 });
 

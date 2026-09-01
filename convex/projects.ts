@@ -26,7 +26,21 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const project = await ctx.db.get(args.projectId as any) as any;
     if (!project || project.userId !== args.userId) return;
+    // Unlink all tasks from this project before deleting
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user_project", (q) => q.eq("userId", args.userId).eq("projectId", args.projectId))
+      .collect();
+    for (const task of tasks) {
+      await ctx.db.patch(task._id, { projectId: undefined });
+    }
     await ctx.db.delete(args.projectId as any);
+    await ctx.db.insert("activities", {
+      userId: args.userId,
+      type: "project",
+      text: `Você excluiu o projeto "${project.name}" (${tasks.length} tarefa(s) desvinculada(s))`,
+      createdAt: new Date().toISOString(),
+    });
   },
 });
 

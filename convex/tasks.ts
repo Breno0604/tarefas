@@ -7,6 +7,42 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { uid } from "./helpers";
 
+/**
+ * Compute next recurrence date using calendar math.
+ * Handles monthly clamping (e.g. 31 jan → 28 feb).
+ */
+function nextRecurrenceDate(dueDate: string, recurrence: string): string | null {
+  if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return null;
+  const parts = dueDate.split("-").map(Number);
+  let year = parts[0], month = parts[1] - 1, day = parts[2];
+  switch (recurrence) {
+    case "daily": {
+      const next = new Date(year, month, day + 1);
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+    }
+    case "weekly": {
+      const next = new Date(year, month, day + 7);
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+    }
+    case "monthly": {
+      const nextMonth = month + 1;
+      const nextYear = nextMonth > 11 ? year + 1 : year;
+      const normalizedMonth = nextMonth % 12;
+      const maxDay = new Date(nextYear, normalizedMonth + 1, 0).getDate();
+      const clampedDay = Math.min(day, maxDay);
+      return `${nextYear}-${String(normalizedMonth + 1).padStart(2, "0")}-${String(clampedDay).padStart(2, "0")}`;
+    }
+    default:
+      return null;
+  }
+}
+
+/** Today's date key YYYY-MM-DD in local-ish time. */
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // ── Mutations ──────────────────────────────────────────────
 
 export const create = mutation({
@@ -97,11 +133,45 @@ export const toggleDone = mutation({
   args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
-    if (!task) return;
+    if (!task || task.userId !== args.userId) return;
     const newStatus = task.status === "done" ? "in_progress" : "done";
     const progress = newStatus === "done" ? 100 : Math.min(task.progress, 99);
     await ctx.db.patch(args.taskId as any, { status: newStatus, progress });
     await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: newStatus === "done" ? `Você concluiu "${task.title}"` : `Você reabriu "${task.title}"`, createdAt: new Date().toISOString() });
+    // Spawn next recurrence when completing
+    if (newStatus === "done" && task.recurrence && task.recurrence !== "none") {
+      let nextDue = task.dueDate ? nextRecurrenceDate(task.dueDate, task.recurrence) : null;
+      if (nextDue && nextDue < todayKey()) {
+        nextDue = nextRecurrenceDate(todayKey(), task.recurrence);
+      }
+      if (nextDue && nextDue >= todayKey()) {
+        const spawnedId = await ctx.db.insert("tasks", {
+          userId: args.userId,
+          title: task.title,
+          description: task.description ?? "",
+          status: "todo",
+          priority: task.priority,
+          projectId: task.projectId,
+          categoryId: task.categoryId,
+          dueDate: nextDue,
+          createdAt: new Date().toISOString(),
+          estimatedHours: task.estimatedHours ?? 0,
+          progress: 0,
+          tags: [...(task.tags ?? [])],
+          subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
+          favorite: false,
+          recurrence: task.recurrence,
+          cancelReason: undefined,
+        });
+        await ctx.db.insert("activities", {
+          userId: args.userId,
+          type: "create",
+          taskId: spawnedId.toString(),
+          text: `Próxima ocorrência de "${task.title}" criada para ${nextDue}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
   },
 });
 
@@ -112,6 +182,40 @@ export const complete = mutation({
     if (!task || task.status === "done" || task.status === "cancelled") return;
     await ctx.db.patch(args.taskId as any, { status: "done", progress: 100 });
     await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: `Você concluiu "${task.title}"`, createdAt: new Date().toISOString() });
+    // Spawn next recurrence if applicable
+    if (task.recurrence && task.recurrence !== "none") {
+      let nextDue = task.dueDate ? nextRecurrenceDate(task.dueDate, task.recurrence) : null;
+      if (nextDue && nextDue < todayKey()) {
+        nextDue = nextRecurrenceDate(todayKey(), task.recurrence);
+      }
+      if (nextDue && nextDue >= todayKey()) {
+        const spawnedId = await ctx.db.insert("tasks", {
+          userId: args.userId,
+          title: task.title,
+          description: task.description ?? "",
+          status: "todo",
+          priority: task.priority,
+          projectId: task.projectId,
+          categoryId: task.categoryId,
+          dueDate: nextDue,
+          createdAt: new Date().toISOString(),
+          estimatedHours: task.estimatedHours ?? 0,
+          progress: 0,
+          tags: [...(task.tags ?? [])],
+          subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
+          favorite: false,
+          recurrence: task.recurrence,
+          cancelReason: undefined,
+        });
+        await ctx.db.insert("activities", {
+          userId: args.userId,
+          type: "create",
+          taskId: spawnedId.toString(),
+          text: `Próxima ocorrência de "${task.title}" criada para ${nextDue}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
   },
 });
 

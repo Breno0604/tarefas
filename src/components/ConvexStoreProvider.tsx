@@ -91,6 +91,9 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
     (localStorage.getItem("taskflow-theme") || "light") as "light" | "dark"
   );
 
+  // ── Track last duplicated task ID for undo toast ──
+  const [lastDuplicatedId, setLastDuplicatedId] = React.useState<string | undefined>(undefined);
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("taskflow-theme", theme);
@@ -150,8 +153,9 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       appearance: prefsRaw
         ? { firstDay: (prefsRaw as any).firstDay as Appearance["firstDay"] }
         : EMPTY.appearance,
+      _lastDuplicatedId: lastDuplicatedId,
     };
-  }, [tasksRaw, projectsRaw, categoriesRaw, activitiesRaw, remindersRaw, trashRaw, allNotesRaw, profileRaw, prefsRaw, theme]);
+  }, [tasksRaw, projectsRaw, categoriesRaw, activitiesRaw, remindersRaw, trashRaw, allNotesRaw, profileRaw, prefsRaw, theme, lastDuplicatedId]);
 
   // ── Dispatch ──
   const dispatch = useCallback((action: AppAction) => {
@@ -197,7 +201,9 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       case "TOGGLE_FAVORITE":
         toggleFavMut({ userId, taskId: action.taskId }); return;
       case "DUPLICATE_TASK":
-        duplicateTaskMut({ userId, taskId: action.taskId }); return;
+        duplicateTaskMut({ userId, taskId: action.taskId }).then((newId: any) => {
+          if (newId) setLastDuplicatedId(newId.toString());
+        }); return;
       case "TOGGLE_SUBTASK":
         toggleSubMut({ userId, taskId: action.taskId, subtaskId: action.subtaskId }); return;
 

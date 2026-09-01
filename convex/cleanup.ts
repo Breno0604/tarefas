@@ -11,6 +11,21 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+/** Today's date key YYYY-MM-DD. */
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Local date key from YYYY-MM-DD string. */
+function localDateKey(iso: string): string {
+  if (!iso) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** Remove trash entries older than 30 days for a user. */
 export const cleanTrash = mutation({
   args: { userId: v.string() },
@@ -115,7 +130,166 @@ export const cleanAll = mutation({
       }
     }
 
-    return { trashDeleted, activitiesDeleted, codesDeleted };
+    // Reconcile reminders
+    const today = todayKey();
+    const DAY = 24 * 60 * 60 * 1000;
+    const allTasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const allReminders = await ctx.db
+      .query("reminders")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const taskMap = new Map(allTasks.map((t) => [t._id.toString(), t]));
+    let remindersDeleted = 0;
+    for (const r of allReminders) {
+      const task = taskMap.get(r.taskId);
+      if (!task || task.status === "done" || task.status === "cancelled" || !task.dueDate) {
+        await ctx.db.delete(r._id); remindersDeleted++; continue;
+      }
+      const taskDateKey = localDateKey(task.dueDate);
+      if (r.title === "Tarefa atrasada" && !(taskDateKey < today)) {
+        await ctx.db.delete(r._id); remindersDeleted++; continue;
+      }
+      if (r.title === "Vencimento próximo") {
+        if (taskDateKey < today) { await ctx.db.delete(r._id); remindersDeleted++; continue; }
+        const diff = Math.round((new Date(taskDateKey).getTime() - new Date(today).getTime()) / DAY);
+        if (diff > 3 || diff < 0) { await ctx.db.delete(r._id); remindersDeleted++; continue; }
+      }
+    }
+    const recheck = await ctx.db
+      .query("reminders")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const hasRem = (taskId: string) => recheck.some((r) => r.taskId === taskId);
+    let remindersCreated = 0;
+    for (const task of allTasks) {
+      if (!task.dueDate || task.status === "done" || task.status === "cancelled") continue;
+      const dk = localDateKey(task.dueDate);
+      if (dk < today && !hasRem(task._id.toString())) {
+        await ctx.db.insert("reminders", { userId: args.userId, type: "due", title: "Tarefa atrasada", body: `\"${task.title}\" está atrasada.`, taskId: task._id.toString(), read: false, createdAt: new Date().toISOString() });
+        remindersCreated++;
+      } else if (dk > today) {
+        const diff = Math.round((new Date(dk).getTime() - new Date(today).getTime()) / DAY);
+        if (diff <= 3 && !hasRem(task._id.toString())) {
+          const body = diff === 1 ? `\"${task.title}\" vence amanhã.` : `\"${task.title}\" vence em ${diff} dia(s).`;
+          await ctx.db.insert("reminders", { userId: args.userId, type: "due", title: "Vencimento próximo", body, taskId: task._id.toString(), read: false, createdAt: new Date().toISOString() });
+          remindersCreated++;
+        }
+      }
+    }
+
+    return { trashDeleted, activitiesDeleted, codesDeleted, remindersCreated, remindersDeleted };
+  },
+});
+
+/**
+ * Reconcile reminders: create missing ones and remove stale ones.
+ * Mirrors the localStorage reconcileReminders logic.
+ */
+export const reconcileReminders = mutation({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const today = todayKey();
+    const DAY = 24 * 60 * 60 * 1000;
+
+    // Fetch all tasks and existing reminders for this user
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const existingReminders = await ctx.db
+      .query("reminders")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const taskMap = new Map(tasks.map((t) => [t._id.toString(), t]));
+    let created = 0;
+    let deleted = 0;
+
+    // Remove stale or orphaned reminders
+    for (const r of existingReminders) {
+      const task = taskMap.get(r.taskId);
+      // Remove if task missing, done, cancelled, or no due date
+      if (!task || task.status === "done" || task.status === "cancelled" || !task.dueDate) {
+        await ctx.db.delete(r._id);
+        deleted++;
+        continue;
+      }
+      const taskDateKey = localDateKey(task.dueDate);
+      // Remove overdue reminder if task is no longer overdue
+      if (r.title === "Tarefa atrasada" && !(taskDateKey < today)) {
+        await ctx.db.delete(r._id);
+        deleted++;
+        continue;
+      }
+      // Remove upcoming reminder if outside 3-day window
+      if (r.title === "Vencimento próximo") {
+        if (taskDateKey < today) {
+          await ctx.db.delete(r._id);
+          deleted++;
+          continue;
+        }
+        const diffDays = Math.round((new Date(taskDateKey).getTime() - new Date(today).getTime()) / DAY);
+        if (diffDays > 3 || diffDays < 0) {
+          await ctx.db.delete(r._id);
+          deleted++;
+          continue;
+        }
+      }
+    }
+
+    // Re-fetch after deletions
+    const remainingReminders = await ctx.db
+      .query("reminders")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const hasReminder = (type: string, taskId: string) =>
+      remainingReminders.some((r) => r.type === type && r.taskId === taskId);
+
+    // Create missing reminders
+    for (const task of tasks) {
+      if (!task.dueDate || task.status === "done" || task.status === "cancelled") continue;
+      const taskDateKey = localDateKey(task.dueDate);
+
+      if (taskDateKey < today) {
+        // Overdue
+        if (!hasReminder("due", task._id.toString())) {
+          await ctx.db.insert("reminders", {
+            userId: args.userId,
+            type: "due",
+            title: "Tarefa atrasada",
+            body: `"${task.title}" está atrasada.`,
+            taskId: task._id.toString(),
+            read: false,
+            createdAt: new Date().toISOString(),
+          });
+          created++;
+        }
+      } else if (taskDateKey > today) {
+        // Due in the future — check if within 3-day window
+        const diffDays = Math.round((new Date(taskDateKey).getTime() - new Date(today).getTime()) / DAY);
+        if (diffDays <= 3 && !hasReminder("due", task._id.toString())) {
+          const body = diffDays === 1
+            ? `"${task.title}" vence amanhã.`
+            : `"${task.title}" vence em ${diffDays} dia(s).`;
+          await ctx.db.insert("reminders", {
+            userId: args.userId,
+            type: "due",
+            title: "Vencimento próximo",
+            body,
+            taskId: task._id.toString(),
+            read: false,
+            createdAt: new Date().toISOString(),
+          });
+          created++;
+        }
+      }
+    }
+
+    return { created, deleted };
   },
 });
 
