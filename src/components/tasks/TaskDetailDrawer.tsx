@@ -25,7 +25,7 @@ import Button from '../ui/Button'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import Modal from '../ui/Modal'
 import { StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
-import { Textarea } from '../ui/Inputs'
+import { Textarea, Input } from '../ui/Inputs'
 import ProgressBar from '../ui/ProgressBar'
 import { useStore, useTaskById, useTaskNotes } from '../../store/store'
 import { STATUS, RECURRENCE } from '../../lib/constants'
@@ -77,7 +77,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
   const isDone = task.status === 'done'
   const isCancelled = task.status === 'cancelled'
 
-  const change = (patch: any, msg: any) => {
+  const change = (patch: any, msg?: any) => {
     dispatch({ type: 'UPDATE_TASK', taskId: task.id, patch })
     if (msg) toast.success(msg)
   }
@@ -293,41 +293,115 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
               Informações
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {task.projectId && (
-                <MetaRow
-                  icon={FolderKanban}
-                  label="Projeto"
-                  value={state.projects.find((p: any) => p.id === task.projectId)?.name || '—'}
-                />
-              )}
-              {task.categoryId && (
-                <MetaRow
-                  icon={Tag}
-                  label="Categoria"
-                  value={state.categories.find((c: any) => c.id === task.categoryId)?.name || '—'}
-                />
-              )}
-              {task.dueDate && (
-                <MetaRow
-                  icon={Calendar}
-                  label="Vencimento"
-                  value={formatDate(task.dueDate)}
-                />
-              )}
-              <MetaRow
-                icon={Clock}
-                label="Horas estimadas"
-                value={task.estimatedHours ? `${task.estimatedHours}h` : 'Não estimado'}
-              />
-              <MetaRow
-                icon={Repeat}
-                label="Repetição"
-                value={
-                  task.recurrence && (RECURRENCE as any)[task.recurrence]
-                    ? (RECURRENCE as any)[task.recurrence].label
-                    : 'Não se repete'
-                }
-              />
+              {/* Projeto editável */}
+              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                <FolderKanban size={16} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Projeto</span>
+                  <Dropdown
+                    align="left"
+                    triggerClassName="w-full mt-0.5"
+                    trigger={
+                      <button className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                        {state.projects.find((p: any) => p.id === task.projectId)?.name || 'Selecionar'}
+                        <ChevronDown size={13} className="text-slate-400" />
+                      </button>
+                    }
+                    items={[
+                      ...state.projects.map((p: any) => ({
+                        label: p.name,
+                        active: task.projectId === p.id,
+                        onClick: () => change({ projectId: p.id }, 'Projeto alterado')
+                      })),
+                      { type: 'divider' },
+                      { label: 'Remover projeto', onClick: () => change({ projectId: null }, 'Projeto removido') }
+                    ]}
+                  />
+                </span>
+              </div>
+
+              {/* Categoria editável */}
+              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                <Tag size={16} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Categoria</span>
+                  <Dropdown
+                    align="left"
+                    triggerClassName="w-full mt-0.5"
+                    trigger={
+                      <button className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                        {state.categories.find((c: any) => c.id === task.categoryId)?.name || 'Selecionar'}
+                        <ChevronDown size={13} className="text-slate-400" />
+                      </button>
+                    }
+                    items={[
+                      ...state.categories.map((c: any) => ({
+                        label: c.name,
+                        active: task.categoryId === c.id,
+                        onClick: () => change({ categoryId: c.id }, 'Categoria alterada')
+                      })),
+                      { type: 'divider' },
+                      { label: 'Remover categoria', onClick: () => change({ categoryId: null }, 'Categoria removida') }
+                    ]}
+                  />
+                </span>
+              </div>
+
+              {/* Vencimento editável */}
+              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                <Calendar size={16} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Vencimento</span>
+                  <input
+                    type="date"
+                    value={task.dueDate || ''}
+                    onChange={(e) => change({ dueDate: e.target.value || null }, e.target.value ? 'Vencimento alterado' : 'Vencimento removido')}
+                    className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 dark:border-slate-700 dark:text-slate-200 dark:focus:border-brand-500"
+                  />
+                </span>
+              </div>
+
+              {/* Horas estimadas editável */}
+              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                <Clock size={16} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Horas estimadas</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={task.estimatedHours || ''}
+                    onChange={(e) => change({ estimatedHours: Number(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 dark:border-slate-700 dark:text-slate-200 dark:focus:border-brand-500"
+                  />
+                </span>
+              </div>
+
+              {/* Repetição editável */}
+              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                <Repeat size={16} className="shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Repetição</span>
+                  <Dropdown
+                    align="left"
+                    triggerClassName="w-full mt-0.5"
+                    trigger={
+                      <button className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                        {task.recurrence && (RECURRENCE as any)[task.recurrence] ? (RECURRENCE as any)[task.recurrence].label : 'Não se repete'}
+                        <ChevronDown size={13} className="text-slate-400" />
+                      </button>
+                    }
+                    items={
+                      Object.values(RECURRENCE).map((r: any) => ({
+                        label: r.label,
+                        active: task.recurrence === r.key,
+                        onClick: () => change({ recurrence: r.key }, 'Repetição alterada')
+                      }))
+                    }
+                  />
+                </span>
+              </div>
             </div>
 
             <Dropdown
