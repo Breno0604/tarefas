@@ -231,7 +231,11 @@ export function useTaskFilters(view: string) {
     (favoritesOnly ? 1 : 0)
 
   const filtered = useMemo(() => {
-    let list = state.tasks.filter((t) => !t.archived)
+    const showArchived = filters.status.includes('archived')
+    const activeStatuses = filters.status.filter((s) => s !== 'archived')
+    let list = showArchived
+      ? state.tasks.filter((t) => t.archived)
+      : state.tasks.filter((t) => !t.archived)
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
@@ -242,7 +246,7 @@ export function useTaskFilters(view: string) {
           (state.notes[t.id] || []).some((n) => (n.text || '').toLowerCase().includes(q))
       )
     }
-    if (filters.status.length) list = list.filter((t) => filters.status.includes(t.status))
+    if (activeStatuses.length) list = list.filter((t) => activeStatuses.includes(t.status))
     if (filters.priority.length) list = list.filter((t) => filters.priority.includes(t.priority))
     if (filters.project.length)
       list = list.filter((t) => filters.project.includes(t.projectId || 'none'))
@@ -270,7 +274,7 @@ export function useTaskFilters(view: string) {
 
   const activeFilters: { dim: string; key: string; label: string | undefined }[] = [
     ...(favoritesOnly ? [{ dim: 'fav', key: 'fav', label: 'Favoritas' }] : []),
-    ...filters.status.map((k: string) => ({ dim: 'status', key: k, label: (STATUS as any)[k].label })),
+    ...filters.status.map((k: string) => ({ dim: 'status', key: k, label: k === 'archived' ? 'Arquivada' : (STATUS as any)[k].label })),
     ...filters.priority.map((k: string) => ({ dim: 'priority', key: k, label: (PRIORITY as any)[k].label })),
     ...filters.project.map((k: string) => ({
       dim: 'project',

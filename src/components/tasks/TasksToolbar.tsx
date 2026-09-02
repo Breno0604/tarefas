@@ -59,12 +59,21 @@ export default function TasksToolbar({ f }: any) {
         icon={CircleDot}
         activeCount={filters.status.length}
         onClear={() => setFilters((f: any) => ({ ...f, status: [] }))}
-        items={Object.values(STATUS).map((s: any) => ({
-          label: s.label,
-          active: filters.status.includes(s.key),
-          keepOpen: true,
-          onClick: () => toggleFilter('status', s.key)
-        }))}
+        items={[
+          ...Object.values(STATUS).map((s: any) => ({
+            label: s.label,
+            active: filters.status.includes(s.key),
+            keepOpen: true,
+            onClick: () => toggleFilter('status', s.key)
+          })),
+          { type: 'divider' },
+          {
+            label: 'Arquivada',
+            active: filters.status.includes('archived'),
+            keepOpen: true,
+            onClick: () => toggleFilter('status', 'archived')
+          }
+        ]}
       />
       <FilterDropdown
         label="Prioridade"
