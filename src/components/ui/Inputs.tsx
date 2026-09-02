@@ -91,13 +91,15 @@ export function Switch({ checked, onChange, label, description, disabled = false
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700'
-        }`}
+        className={`relative h-[26px] w-[48px] shrink-0 rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+          checked
+            ? 'bg-brand-600 shadow-inner hover:bg-brand-700 active:bg-brand-800'
+            : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-500 dark:hover:bg-slate-400'
+        } ${disabled ? 'pointer-events-none' : ''}`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-[22px]' : 'translate-x-[2px]'
+          className={`absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${
+            checked ? 'translate-x-[22px]' : 'translate-x-0'
           }`}
         />
       </button>
