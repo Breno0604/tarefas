@@ -32,6 +32,7 @@ import { STATUS, RECURRENCE } from '../../lib/constants'
 import { formatDate, formatRelative } from '../../lib/format'
 import { useToast } from '../../store/toast'
 import { deleteTaskWithUndo } from '../../lib/utils'
+import { uid } from '../../domain/tasks'
 
 function MetaRow({ icon: Icon, label, value, children }: any) {
   return (
@@ -114,7 +115,7 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
         disableDismiss={confirmDelete || cancelOpen}
         footer={
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap items-center gap-1.5 sm:hidden">
+            <div className="flex flex-1 flex-wrap items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="sm"
@@ -134,62 +135,13 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
                 size="sm"
                 icon={Copy}
                 onClick={() => {
-                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+                  const newTaskId = uid('t')
+                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id, newTaskId })
                   toast.push(`"${task.title}" duplicada`, 'success', {
                     action: {
                       label: 'Desfazer',
                       onClick: () => {
-                        const idToDelete = lastDuplicatedIdRef.current
-                        if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
-                      }
-                    }
-                  })
-                }}
-              >
-                Duplicar
-              </Button>
-              {!isDone && !isCancelled && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={Ban}
-                  onClick={() => {
-                    setCancelReason('')
-                    setCancelOpen(true)
-                  }}
-                  className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-                >
-                  Cancelar
-                </Button>
-              )}
-            </div>
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={task.archived ? ArchiveRestore : Archive}
-                onClick={() => {
-                  dispatch({ type: 'TOGGLE_ARCHIVE', taskId: task.id })
-                  toast.success(task.archived ? 'Tarefa desarquivada' : 'Tarefa arquivada')
-                }}
-              >
-                {task.archived ? 'Desarquivar' : 'Arquivar'}
-              </Button>
-              <Button variant="ghost" size="sm" icon={Trash2} onClick={() => setConfirmDelete(true)} className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
-                Excluir
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={Copy}
-                onClick={() => {
-                  dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
-                  toast.push(`"${task.title}" duplicada`, 'success', {
-                    action: {
-                      label: 'Desfazer',
-                      onClick: () => {
-                        const idToDelete = lastDuplicatedIdRef.current
-                        if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
+                        dispatch({ type: 'DELETE_TASK', taskId: newTaskId })
                       }
                     }
                   })

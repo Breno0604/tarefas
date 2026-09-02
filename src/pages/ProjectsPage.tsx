@@ -12,7 +12,16 @@ import EmptyState from '../components/ui/EmptyState'
 import { Input } from '../components/ui/Inputs'
 import { formatDay, isOverdue } from '../lib/format'
 
-const COLORS = ['#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#f43f5e', '#10b981']
+const COLOR_NAMES: Record<string, string> = {
+  '#6366f1': 'Índigo',
+  '#0ea5e9': 'Azul claro',
+  '#8b5cf6': 'Roxo',
+  '#ec4899': 'Rosa',
+  '#f59e0b': 'Âmbar',
+  '#14b8a6': 'Verde-água',
+  '#f43f5e': 'Vermelho',
+  '#10b981': 'Esmeralda'
+}
 
 function ProjectCard({ project, stats, onOpen, onEdit, onDelete }: { project: any; stats: any; onOpen: (...args: any[]) => void; onEdit: () => void; onDelete: () => void }) {
   const health = stats.overdue > 0 ? 'Atrasado' : stats.pct < 40 && stats.dueSoon ? 'Em risco' : 'No prazo'
@@ -94,8 +103,8 @@ function ProjectsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
-  const [editForm, setEditForm] = useState({ name: '', description: '', color: COLORS[0], due: '' })
-  const [form, setForm] = useState({ name: '', description: '', color: COLORS[0], due: '' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', color: Object.keys(COLOR_NAMES)[0], due: '' })
+  const [form, setForm] = useState({ name: '', description: '', color: Object.keys(COLOR_NAMES)[0], due: '' })
 
   const projParam = searchParams.get('proj')
 
@@ -191,7 +200,7 @@ function ProjectsPage() {
                 })
                 toast.success(`Projeto "${form.name.trim()}" criado`)
                 setCreateOpen(false)
-                setForm({ name: '', description: '', color: COLORS[0], due: '' })
+                setForm({ name: '', description: '', color: Object.keys(COLOR_NAMES)[0], due: '' })
               }}
             >
               Criar projeto
@@ -206,13 +215,13 @@ function ProjectsPage() {
             <div>
               <label className="label-base">Cor</label>
               <div className="flex flex-wrap gap-2 pt-1">
-                {COLORS.map((c: string) => (
+                {Object.keys(COLOR_NAMES).map((c: string) => (
                   <button
                     key={c}
                     onClick={() => setForm((f: any) => ({ ...f, color: c }))}
                     className={`h-7 w-7 rounded-full transition ${form.color === c ? 'ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-110'}`}
                     style={{ backgroundColor: c }}
-                    aria-label={`Cor ${c}`}
+                    aria-label={`Cor ${COLOR_NAMES[c] || c}`}
                   />
                 ))}
               </div>
@@ -305,18 +314,79 @@ function ProjectsPage() {
         )}
       </Drawer>
 
-      <Modal open={editOpen} onClose={() => { setEditOpen(false); setSelectedId(null) }} title="Editar projeto" description="Altere as informacoes do projeto." size="md" footer={<><Button variant="secondary" onClick={() => { setEditOpen(false); setSelectedId(null) }}>Cancelar</Button><Button onClick={() => { if (!editForm.name.trim()) { toast.error('Informe o nome do projeto'); return } dispatch({ type: 'EDIT_PROJECT', projectId: selectedId!, name: editForm.name.trim(), description: editForm.description.trim(), color: editForm.color, due: editForm.due || undefined }); toast.success('Projeto atualizado'); setEditOpen(false); setSelectedId(null) }}>Salvar</Button></>}>
+      <Modal
+        open={editOpen}
+        onClose={() => { setEditOpen(false); setSelectedId(null) }}
+        title="Editar projeto"
+        description="Altere as informações do projeto."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => { setEditOpen(false); setSelectedId(null) }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!editForm.name.trim()) {
+                  toast.error('Informe o nome do projeto')
+                  return
+                }
+                dispatch({
+                  type: 'EDIT_PROJECT',
+                  projectId: selectedId!,
+                  name: editForm.name.trim(),
+                  description: editForm.description.trim(),
+                  color: editForm.color,
+                  due: editForm.due || undefined
+                })
+                toast.success('Projeto atualizado')
+                setEditOpen(false)
+                setSelectedId(null)
+              }}
+            >
+              Salvar
+            </Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           <Input label="Nome do projeto" value={editForm.name} onChange={(e: any) => setEditForm((f: any) => ({ ...f, name: e.target.value }))} />
-          <Input label="Descricao" value={editForm.description} onChange={(e: any) => setEditForm((f: any) => ({ ...f, description: e.target.value }))} />
+          <Input label="Descrição" value={editForm.description} onChange={(e: any) => setEditForm((f: any) => ({ ...f, description: e.target.value }))} />
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label-base">Cor</label><div className="flex flex-wrap gap-2 pt-1">{COLORS.map((c: string) => (<button key={c} onClick={() => setEditForm((f: any) => ({ ...f, color: c }))} className={'h-7 w-7 rounded-full transition ' + (editForm.color === c ? 'ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-110')} style={{ backgroundColor: c }} />))}</div></div>
-            <div><label className="label-base">Prazo</label><Input type="date" value={editForm.due} onChange={(e: any) => setEditForm((f: any) => ({ ...f, due: e.target.value }))} /></div>
+            <div>
+              <label className="label-base">Cor</label>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {Object.keys(COLOR_NAMES).map((c: string) => (
+                  <button
+                    key={c}
+                    onClick={() => setEditForm((f: any) => ({ ...f, color: c }))}
+                    className={`h-7 w-7 rounded-full transition ${editForm.color === c ? 'ring-2 ring-offset-2 ring-slate-400' : 'hover:scale-110'}`}
+                    style={{ backgroundColor: c }}
+                    aria-label={`Cor ${COLOR_NAMES[c] || c}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="label-base">Prazo</label>
+              <Input type="date" value={editForm.due} onChange={(e: any) => setEditForm((f: any) => ({ ...f, due: e.target.value }))} />
+            </div>
           </div>
         </div>
       </Modal>
 
-      <ConfirmDialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} onConfirm={() => { dispatch({ type: 'DELETE_PROJECT', projectId: deleteTarget.id }); toast.success('Projeto excluido'); setDeleteTarget(null) }} title="Excluir projeto" message={'Tem certeza que deseja excluir "' + (deleteTarget?.name || '') + '"? As tarefas desse projeto nao serao excluidas - apenas perdem a referencia.'} confirmLabel="Excluir projeto" />
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          dispatch({ type: 'DELETE_PROJECT', projectId: deleteTarget.id })
+          toast.success('Projeto excluído')
+          setDeleteTarget(null)
+        }}
+        title="Excluir projeto"
+        message={`Tem certeza que deseja excluir "${deleteTarget?.name || ''}"? As tarefas deste projeto não serão excluídas — apenas perdem a referência.`}
+        confirmLabel="Excluir projeto"
+      />
     </div>
   )
 }

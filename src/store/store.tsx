@@ -739,7 +739,7 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'DUPLICATE_TASK': {
       const source = state.tasks.find((t) => t.id === action.taskId)
       if (!source) return state
-      const newId = uid('t')
+      const newId = action.newTaskId || uid('t')
       const copy = {
         ...source,
         id: newId,
@@ -881,7 +881,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           activityEntry({
             type: 'status',
             taskId: task.id,
-            text: task.archived ? `Você arquivou "${task.title}"` : `Você desarquivou "${task.title}"`
+            text: task.archived ? `Você desarquivou "${task.title}"` : `Você arquivou "${task.title}"`
           }),
           ...state.activities
         ])
@@ -903,7 +903,7 @@ function reducer(state: AppState, action: AppAction): AppState {
         ...state,
         projects: projs,
         activities: trimActivities([
-          activityEntry({ type: 'project', taskId: null, text: 'Voce editou o projeto "' + action.name + '"' }),
+          activityEntry({ type: 'project', taskId: null, text: `Você editou o projeto "${action.name}"` }),
           ...state.activities
         ])
       }
@@ -918,7 +918,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           t.projectId === action.projectId ? { ...t, projectId: null } : t
         ),
         activities: trimActivities([
-          activityEntry({ type: 'project', taskId: null, text: 'Voce excluiu o projeto "' + proj.name + '" - tarefas mantidas sem projeto' }),
+          activityEntry({ type: 'project', taskId: null, text: `Você excluiu o projeto "${proj.name}" - tarefas mantidas sem projeto` }),
           ...state.activities
         ])
       }

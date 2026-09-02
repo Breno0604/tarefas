@@ -37,7 +37,10 @@ function nextRecurrenceDate(dueDate: string, recurrence: string): string | null 
   }
 }
 
-/** Today's date key YYYY-MM-DD in local-ish time. */
+/** 
+ * Today's date key YYYY-MM-DD in UTC server time.
+ * Note: When running on Convex cloud, `new Date()` uses UTC.
+ */
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -146,6 +149,40 @@ export const update = mutation({
   },
 });
 
+async function spawnNextRecurrenceIfNeeded(ctx: any, userId: string, task: any) {
+  if (task.recurrence && task.recurrence !== "none") {
+    let nextDue = task.dueDate ? nextRecurrenceDate(task.dueDate, task.recurrence) : null;
+    if (nextDue && nextDue < todayKey()) {
+      nextDue = nextRecurrenceDate(todayKey(), task.recurrence);
+    }
+    if (nextDue && nextDue >= todayKey()) {
+      const spawnedId = await ctx.db.insert("tasks", {
+        userId,
+        title: task.title,
+        description: task.description ?? "",
+        status: "todo",
+        priority: task.priority,
+        projectId: task.projectId,
+        dueDate: nextDue,
+        createdAt: new Date().toISOString(),
+        progress: 0,
+        tags: [...(task.tags ?? [])],
+        subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
+        favorite: false,
+        recurrence: task.recurrence,
+        cancelReason: undefined,
+      });
+      await ctx.db.insert("activities", {
+        userId,
+        type: "create",
+        taskId: spawnedId.toString(),
+        text: `Próxima ocorrência de "${task.title}" criada para ${nextDue}`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+}
+
 export const toggleDone = mutation({
   args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
@@ -155,37 +192,8 @@ export const toggleDone = mutation({
     const progress = newStatus === "done" ? 100 : Math.min(task.progress, 99);
     await ctx.db.patch(args.taskId as any, { status: newStatus, progress });
     await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: newStatus === "done" ? `Você concluiu "${task.title}"` : `Você reabriu "${task.title}"`, createdAt: new Date().toISOString() });
-    // Spawn next recurrence when completing
-    if (newStatus === "done" && task.recurrence && task.recurrence !== "none") {
-      let nextDue = task.dueDate ? nextRecurrenceDate(task.dueDate, task.recurrence) : null;
-      if (nextDue && nextDue < todayKey()) {
-        nextDue = nextRecurrenceDate(todayKey(), task.recurrence);
-      }
-      if (nextDue && nextDue >= todayKey()) {
-        const spawnedId = await ctx.db.insert("tasks", {
-          userId: args.userId,
-          title: task.title,
-          description: task.description ?? "",
-          status: "todo",
-          priority: task.priority,
-          projectId: task.projectId,
-          dueDate: nextDue,
-          createdAt: new Date().toISOString(),
-          progress: 0,
-          tags: [...(task.tags ?? [])],
-          subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
-          favorite: false,
-          recurrence: task.recurrence,
-          cancelReason: undefined,
-        });
-        await ctx.db.insert("activities", {
-          userId: args.userId,
-          type: "create",
-          taskId: spawnedId.toString(),
-          text: `Próxima ocorrência de "${task.title}" criada para ${nextDue}`,
-          createdAt: new Date().toISOString(),
-        });
-      }
+    if (newStatus === "done") {
+      await spawnNextRecurrenceIfNeeded(ctx, args.userId, task);
     }
   },
 });
@@ -197,38 +205,7 @@ export const complete = mutation({
     if (!task || task.status === "done" || task.status === "cancelled") return;
     await ctx.db.patch(args.taskId as any, { status: "done", progress: 100 });
     await ctx.db.insert("activities", { userId: args.userId, type: "status", taskId: args.taskId, text: `Você concluiu "${task.title}"`, createdAt: new Date().toISOString() });
-    // Spawn next recurrence if applicable
-    if (task.recurrence && task.recurrence !== "none") {
-      let nextDue = task.dueDate ? nextRecurrenceDate(task.dueDate, task.recurrence) : null;
-      if (nextDue && nextDue < todayKey()) {
-        nextDue = nextRecurrenceDate(todayKey(), task.recurrence);
-      }
-      if (nextDue && nextDue >= todayKey()) {
-        const spawnedId = await ctx.db.insert("tasks", {
-          userId: args.userId,
-          title: task.title,
-          description: task.description ?? "",
-          status: "todo",
-          priority: task.priority,
-          projectId: task.projectId,
-          dueDate: nextDue,
-          createdAt: new Date().toISOString(),
-          progress: 0,
-          tags: [...(task.tags ?? [])],
-          subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
-          favorite: false,
-          recurrence: task.recurrence,
-          cancelReason: undefined,
-        });
-        await ctx.db.insert("activities", {
-          userId: args.userId,
-          type: "create",
-          taskId: spawnedId.toString(),
-          text: `Próxima ocorrência de "${task.title}" criada para ${nextDue}`,
-          createdAt: new Date().toISOString(),
-        });
-      }
-    }
+    await spawnNextRecurrenceIfNeeded(ctx, args.userId, task);
   },
 });
 
@@ -287,7 +264,15 @@ export const toggleFavorite = mutation({
   handler: async (ctx, args) => {
     const task = await ctx.db.get(args.taskId as any) as any;
     if (!task || task.userId !== args.userId) return;
-    await ctx.db.patch(args.taskId as any, { favorite: !task.favorite });
+    const newFav = !task.favorite;
+    await ctx.db.patch(args.taskId as any, { favorite: newFav });
+    await ctx.db.insert("activities", {
+      userId: args.userId,
+      type: "status",
+      taskId: args.taskId,
+      text: newFav ? `Você adicionou "${task.title}" aos favoritos` : `Você removeu "${task.title}" dos favoritos`,
+      createdAt: new Date().toISOString(),
+    });
   },
 });
 
@@ -312,7 +297,7 @@ export const duplicate = mutation({
   args: { userId: v.string(), taskId: v.string() },
   handler: async (ctx, args) => {
     const source = await ctx.db.get(args.taskId as any) as any;
-    if (!source) return;
+    if (!source || source.userId !== args.userId) return;
     const newId = await ctx.db.insert("tasks", {
       userId: args.userId, title: `${source.title} (cópia)`, description: source.description ?? "", status: "todo", priority: source.priority,
       projectId: source.projectId, dueDate: source.dueDate, createdAt: new Date().toISOString(),

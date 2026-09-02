@@ -18,6 +18,7 @@ import Tooltip from '../ui/Tooltip'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store/store'
 import { isTypingTarget } from '../../lib/utils'
+import { KEYBOARD_SHORTCUTS } from '../../lib/constants'
 import { PageSkeleton } from '../ui/Skeleton'
 
 const TITLES = {
@@ -25,7 +26,6 @@ const TITLES = {
   '/dashboard': { title: 'Dashboard', subtitle: 'Visão geral das suas tarefas' },
   '/tarefas': { title: 'Tarefas', subtitle: 'Organize tudo o que você precisa fazer' },
   '/projetos': { title: 'Projetos', subtitle: 'Acompanhe o progresso dos seus projetos' },
-  '/categorias': { title: 'Categorias', subtitle: 'Organize tarefas por categoria' },
   '/atividades': { title: 'Atividades', subtitle: 'Seu histórico recente' },
   '/configuracoes': { title: 'Configurações', subtitle: 'Preferências pessoais' },
   '/lixeira': { title: 'Lixeira', subtitle: 'Tarefas excluídas' }
@@ -189,17 +189,7 @@ export default function AppLayout() {
         size="sm"
       >
         <ul className="space-y-2.5">
-          {[
-            ['Ctrl + K', 'Abrir a paleta de comandos'],
-            ['N', 'Nova tarefa'],
-            ['D', 'Alternar tema claro/escuro'],
-            ['/', 'Buscar tarefas'],
-            ['1 – 4', 'Alternar visão (somente na página de Tarefas)'],
-            ['?', 'Mostrar estes atalhos'],
-            ['F', 'Favoritas (na página de Tarefas)'],
-            ['T', 'Abrir Lixeira'],
-            ['Esc', 'Fechar janelas abertas']
-          ].map(([keys, label]) => (
+          {KEYBOARD_SHORTCUTS.map(([keys, label]) => (
             <li key={keys} className="flex items-center justify-between gap-4">
               <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>
               <kbd className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

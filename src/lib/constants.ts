@@ -73,6 +73,17 @@ export const RECURRENCE: Record<RecurrenceType, { key: RecurrenceType; label: st
 
 export const RECURRENCE_KEYS: RecurrenceType[] = ['none', 'daily', 'weekly', 'monthly']
 
+export const KEYBOARD_SHORTCUTS: Array<[string, string]> = [
+  ['Ctrl + K', 'Abrir a paleta de comandos'],
+  ['N', 'Nova tarefa'],
+  ['D', 'Alternar tema claro/escuro'],
+  ['/', 'Buscar tarefas'],
+  ['1 – 4', 'Alternar visão (Lista, Kanban, Tabela, Calendário)'],
+  ['?', 'Mostrar estes atalhos'],
+  ['T', 'Abrir Lixeira'],
+  ['Esc', 'Fechar janelas abertas']
+]
+
 /**
  * Calcula a data da próxima ocorrência de uma tarefa recorrente.
  * Trata datas como calendário (YYYY-MM-DD) para evitar deslocamentos de fuso.

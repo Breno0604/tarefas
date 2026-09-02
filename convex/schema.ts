@@ -36,10 +36,12 @@ export default defineSchema({
       v.literal("urgent")
     ),
     projectId: v.optional(v.string()),
-    categoryId: v.optional(v.string()),  // kept for legacy data; no longer used by UI
+    /** @deprecated Mantido para compatibilidade com dados legados; não utilizado na UI atual. */
+    categoryId: v.optional(v.string()),
     dueDate: v.optional(v.string()),       // "YYYY-MM-DD"
     createdAt: v.string(),
-    estimatedHours: v.optional(v.number()),  // kept for legacy data; no longer used by UI
+    /** @deprecated Mantido para compatibilidade com dados legados; não utilizado na UI atual. */
+    estimatedHours: v.optional(v.number()),
     progress: v.number(),
     tags: v.array(v.string()),
     subtasks: v.array(

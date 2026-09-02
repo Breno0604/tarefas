@@ -57,9 +57,11 @@ export const generateCode = mutation({
 export const validateCode = query({
   args: { code: v.string() },
   handler: async (ctx, args) => {
+    if (!/^\d{6}$/.test(args.code.trim())) return null;
+
     const entries = await ctx.db
       .query("pairing_codes")
-      .withIndex("by_code", (q) => q.eq("code", args.code))
+      .withIndex("by_code", (q) => q.eq("code", args.code.trim()))
       .collect();
 
     if (entries.length === 0) return null;
@@ -79,9 +81,11 @@ export const validateCode = query({
 export const claimCode = mutation({
   args: { code: v.string() },
   handler: async (ctx, args) => {
+    if (!/^\d{6}$/.test(args.code.trim())) return null;
+
     const entries = await ctx.db
       .query("pairing_codes")
-      .withIndex("by_code", (q) => q.eq("code", args.code))
+      .withIndex("by_code", (q) => q.eq("code", args.code.trim()))
       .collect();
 
     if (entries.length === 0) return null;

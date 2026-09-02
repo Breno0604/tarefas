@@ -19,6 +19,8 @@ import { useToast } from '../store/toast'
 import { useTaskFilters, PAGE_SIZE } from '../hooks/useTaskFilters'
 import { useDebounce } from '../hooks/useDebounce'
 import { isTypingTarget, deleteTaskWithUndo, bulkDeleteWithUndo } from '../lib/utils'
+import { STATUS } from '../lib/constants'
+import { uid } from '../domain/tasks'
 import Dropdown from '../components/ui/Dropdown'
 import Button from '../components/ui/Button'
 import Tooltip from '../components/ui/Tooltip'
@@ -42,12 +44,6 @@ export default function TasksPage() {
   const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const searchRef = useRef<HTMLInputElement | null>(null)
-  const lastDuplicatedIdRef = useRef<string | null>(null)
-
-  // Keep ref in sync with reducer's _lastDuplicatedId
-  useEffect(() => {
-    if (state._lastDuplicatedId) lastDuplicatedIdRef.current = state._lastDuplicatedId
-  }, [state._lastDuplicatedId])
 
   const drawerTaskId = searchParams.get('task')
   const viewParam = searchParams.get('view')
@@ -69,13 +65,8 @@ export default function TasksPage() {
   const [cancelTarget, setCancelTarget] = useState(null)
   const [saveFilterOpen, setSaveFilterOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
-  const [loading, setLoading] = useState(true)
+  const loading = !state.booted
   const [filtersVisible, setFiltersVisible] = useState(true)
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500)
-    return () => clearTimeout(t)
-  }, [])
 
   useEffect(() => {
     if (!viewParam || !['list', 'kanban', 'table', 'calendar'].includes(viewParam)) return
@@ -178,13 +169,13 @@ export default function TasksPage() {
     toast.success(task.favorite ? 'Removida dos favoritos' : 'Adicionada aos favoritos')
   }
   const duplicateTask = (task: any) => {
-    dispatch({ type: 'DUPLICATE_TASK', taskId: task.id })
+    const newTaskId = uid('t')
+    dispatch({ type: 'DUPLICATE_TASK', taskId: task.id, newTaskId })
     toast.push(`"${task.title}" duplicada`, 'success', {
       action: {
         label: 'Desfazer',
         onClick: () => {
-          const idToDelete = lastDuplicatedIdRef.current
-          if (idToDelete) dispatch({ type: 'DELETE_TASK', taskId: idToDelete })
+          dispatch({ type: 'DELETE_TASK', taskId: newTaskId })
         }
       }
     })
@@ -239,7 +230,8 @@ export default function TasksPage() {
     f.selected.forEach((id: any) =>
       dispatch({ type: 'UPDATE_TASK', taskId: id, patch: { status } })
     )
-    toast.success(`${f.selected.size} tarefa(s) movida(s) para ${status}`)
+    const statusLabel = STATUS[status as keyof typeof STATUS]?.label || status
+    toast.success(`${f.selected.size} tarefa(s) movida(s) para ${statusLabel}`)
     f.setSelected(new Set())
   }
   const bulkDeleteAll = () => {

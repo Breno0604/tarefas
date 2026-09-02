@@ -271,6 +271,16 @@ function TodayPage() {
           empty={null}
         >
           {sections.undated.slice(0, 10).map((t: any) => <TaskRow {...rowProps(t)} />)}
+          {sections.undated.length > 10 && (
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => navigate('/tarefas')}
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition"
+              >
+                Ver mais {sections.undated.length - 10} tarefa(s) sem data na lista geral →
+              </button>
+            </div>
+          )}
         </Section>
       )}
     </div>
