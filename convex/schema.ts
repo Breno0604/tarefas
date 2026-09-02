@@ -7,7 +7,6 @@
  * Tables:
  *   tasks      – core task data
  *   projects   – project containers
- *   categories – category labels
  *   notes      – per-task notes (linked to task)
  *   activities – audit trail
  *   reminders  – notification triggers
@@ -37,7 +36,7 @@ export default defineSchema({
       v.literal("urgent")
     ),
     projectId: v.optional(v.string()),
-    categoryId: v.optional(v.string()),
+    categoryId: v.optional(v.string()),  // kept for legacy data; no longer used by UI
     dueDate: v.optional(v.string()),       // "YYYY-MM-DD"
     createdAt: v.string(),
     estimatedHours: v.optional(v.number()),
@@ -65,8 +64,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_status", ["userId", "status"])
     .index("by_user_due", ["userId", "dueDate"])
-    .index("by_user_project", ["userId", "projectId"])
-    .index("by_user_category", ["userId", "categoryId"]),
+    .index("by_user_project", ["userId", "projectId"]),
 
   projects: defineTable({
     userId: v.string(),
@@ -74,12 +72,6 @@ export default defineSchema({
     description: v.optional(v.string()),
     color: v.string(),
     due: v.optional(v.string()),
-  }).index("by_user", ["userId"]),
-
-  categories: defineTable({
-    userId: v.string(),
-    name: v.string(),
-    color: v.string(),
   }).index("by_user", ["userId"]),
 
   notes: defineTable({
@@ -104,7 +96,7 @@ export default defineSchema({
       v.literal("delete"),
       v.literal("restore"),
       v.literal("cancel"),
-      v.literal("category")
+      v.literal("category"),
     ),
     taskId: v.optional(v.string()),
     text: v.string(),
@@ -133,7 +125,7 @@ export default defineSchema({
       status: v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled")),
       priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent")),
       projectId: v.optional(v.string()),
-      categoryId: v.optional(v.string()),
+      categoryId: v.optional(v.string()),  // kept for legacy data
       dueDate: v.optional(v.string()),
       createdAt: v.string(),
       estimatedHours: v.optional(v.number()),

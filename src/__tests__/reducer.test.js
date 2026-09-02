@@ -5,10 +5,9 @@ import { reducer, validateTaskPayload } from '../store/store'
 const baseState = () => ({
   me: { id: 'me', name: 'Você', bio: '' },
   projects: [{ id: 'p1', name: 'Pessoal', color: '#6366f1' }],
-  categories: [{ id: 'c1', name: 'Casa', color: '#6366f1' }],
   tasks: [
-    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: [], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
-    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: null, cancelReason: null }
+    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: [], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
+    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: null, cancelReason: null }
   ],
   notes: { t1: [{ id: 'n1', text: 'Old note', createdAt: '2026-08-01' }] },
   activities: [],
@@ -339,14 +338,6 @@ describe('reducer', () => {
       expect(next.projects[1].name).toBe('Beta')
       expect(next.projects[1].members).toBeUndefined()
       expect(next.activities.some((a) => a.text.includes('Beta'))).toBe(true)
-    })
-  })
-
-  describe('CREATE_CATEGORY', () => {
-    it('creates a category', () => {
-      const next = reducer(state, { type: 'CREATE_CATEGORY', name: 'Bug', color: '#ef4444' })
-      expect(next.categories.length).toBe(2)
-      expect(next.categories[1].name).toBe('Bug')
     })
   })
 

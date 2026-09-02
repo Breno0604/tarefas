@@ -41,7 +41,7 @@ const migrateV2ToV3: Migration = (state, ctx) => {
       status: ['todo', 'in_progress', 'done', 'cancelled'].includes(t.status) ? t.status : 'todo',
       priority: ['low', 'medium', 'high', 'urgent'].includes(t.priority) ? t.priority : 'medium',
       projectId: t.projectId || null,
-      categoryId: t.categoryId || null,
+      // categoryId removed — unified into tags
       dueDate: normalizeDateKey(t.dueDate),
       createdAt: t.createdAt || new Date().toISOString(),
       estimatedHours: Number(t.estimatedHours) || 0,
@@ -69,14 +69,7 @@ const migrateV2ToV3: Migration = (state, ctx) => {
     }))
   }
 
-  // Normalize categories
-  if (Array.isArray(state.categories)) {
-    state.categories = state.categories.map((c: any) => ({
-      id: c.id || `c-${Date.now()}`,
-      name: String(c.name || 'Sem nome').trim(),
-      color: typeof c.color === 'string' ? c.color : '#94a3b8',
-    }))
-  }
+  // Categories removed — old data ignored during migration
 
   // Ensure notes is an object with arrays
   if (!state.notes || typeof state.notes !== 'object' || Array.isArray(state.notes)) {

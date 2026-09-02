@@ -8,7 +8,6 @@ interface TaskFilters {
   status: string[]
   priority: string[]
   project: string[]
-  category: string[]
   tags: string[]
 }
 
@@ -28,7 +27,6 @@ export const DEFAULT_FILTERS = {
   status: [],
   priority: [],
   project: [],
-  category: [],
   tags: []
 }
 
@@ -82,7 +80,6 @@ export function useTaskFilters(view: string) {
   const { state } = useStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
-  const categoryParam = searchParams.get('category')
   const tagParam = searchParams.get('tag')
   const statusParam = searchParams.get('status')
   const favoritesParam = searchParams.get('favorites')
@@ -127,16 +124,6 @@ export function useTaskFilters(view: string) {
     setPage(1)
     appliedParamsRef.current.project = projectParam
   }, [projectParam])
-
-  useEffect(() => {
-    if (!categoryParam) return
-    setFilters((f) => {
-      if (f.category.includes(categoryParam)) return f
-      return { ...f, category: [categoryParam] }
-    })
-    setPage(1)
-    appliedParamsRef.current.category = categoryParam
-  }, [categoryParam])
 
   useEffect(() => {
     if (!tagParam) return
@@ -207,7 +194,6 @@ export function useTaskFilters(view: string) {
       }
     }
     drop('project', () => filters.project.includes(next.get('project') || ''))
-    drop('category', () => filters.category.includes(next.get('category') || ''))
     drop('tag', () =>
       (next.get('tag') || '')
         .split(',')
@@ -260,7 +246,6 @@ export function useTaskFilters(view: string) {
     if (filters.priority.length) list = list.filter((t) => filters.priority.includes(t.priority))
     if (filters.project.length)
       list = list.filter((t) => filters.project.includes(t.projectId || 'none'))
-    if (filters.category.length) list = list.filter((t) => t.categoryId !== null && filters.category.includes(t.categoryId))
     if (filters.tags.length)
       list = list.filter((t) => filters.tags.some((tag: string) => (t.tags || []).includes(tag)))
     if (favoritesOnly) list = list.filter((t) => t.favorite)
@@ -291,11 +276,6 @@ export function useTaskFilters(view: string) {
       dim: 'project',
       key: k,
       label: k === 'none' ? 'Sem projeto' : state.projects.find((p: any) => p.id === k)?.name
-    })),
-    ...filters.category.map((k: string) => ({
-      dim: 'category',
-      key: k,
-      label: state.categories.find((c: any) => c.id === k)?.name
     })),
     ...(filters.tags || []).map((k: string) => ({
       dim: 'tags',

@@ -299,14 +299,12 @@ export const counts = query({
   handler: async (ctx, args) => {
     const tasks = await ctx.db.query("tasks").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect();
     const projects = await ctx.db.query("projects").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect();
-    const categories = await ctx.db.query("categories").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect();
     const notes = await ctx.db.query("notes").withIndex("by_user_task", (q) => q.eq("userId", args.userId)).collect();
     const activities = await ctx.db.query("activities").withIndex("by_user_created", (q) => q.eq("userId", args.userId)).collect();
     const trash = await ctx.db.query("trash").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect();
     return {
       tasks: tasks.length,
       projects: projects.length,
-      categories: categories.length,
       notes: notes.length,
       activities: activities.length,
       trash: trash.length,

@@ -17,7 +17,6 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   projectId: string | null
-  categoryId: string | null
   dueDate: string | null
   createdAt: string
   estimatedHours: number
@@ -38,12 +37,6 @@ export interface Project {
   due: string | null
 }
 
-export interface Category {
-  id: string
-  name: string
-  color: string
-}
-
 export interface Note {
   id: string
   text: string
@@ -55,7 +48,7 @@ export type NotesMap = Record<string, Note[]>
 export type ActivityType =
   | "create" | "status" | "priority" | "due"
   | "project" | "title" | "note" | "delete"
-  | "restore" | "cancel" | "category"
+  | "restore" | "cancel"
 
 export interface Activity {
   id: string
@@ -104,7 +97,6 @@ export interface AppState {
   me: UserProfile
   tasks: Task[]
   projects: Project[]
-  categories: Category[]
   notes: NotesMap
   activities: Activity[]
   reminders: Reminder[]
@@ -143,11 +135,8 @@ export type AppAction =
   | { type: "MARK_ALL_REMINDERS_READ" }
   | { type: "CLEAR_REMINDERS" }
   | { type: "CREATE_PROJECT"; name: string; description?: string; color?: string; due?: string }
-  | { type: "CREATE_CATEGORY"; name: string; color?: string }
   | { type: "IMPORT_DATA"; data: Partial<AppState> }
   | { type: "DELETE_ACTIVITY"; activityId: string }
-  | { type: "EDIT_CATEGORY"; categoryId: string; name: string; color: string }
-  | { type: "DELETE_CATEGORY"; categoryId: string }
   | { type: "EDIT_PROJECT"; projectId: string; name: string; description: string; color: string; due?: string | null }
   | { type: "DELETE_PROJECT"; projectId: string }
   | { type: "TOGGLE_ARCHIVE"; taskId: string }
@@ -160,7 +149,6 @@ export interface CreateTaskPayload {
   status?: TaskStatus
   priority?: TaskPriority
   projectId?: string | null
-  categoryId?: string | null
   dueDate?: string | null
   estimatedHours?: number
   tags?: string[]

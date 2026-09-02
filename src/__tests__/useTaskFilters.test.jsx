@@ -6,17 +6,16 @@ import { useTaskFilters } from '../hooks/useTaskFilters'
 
 /* ─── Mock store ─── */
 const MOCK_TASKS = [
-  { id: 't1', title: 'Implementar login', description: 'Fluxo de autenticação', status: 'todo', priority: 'high', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01T10:00:00Z', createdAt: '2026-08-01T10:00:00Z', tags: ['auth'], favorite: false },
-  { id: 't2', title: 'Criar dashboard', description: 'Painel de métricas', status: 'in_progress', priority: 'medium', projectId: 'p1', categoryId: 'c2', dueDate: '2026-09-10T10:00:00Z', createdAt: '2026-08-02T10:00:00Z', tags: ['frontend'], favorite: true },
-  { id: 't3', title: 'Testes de integração', description: 'Cobertura de fluxos', status: 'done', priority: 'low', projectId: 'p2', categoryId: 'c1', dueDate: '2026-08-20T10:00:00Z', createdAt: '2026-08-03T10:00:00Z', tags: ['qa'], favorite: false },
-  { id: 't4', title: 'Corrigir bug no pagamento', description: 'Erro no checkout', status: 'todo', priority: 'urgent', projectId: 'p2', categoryId: 'c3', dueDate: '2026-08-25T10:00:00Z', createdAt: '2026-08-04T10:00:00Z', tags: ['bug'], favorite: false },
-  { id: 't5', title: 'Documentar API', description: 'Endpoints REST', status: 'cancelled', priority: 'medium', projectId: null, categoryId: 'c1', dueDate: null, createdAt: '2026-08-05T10:00:00Z', tags: [], favorite: true }
+  { id: 't1', title: 'Implementar login', description: 'Fluxo de autenticação', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01T10:00:00Z', createdAt: '2026-08-01T10:00:00Z', tags: ['auth'], favorite: false },
+  { id: 't2', title: 'Criar dashboard', description: 'Painel de métricas', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-10T10:00:00Z', createdAt: '2026-08-02T10:00:00Z', tags: ['frontend'], favorite: true },
+  { id: 't3', title: 'Testes de integração', description: 'Cobertura de fluxos', status: 'done', priority: 'low', projectId: 'p2', dueDate: '2026-08-20T10:00:00Z', createdAt: '2026-08-03T10:00:00Z', tags: ['qa'], favorite: false },
+  { id: 't4', title: 'Corrigir bug no pagamento', description: 'Erro no checkout', status: 'todo', priority: 'urgent', projectId: 'p2', dueDate: '2026-08-25T10:00:00Z', createdAt: '2026-08-04T10:00:00Z', tags: ['bug'], favorite: false },
+  { id: 't5', title: 'Documentar API', description: 'Endpoints REST', status: 'cancelled', priority: 'medium', projectId: null, dueDate: null, createdAt: '2026-08-05T10:00:00Z', tags: [], favorite: true }
 ]
 
 const MOCK_STATE = {
   tasks: MOCK_TASKS,
   projects: [{ id: 'p1', name: 'Projeto Alpha' }, { id: 'p2', name: 'Projeto Beta' }],
-  categories: [{ id: 'c1', name: 'Dev' }, { id: 'c2', name: 'Design' }, { id: 'c3', name: 'Bug' }],
   notes: {}
 }
 
@@ -238,18 +237,6 @@ describe('useTaskFilters', () => {
     })
   })
 
-  describe('category URL param', () => {
-    it('applies category filter from ?category= param', () => {
-      const { result } = renderHook(
-        () => useTaskFilters('list'),
-        { wrapper: ({ children }) => <MemoryRouter initialEntries={['/?category=c1']}>{children}</MemoryRouter> }
-      )
-      expect(result.current.filters.category).toContain('c1')
-      expect(result.current.filtered.every((t) => t.categoryId === 'c1')).toBe(true)
-      expect(result.current.activeFilters.some((f) => f.dim === 'category')).toBe(true)
-    })
-  })
-
   /* ─── Tag filter dimension ─── */
   describe('tag filters', () => {
     it('filters by a single tag', () => {
@@ -309,7 +296,7 @@ describe('useTaskFilters', () => {
     it('normalizes old saved filters without tags dimension', () => {
       localStorage.setItem(
         'taskflow-task-filters',
-        JSON.stringify({ query: '', filters: { status: ['todo'], priority: [], project: [], category: [] }, favoritesOnly: false, sortKey: 'dueDate', page: 1 })
+        JSON.stringify({ query: '', filters: { status: ['todo'], priority: [], project: [] }, favoritesOnly: false, sortKey: 'dueDate', page: 1 })
       )
       const { result } = renderHook(() => useTaskFilters('list'), { wrapper })
       expect(Array.isArray(result.current.filters.tags)).toBe(true)

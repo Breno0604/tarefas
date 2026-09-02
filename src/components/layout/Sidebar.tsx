@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   ListTodo,
   FolderKanban,
-  Tags,
   Activity,
   Settings,
   Trash2,
@@ -18,7 +17,6 @@ const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { to: '/projetos', label: 'Projetos', icon: FolderKanban },
-  { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/atividades', label: 'Atividades', icon: Activity },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
   { to: '/lixeira', label: 'Lixeira', icon: Trash2 }

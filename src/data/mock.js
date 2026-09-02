@@ -48,15 +48,6 @@ export const PROJECTS = [
   }
 ]
 
-export const CATEGORIES = [
-  { id: 'c1', name: 'Casa', color: '#6366f1' },
-  { id: 'c2', name: 'Trabalho', color: '#0ea5e9' },
-  { id: 'c3', name: 'Finanças', color: '#f59e0b' },
-  { id: 'c4', name: 'Estudos', color: '#10b981' },
-  { id: 'c5', name: 'Saúde', color: '#ef4444' },
-  { id: 'c6', name: 'Pessoal', color: '#ec4899' }
-]
-
 const T = (id, data) => ({
   id,
   title: '',
@@ -64,7 +55,6 @@ const T = (id, data) => ({
   status: 'todo',
   priority: 'medium',
   projectId: null,
-  categoryId: 'c6',
   dueDate: null,
   createdAt: iso(-7 - Math.floor(Math.random() * 15)),
   estimatedHours: 1,
@@ -84,7 +74,6 @@ export const TASKS = [
     status: 'in_progress',
     priority: 'high',
     projectId: 'p1',
-    categoryId: 'c1',
     dueDate: iso(6),
     estimatedHours: 8,
     progress: 40,
@@ -102,7 +91,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'medium',
     projectId: 'p1',
-    categoryId: 'c1',
     dueDate: iso(14),
     estimatedHours: 2,
     tags: ['reforma']
@@ -113,7 +101,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'urgent',
     projectId: 'p3',
-    categoryId: 'c3',
     dueDate: iso(-1),
     estimatedHours: 0.2,
     recurrence: 'monthly',
@@ -124,7 +111,6 @@ export const TASKS = [
     description: 'Treino de 40 minutos.',
     status: 'todo',
     priority: 'medium',
-    categoryId: 'c5',
     dueDate: iso(0),
     estimatedHours: 1,
     recurrence: 'daily',
@@ -136,7 +122,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'medium',
     projectId: 'p4',
-    categoryId: 'c4',
     dueDate: iso(0),
     estimatedHours: 0.5,
     recurrence: 'daily',
@@ -149,7 +134,6 @@ export const TASKS = [
     status: 'in_progress',
     priority: 'high',
     projectId: 'p4',
-    categoryId: 'c4',
     dueDate: iso(2),
     estimatedHours: 0.5,
     recurrence: 'weekly',
@@ -162,7 +146,6 @@ export const TASKS = [
     status: 'done',
     priority: 'high',
     projectId: 'p2',
-    categoryId: 'c2',
     dueDate: iso(-4),
     estimatedHours: 1,
     progress: 100,
@@ -174,7 +157,6 @@ export const TASKS = [
     status: 'in_progress',
     priority: 'high',
     projectId: 'p2',
-    categoryId: 'c2',
     dueDate: iso(8),
     estimatedHours: 12,
     progress: 30,
@@ -192,7 +174,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'low',
     projectId: 'p3',
-    categoryId: 'c3',
     dueDate: iso(5),
     estimatedHours: 0.5,
     tags: ['gastos']
@@ -203,7 +184,6 @@ export const TASKS = [
     status: 'done',
     priority: 'high',
     projectId: 'p3',
-    categoryId: 'c3',
     dueDate: iso(-2),
     estimatedHours: 0.2,
     progress: 100,
@@ -216,7 +196,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'medium',
     projectId: 'p3',
-    categoryId: 'c3',
     dueDate: iso(9),
     estimatedHours: 1,
     recurrence: 'monthly',
@@ -227,7 +206,6 @@ export const TASKS = [
     description: 'Agendar limpeza anual.',
     status: 'todo',
     priority: 'low',
-    categoryId: 'c5',
     dueDate: iso(20),
     estimatedHours: 1,
     tags: ['saúde']
@@ -238,7 +216,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'low',
     projectId: 'p1',
-    categoryId: 'c1',
     dueDate: iso(-3),
     estimatedHours: 2,
     tags: ['organização']
@@ -248,7 +225,6 @@ export const TASKS = [
     description: 'Ela quer um livro de receitas. Pesquisar em sebo ou livraria.',
     status: 'todo',
     priority: 'high',
-    categoryId: 'c6',
     dueDate: iso(1),
     estimatedHours: 1,
     tags: ['presente']
@@ -258,7 +234,6 @@ export const TASKS = [
     description: 'Adicionar projeto recente e revisar o resumo profissional.',
     status: 'in_progress',
     priority: 'medium',
-    categoryId: 'c2',
     dueDate: iso(11),
     estimatedHours: 3,
     progress: 60,
@@ -269,7 +244,6 @@ export const TASKS = [
     description: 'Definir destino, datas e estimativa de custos.',
     status: 'todo',
     priority: 'medium',
-    categoryId: 'c6',
     dueDate: iso(28),
     estimatedHours: 4,
     tags: ['viagem'],
@@ -284,7 +258,6 @@ export const TASKS = [
     description: 'Calça jeans com barra solta.',
     status: 'in_progress',
     priority: 'low',
-    categoryId: 'c1',
     dueDate: iso(-1),
     estimatedHours: 0.5,
     progress: 20,
@@ -295,7 +268,6 @@ export const TASKS = [
     description: 'Curso comprado no ano passado; concluir módulos restantes.',
     status: 'cancelled',
     priority: 'low',
-    categoryId: 'c4',
     cancelReason: 'Prefiro focar no inglês neste semestre.',
     estimatedHours: 6,
     tags: []
@@ -335,7 +307,6 @@ export const REMINDERS = [
 export const MOCK_STATE = {
   me: ME,
   projects: PROJECTS,
-  categories: CATEGORIES,
   tasks: TASKS,
   notes: NOTES,
   activities: ACTIVITIES,

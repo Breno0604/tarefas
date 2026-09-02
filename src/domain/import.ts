@@ -7,7 +7,7 @@
 
 import { uid } from './tasks'
 import { trimActivities } from './tasks'
-import type { AppState, Task, Project, Category, Activity, TaskStatus, TaskPriority, RecurrenceType } from '../types'
+import type { AppState, Task, Project, Activity, TaskStatus, TaskPriority, RecurrenceType } from '../types'
 
 const VALID_STATUS = new Set(['todo', 'in_progress', 'done', 'cancelled'])
 const VALID_PRIORITY = new Set(['low', 'medium', 'high', 'urgent'])
@@ -28,7 +28,6 @@ export function normalizeImportedData(d: Record<string, any>, currentState: AppS
       status: (VALID_STATUS.has(t.status) ? t.status : 'todo') as TaskStatus,
       priority: (VALID_PRIORITY.has(t.priority) ? t.priority : 'medium') as TaskPriority,
       projectId: t.projectId || null,
-      categoryId: t.categoryId || null,
       dueDate: t.dueDate || null,
       createdAt: t.createdAt || new Date().toISOString(),
       estimatedHours: Number(t.estimatedHours) || 0,
@@ -56,22 +55,11 @@ export function normalizeImportedData(d: Record<string, any>, currentState: AppS
     }
   }).filter(Boolean) as Project[] : currentState.projects
 
-  const categories: Category[] = Array.isArray(d.categories) ? d.categories.map((c: Record<string, any>) => {
-    if (!c || typeof c !== 'object') return null
-    return {
-      id: c.id || uid('c'),
-      name: String(c.name || 'Sem nome').trim(),
-      color: typeof c.color === 'string' ? c.color : '#94a3b8'
-    }
-  }).filter(Boolean) as Category[] : currentState.categories
-
-  // Fix broken project/category references
+  // Fix broken project references
   const projectIds = new Set(projects.map((p) => p.id))
-  const categoryIds = new Set(categories.map((c) => c.id))
   const cleanedTasks = (tasks as Task[]).map((t) => ({
     ...t,
-    projectId: t.projectId && projectIds.has(t.projectId) ? t.projectId : null,
-    categoryId: t.categoryId && categoryIds.has(t.categoryId) ? t.categoryId : null
+    projectId: t.projectId && projectIds.has(t.projectId) ? t.projectId : null
   }))
 
   // Normalize notes
@@ -88,7 +76,6 @@ export function normalizeImportedData(d: Record<string, any>, currentState: AppS
     me: d.me && typeof d.me === 'object' ? { ...currentState.me, ...d.me } : currentState.me,
     tasks: cleanedTasks,
     projects,
-    categories,
     notes,
     activities: trimActivities(activities),
     trash: Array.isArray(d.trash) ? d.trash : currentState.trash,

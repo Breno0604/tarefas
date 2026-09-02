@@ -19,10 +19,9 @@ function wrapper({ children } = {}) {
 vi.mock('../store/store', () => ({
   useStore: () => ({
     state: {
-      tasks: [{ id: 't1', title: 'Test task', status: 'todo', priority: 'medium', projectId: null, categoryId: 'c1', tags: [], subtasks: [], recurrence: null }],
+      tasks: [{ id: 't1', title: 'Test task', status: 'todo', priority: 'medium', projectId: null, tags: [], subtasks: [], recurrence: null }],
       me: { id: 'me', name: 'Você', bio: '' },
       projects: [],
-      categories: [{ id: 'c1', name: 'Dev' }],
       reminders: [],
       notes: {},
       activities: [],

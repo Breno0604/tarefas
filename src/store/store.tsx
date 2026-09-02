@@ -12,7 +12,7 @@ import { PERSIST_VERSION, migrateState } from './migrations'
 import { formatDate, localDateKey, todayKey, isPastDateKey } from '../lib/format'
 import { getStorageAdapter } from '../lib/storage'
 import type {
-  AppState, AppAction, Task, Project, Category, Note, NotesMap,
+  AppState, AppAction, Task, Project, Note, NotesMap,
   Activity, ActivityType, Reminder, TrashEntry, UserProfile,
   CreateTaskPayload, CompleteTaskResult, ReopenTaskResult,
   TaskStatus, TaskPriority, RecurrenceType, Subtask, StoreContextValue, Appearance
@@ -87,7 +87,6 @@ const initialState = (): AppState => {
     me: persisted.me || { id: 'me', name: 'Você', bio: '' } as UserProfile,
     tasks: persisted.tasks || [],
     projects: persisted.projects || [],
-    categories: persisted.categories || [],
     notes: persisted.notes || {},
     activities: persisted.activities || [],
     reminders: persisted.reminders || [],
@@ -102,7 +101,6 @@ const initialState = (): AppState => {
     me: MOCK_STATE.me || { id: 'me', name: 'Você', bio: '' } as UserProfile,
     tasks: MOCK_STATE.tasks || [],
     projects: MOCK_STATE.projects || [],
-    categories: MOCK_STATE.categories || [],
     notes: MOCK_STATE.notes || {},
     activities: MOCK_STATE.activities || [],
     reminders: MOCK_STATE.reminders || [],
@@ -260,7 +258,6 @@ function spawnRecurrence(state: AppState, task: Task): Task | null {
     status: 'todo' as TaskStatus,
     priority: task.priority,
     projectId: task.projectId || null,
-    categoryId: task.categoryId || null,
     dueDate: nextDue,
     createdAt: new Date().toISOString(),
     estimatedHours: task.estimatedHours || 0,
@@ -434,7 +431,6 @@ function normalizeImportedData(d: Record<string, any>, currentState: AppState): 
       status: (VALID_STATUS.has(t.status) ? t.status : 'todo') as TaskStatus,
       priority: VALID_PRIORITY.has(t.priority) ? t.priority : 'medium',
       projectId: t.projectId || null,
-      categoryId: t.categoryId || null,
       dueDate: t.dueDate || null,
       createdAt: t.createdAt || new Date().toISOString(),
       estimatedHours: Number(t.estimatedHours) || 0,
@@ -462,22 +458,11 @@ function normalizeImportedData(d: Record<string, any>, currentState: AppState): 
     }
   }).filter(Boolean as unknown as (x: unknown) => x is Project) : currentState.projects
 
-  const categories: Category[] = Array.isArray(d.categories) ? d.categories.map((c: Record<string, unknown>) => {
-    if (!c || typeof c !== 'object') return null
-    return {
-      id: c.id || uid('c'),
-      name: String(c.name || 'Sem nome').trim(),
-      color: typeof c.color === 'string' ? c.color : '#94a3b8'
-    }
-  }).filter(Boolean as any) : currentState.categories
-
-  // Fix broken project/category references
+  // Fix broken project references
   const projectIds = new Set(projects.map((p) => p.id))
-  const categoryIds = new Set(categories.map((c) => c.id))
   const cleanedTasks = tasks.map((t) => ({
     ...t,
-    projectId: t.projectId && projectIds.has(t.projectId) ? t.projectId : null,
-    categoryId: t.categoryId && categoryIds.has(t.categoryId) ? t.categoryId : null
+    projectId: t.projectId && projectIds.has(t.projectId) ? t.projectId : null
   }))
 
   // Normalize notes: only replace if imported data has actual notes content
@@ -494,7 +479,6 @@ function normalizeImportedData(d: Record<string, any>, currentState: AppState): 
     me: d.me && typeof d.me === 'object' ? { ...currentState.me, ...d.me } : currentState.me,
     tasks: cleanedTasks,
     projects,
-    categories,
     notes,
     activities: trimActivities(activities),
     trash: Array.isArray(d.trash) ? d.trash : currentState.trash,
@@ -547,9 +531,8 @@ function reducer(state: AppState, action: AppAction): AppState {
         description: action.task.description || '',
         status: action.task.status || 'todo',
         priority: action.task.priority || 'medium',
-        projectId: action.task.projectId || null,
-        categoryId: action.task.categoryId || null,
-        dueDate: normalizeDueDate(action.task.dueDate),
+      projectId: action.task.projectId || null,
+      dueDate: normalizeDueDate(action.task.dueDate),
         createdAt: new Date().toISOString(),
         estimatedHours: Number(action.task.estimatedHours) || 0,
         progress: 0,
@@ -880,25 +863,7 @@ function reducer(state: AppState, action: AppAction): AppState {
         activities: trimActivities([...acts, ...state.activities])
       }
     }
-    case 'CREATE_CATEGORY': {
-      const category = {
-        id: uid('c'),
-        name: action.name,
-        color: action.color || '#94a3b8'
-      }
-      const acts = [
-        activityEntry({
-          type: 'category',
-          taskId: null,
-          text: `Você criou a categoria "${category.name}"`
-        })
-      ]
-      return {
-        ...state,
-        categories: [...state.categories, category],
-        activities: trimActivities([...acts, ...state.activities])
-      }
-    }
+
     case 'IMPORT_DATA': {
       const d = action.data || {}
       const normalized = normalizeImportedData(d, state)
@@ -934,35 +899,7 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'RESET': {
       return { ...initialState(), booted: true }
     }
-    case 'EDIT_CATEGORY': {
-      const idx = state.categories.findIndex((c) => c.id === action.categoryId)
-      if (idx === -1) return state
-      const updated = state.categories.slice()
-      updated[idx] = { ...updated[idx], name: action.name, color: action.color }
-      return {
-        ...state,
-        categories: updated,
-        activities: trimActivities([
-          activityEntry({ type: 'category', taskId: null, text: 'Voce editou a categoria "' + action.name + '"' }),
-          ...state.activities
-        ])
-      }
-    }
-    case 'DELETE_CATEGORY': {
-      const cat = state.categories.find((c) => c.id === action.categoryId)
-      if (!cat) return state
-      return {
-        ...state,
-        categories: state.categories.filter((c) => c.id !== action.categoryId),
-        tasks: state.tasks.map((t) =>
-          t.categoryId === action.categoryId ? { ...t, categoryId: null } : t
-        ),
-        activities: trimActivities([
-          activityEntry({ type: 'category', taskId: null, text: 'Voce excluiu a categoria "' + cat.name + '" - tarefas mantidas sem categoria' }),
-          ...state.activities
-        ])
-      }
-    }
+
     case 'EDIT_PROJECT': {
       const pidx = state.projects.findIndex((p) => p.id === action.projectId)
       if (pidx === -1) return state

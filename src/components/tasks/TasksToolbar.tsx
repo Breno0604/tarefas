@@ -98,18 +98,6 @@ export default function TasksToolbar({ f }: any) {
           }
         ]}
       />
-      <FilterDropdown
-        label="Categoria"
-        icon={Tags}
-        activeCount={filters.category.length}
-        onClear={() => setFilters((f: any) => ({ ...f, category: [] }))}
-        items={f.categories.map((c: any) => ({
-          label: c.name,
-          active: filters.category.includes(c.id),
-          keepOpen: true,
-          onClick: () => toggleFilter('category', c.id)
-        }))}
-      />
       {(f.tags || []).length > 0 && (
         <FilterDropdown
           label="Tag"

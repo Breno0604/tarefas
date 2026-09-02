@@ -5,10 +5,9 @@ import { reducer, validateTaskPayload, initialState } from '../store/store'
 const baseState = () => ({
   me: { id: 'me', name: 'Você', bio: 'Dev' },
   projects: [{ id: 'p1', name: 'Pessoal', color: '#6366f1' }],
-  categories: [{ id: 'c1', name: 'Casa', color: '#6366f1' }],
   tasks: [
-    { id: 't1', title: 'Task 1', description: 'Desc', status: 'todo', priority: 'high', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: ['bug'], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
-    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', categoryId: 'c1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: 'weekly', cancelReason: null }
+    { id: 't1', title: 'Task 1', description: 'Desc', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: ['bug'], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
+    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: 'weekly', cancelReason: null }
   ],
   notes: { t1: [{ id: 'n1', text: 'Comment', createdAt: '2026-08-01' }] },
   activities: [],
@@ -149,7 +148,7 @@ describe('persistence – notes & activities', () => {
   })
 })
 
-describe('persistence – projects & categories', () => {
+describe('persistence – projects', () => {
   let state
   beforeEach(() => { state = baseState() })
 
@@ -160,13 +159,6 @@ describe('persistence – projects & categories', () => {
     expect(p.color).toBe('#0ea5e9')
     expect(p.due).toBeTruthy()
     expect(p.members).toBeUndefined()
-  })
-
-  it('CREATE_CATEGORY persists all fields', () => {
-    const next = reducer(state, { type: 'CREATE_CATEGORY', name: 'Bug', color: '#ef4444' })
-    const c = next.categories.find((cat) => cat.name === 'Bug')
-    expect(c).toBeTruthy()
-    expect(c.color).toBe('#ef4444')
   })
 })
 
@@ -245,7 +237,7 @@ describe('persistence – undo/restore cycle', () => {
     expect(restored.status).toBe('todo')
     expect(restored.priority).toBe('high')
     expect(restored.projectId).toBe('p1')
-    expect(restored.categoryId).toBe('c1')
+    expect(restored.projectId).toBe('p1')
     expect(restored.dueDate).toBe('2026-09-01')
     expect(restored.estimatedHours).toBe(8)
     expect(restored.tags).toEqual(['bug'])
@@ -299,7 +291,6 @@ describe('persistence – import cycle (simulating JSON import)', () => {
     const imported = {
       me: { id: 'me', name: 'Importado', bio: 'Bio' },
       projects: [{ id: 'px', name: 'Proj X', color: '#0ea5e9', due: null }],
-      categories: [{ id: 'cx', name: 'Cat X', color: '#ef4444' }],
       tasks: [
         {
           id: 'tx',
@@ -308,7 +299,6 @@ describe('persistence – import cycle (simulating JSON import)', () => {
           status: 'in_progress',
           priority: 'high',
           projectId: 'px',
-          categoryId: 'cx',
           dueDate: '2026-09-01T12:00:00.000Z',
           createdAt: '2026-01-01T00:00:00.000Z',
           estimatedHours: 5,
@@ -343,7 +333,7 @@ describe('persistence – import cycle (simulating JSON import)', () => {
   })
 
   it('IMPORT_DATA keeps current values for missing optional fields', () => {
-    const imported = { me: { id: 'me', name: 'X' }, tasks: [], projects: [], categories: [] }
+    const imported = { me: { id: 'me', name: 'X' }, tasks: [], projects: [] }
     const next = reducer(state, { type: 'IMPORT_DATA', data: imported })
     expect(next.theme).toBe('light')
     expect(next.notes).toEqual(state.notes)
@@ -368,12 +358,10 @@ describe('persistence – import cycle (simulating JSON import)', () => {
     expect(next.tasks.some((t) => t.title === 'Imported Task 2')).toBe(true)
   })
 
-  it('import preserves projects and categories', () => {
+  it('import preserves projects', () => {
     let next = reducer(state, { type: 'RESET' })
     next = reducer(next, { type: 'CREATE_PROJECT', name: 'Projeto Importado', color: '#ef4444' })
-    next = reducer(next, { type: 'CREATE_CATEGORY', name: 'Categoria Importada', color: '#10b981' })
     expect(next.projects.some((p) => p.name === 'Projeto Importado')).toBe(true)
-    expect(next.categories.some((c) => c.name === 'Categoria Importada')).toBe(true)
   })
 
   it('imported data persists through theme change', () => {

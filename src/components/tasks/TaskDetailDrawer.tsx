@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   FolderKanban,
-  Tag,
   StickyNote,
   History,
   Send,
@@ -339,33 +338,6 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
                       })),
                       { type: 'divider' },
                       { label: 'Remover projeto', onClick: () => change({ projectId: null }, 'Projeto removido') }
-                    ]}
-                  />
-                </span>
-              </div>
-
-              {/* Categoria editável */}
-              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
-                <Tag size={16} className="shrink-0 text-slate-400" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Categoria</span>
-                  <Dropdown
-                    align="left"
-                    triggerClassName="w-full mt-0.5"
-                    trigger={
-                      <button className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-                        {state.categories.find((c: any) => c.id === task.categoryId)?.name || 'Selecionar'}
-                        <ChevronDown size={13} className="text-slate-400" />
-                      </button>
-                    }
-                    items={[
-                      ...state.categories.map((c: any) => ({
-                        label: c.name,
-                        active: task.categoryId === c.id,
-                        onClick: () => change({ categoryId: c.id }, 'Categoria alterada')
-                      })),
-                      { type: 'divider' },
-                      { label: 'Remover categoria', onClick: () => change({ categoryId: null }, 'Categoria removida') }
                     ]}
                   />
                 </span>

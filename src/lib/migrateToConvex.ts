@@ -32,7 +32,6 @@ function readLocalState(): Record<string, any> | null {
 export async function migrateToConvex(): Promise<{
   tasks: number;
   projects: number;
-  categories: number;
   notes: number;
   activities: number;
 } | null> {
@@ -47,7 +46,7 @@ export async function migrateToConvex(): Promise<{
     return null;
   }
 
-  const summary = { tasks: 0, projects: 0, categories: 0, notes: 0, activities: 0 };
+  const summary = { tasks: 0, projects: 0, notes: 0, activities: 0 };
 
   // Import tasks
   if (Array.isArray(state.tasks)) {
@@ -59,7 +58,6 @@ export async function migrateToConvex(): Promise<{
           status: task.status,
           priority: task.priority,
           projectId: task.projectId,
-          categoryId: task.categoryId,
           dueDate: task.dueDate,
           estimatedHours: task.estimatedHours,
           progress: task.progress,
@@ -88,21 +86,6 @@ export async function migrateToConvex(): Promise<{
         summary.projects++;
       } catch (e) {
         console.warn("[Migration] Failed to migrate project:", project.name, e);
-      }
-    }
-  }
-
-  // Import categories
-  if (Array.isArray(state.categories)) {
-    for (const category of state.categories) {
-      try {
-        await (convexClient as any).mutation("categories:create", {
-          name: category.name,
-          color: category.color,
-        });
-        summary.categories++;
-      } catch (e) {
-        console.warn("[Migration] Failed to migrate category:", category.name, e);
       }
     }
   }

@@ -19,7 +19,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
     status: 'todo',
     priority: 'medium',
     projectId: '',
-    categoryId: '',
     dueDate: '',
     estimatedHours: '',
     tagsText: '',
@@ -37,14 +36,13 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
           status: task.status,
           priority: task.priority,
           projectId: task.projectId || '',
-          categoryId: task.categoryId || '',
           dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
           estimatedHours: task.estimatedHours ? String(task.estimatedHours) : '',
           tagsText: (task.tags || []).join(', '),
           recurrence: task.recurrence || 'none'
         })
         // Auto-expand if task has advanced fields set
-        setShowAdvanced(Boolean(task.categoryId || task.recurrence || task.estimatedHours || task.tags?.length))
+        setShowAdvanced(Boolean(task.recurrence || task.estimatedHours || task.tags?.length))
       } else {
         setForm({
           title: '',
@@ -52,7 +50,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
           status: defaults.status || 'todo',
           priority: defaults.priority || 'medium',
           projectId: defaults.projectId || '',
-          categoryId: defaults.categoryId || '',
           dueDate: defaults.dueDate ? String(defaults.dueDate).slice(0, 10) : '',
           estimatedHours: '',
           tagsText: '',
@@ -99,7 +96,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
       status: form.status,
       priority: form.priority,
       projectId: form.projectId || null,
-      categoryId: form.categoryId || null,
       dueDate: form.dueDate || null,
       estimatedHours: form.estimatedHours ? Number(form.estimatedHours) : 0,
       tags: form.tagsText
@@ -206,13 +202,6 @@ export default function TaskFormModal({ open, onClose, task, defaults = {} }: { 
               onChange={set('projectId')}
               placeholder="Sem projeto"
               options={state.projects.map((p: any) => ({ value: p.id, label: p.name }))}
-            />
-            <Select
-              label="Categoria"
-              value={form.categoryId}
-              onChange={set('categoryId')}
-              placeholder="Sem categoria"
-              options={state.categories.map((c: any) => ({ value: c.id, label: c.name }))}
             />
             <Field label="Horas estimadas">
               <Input

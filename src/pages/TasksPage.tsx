@@ -259,7 +259,6 @@ export default function TasksPage() {
   const toolbarData = {
     ...f,
     projects: state.projects,
-    categories: state.categories,
     tags: allTags
   }
 

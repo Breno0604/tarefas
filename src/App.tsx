@@ -13,7 +13,6 @@ const TodayPage = React.lazy(() => import('./pages/TodayPage'))
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const TasksPage = React.lazy(() => import('./pages/TasksPage'))
 const ProjectsPage = React.lazy(() => import('./pages/ProjectsPage'))
-const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage'))
 const ActivitiesPage = React.lazy(() => import('./pages/ActivitiesPage'))
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
 const TrashPage = React.lazy(() => import('./pages/TrashPage'))
@@ -70,7 +69,6 @@ export default function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/tarefas" element={<TasksPage />} />
                     <Route path="/projetos" element={<ProjectsPage />} />
-                    <Route path="/categorias" element={<CategoriesPage />} />
                     <Route path="/atividades" element={<ActivitiesPage />} />
                     <Route path="/configuracoes" element={<SettingsPage />} />
                     <Route path="/lixeira" element={<TrashPage />} />

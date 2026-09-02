@@ -21,7 +21,6 @@ const EMPTY: AppState = {
   me: { id: "me", name: "Você", bio: "" },
   tasks: [],
   projects: [],
-  categories: [],
   notes: {},
   activities: [],
   reminders: [],
@@ -39,7 +38,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
   // ── Queries ──
   const tasksRaw = useQuery(api.tasks.list, { userId }) ?? [];
   const projectsRaw = useQuery(api.projects.list, { userId }) ?? [];
-  const categoriesRaw = useQuery(api.categories.list, { userId }) ?? [];
+
   const activitiesRaw = useQuery(api.activities.list, { userId }) ?? [];
   const remindersRaw = useQuery(api.reminders.list, { userId }) ?? [];
   const trashRaw = useQuery(api.trash.list, { userId }) ?? [];
@@ -64,9 +63,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
   const createProjectMut = useMutation(api.projects.create);
   const updateProjectMut = useMutation(api.projects.update);
   const removeProjectMut = useMutation(api.projects.remove);
-  const createCategoryMut = useMutation(api.categories.create);
-  const updateCategoryMut = useMutation(api.categories.update);
-  const removeCategoryMut = useMutation(api.categories.remove);
+
   const addNoteMut = useMutation(api.notes.add);
   const deleteNoteMut = useMutation(api.notes.remove);
 
@@ -119,7 +116,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       tasks: (tasksRaw as any[]).map((t: any) => ({
         id: t._id.toString(), title: t.title, description: t.description ?? "",
         status: t.status as TaskStatus, priority: t.priority as TaskPriority,
-        projectId: t.projectId ?? null, categoryId: t.categoryId ?? null,
+        projectId: t.projectId ?? null,
         dueDate: t.dueDate ?? null, createdAt: t.createdAt,
         estimatedHours: t.estimatedHours ?? 0, progress: t.progress ?? 0,
         tags: t.tags ?? [], subtasks: t.subtasks ?? [],
@@ -130,9 +127,6 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       projects: (projectsRaw as any[]).map((p: any) => ({
         id: p._id.toString(), name: p.name, description: p.description ?? "",
         color: p.color, due: p.due ?? null,
-      })),
-      categories: (categoriesRaw as any[]).map((c: any) => ({
-        id: c._id.toString(), name: c.name, color: c.color,
       })),
       notes: notesMap,
       activities: (activitiesRaw as any[]).map((a: any) => ({
@@ -159,7 +153,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
         : EMPTY.appearance,
       _lastDuplicatedId: lastDuplicatedId,
     };
-  }, [tasksRaw, projectsRaw, categoriesRaw, activitiesRaw, remindersRaw, trashRaw, allNotesRaw, profileRaw, prefsRaw, theme, lastDuplicatedId]);
+  }, [tasksRaw, projectsRaw, activitiesRaw, remindersRaw, trashRaw, allNotesRaw, profileRaw, prefsRaw, theme, lastDuplicatedId]);
 
   // ── Dispatch ──
   const dispatch = useCallback((action: AppAction) => {
@@ -181,7 +175,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
 
       // ── Tasks ──
       case "CREATE_TASK":
-        createTask({ userId, title: action.task.title, description: action.task.description, status: action.task.status, priority: action.task.priority, projectId: action.task.projectId ?? undefined, categoryId: action.task.categoryId ?? undefined, dueDate: action.task.dueDate ?? undefined, estimatedHours: action.task.estimatedHours, tags: action.task.tags, subtasks: action.task.subtasks, favorite: action.task.favorite, recurrence: action.task.recurrence ?? undefined });
+        createTask({ userId, title: action.task.title, description: action.task.description, status: action.task.status, priority: action.task.priority, projectId: action.task.projectId ?? undefined, dueDate: action.task.dueDate ?? undefined, estimatedHours: action.task.estimatedHours, tags: action.task.tags, subtasks: action.task.subtasks, favorite: action.task.favorite, recurrence: action.task.recurrence ?? undefined });
         return;
       case "UPDATE_TASK":
         updateTask({ userId, taskId: action.taskId, patch: action.patch as any });
@@ -235,14 +229,6 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       case "DELETE_PROJECT":
         removeProjectMut({ userId, projectId: action.projectId }); return;
 
-      // ── Categories ──
-      case "CREATE_CATEGORY":
-        createCategoryMut({ userId, name: action.name, color: action.color }); return;
-      case "EDIT_CATEGORY":
-        updateCategoryMut({ userId, categoryId: action.categoryId, patch: { name: action.name, color: action.color } }); return;
-      case "DELETE_CATEGORY":
-        removeCategoryMut({ userId, categoryId: action.categoryId }); return;
-
       // ── Activities ──
       case "DELETE_ACTIVITY":
         deleteActivityMut({ userId, activityId: action.activityId as any }); return;
@@ -262,7 +248,6 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
             status: t.status || "todo",
             priority: t.priority || "medium",
             projectId: t.projectId || undefined,
-            categoryId: t.categoryId || undefined,
             dueDate: t.dueDate || undefined,
             createdAt: t.createdAt || new Date().toISOString(),
             estimatedHours: Number(t.estimatedHours) || 0,
@@ -278,10 +263,6 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
             description: p.description || "",
             color: p.color || "#6366f1",
             due: p.due || undefined,
-          })),
-          categories: (d.categories || []).map((c: any) => ({
-            name: c.name || "Sem nome",
-            color: c.color || "#94a3b8",
           })),
           notes: (() => {
             const raw = d.notes;
@@ -314,7 +295,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
       default:
         console.warn("[ConvexStore] Unknown action:", (action as any).type);
     }
-  }, [userId, theme, prefsRaw, deleteActivityMut, updateCategoryMut, removeCategoryMut, updateProjectMut, removeProjectMut, createTask, updateTask, toggleDoneMut, completeTaskMut, reopenTaskMut, setStatusMut, cancelTaskMut, deleteTaskMut, toggleFavMut, duplicateTaskMut, toggleSubMut, addNoteMut, deleteNoteMut, markReadMut, markAllReadMut, clearRemindersMut, createProjectMut, createCategoryMut, restoreTasksMut, clearTrashMut, upsertProfileMut, upsertPrefsMut]);
+  }, [userId, theme, prefsRaw, deleteActivityMut, updateProjectMut, removeProjectMut, createTask, updateTask, toggleDoneMut, completeTaskMut, reopenTaskMut, setStatusMut, cancelTaskMut, deleteTaskMut, toggleFavMut, duplicateTaskMut, toggleSubMut, addNoteMut, deleteNoteMut, markReadMut, markAllReadMut, clearRemindersMut, createProjectMut, restoreTasksMut, clearTrashMut, upsertProfileMut, upsertPrefsMut]);
 
   const value = useMemo<StoreContextValue>(() => ({ state, dispatch }), [state, dispatch]);
 

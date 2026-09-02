@@ -53,7 +53,6 @@ export const create = mutation({
     status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled"))),
     priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent"))),
     projectId: v.optional(v.string()),
-    categoryId: v.optional(v.string()),
     dueDate: v.optional(v.string()),
     estimatedHours: v.optional(v.number()),
     tags: v.optional(v.array(v.string())),
@@ -71,7 +70,6 @@ export const create = mutation({
       status: args.status ?? "todo",
       priority: args.priority ?? "medium",
       projectId: args.projectId ?? undefined,
-      categoryId: args.categoryId ?? undefined,
       dueDate: args.dueDate ?? undefined,
       createdAt: new Date().toISOString(),
       estimatedHours: args.estimatedHours ?? 0,
@@ -104,7 +102,6 @@ export const update = mutation({
       status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"), v.literal("cancelled"))),
       priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent"))),
       projectId: v.optional(v.string()),
-      categoryId: v.optional(v.string()),
       dueDate: v.optional(v.string()),
       estimatedHours: v.optional(v.number()),
       progress: v.optional(v.number()),
@@ -149,12 +146,6 @@ export const update = mutation({
     if (args.patch.title && args.patch.title !== task.title) {
       await ctx.db.insert("activities", { userId: args.userId, type: "title", taskId: args.taskId, text: `Você renomeou a tarefa "${task.title}" para "${args.patch.title}"`, createdAt: now });
     }
-    if (args.patch.categoryId !== undefined && args.patch.categoryId !== task.categoryId) {
-      const text = args.patch.categoryId
-        ? `Você moveu "${task.title}" para uma categoria`
-        : `Você removeu "${task.title}" da categoria`;
-      await ctx.db.insert("activities", { userId: args.userId, type: "category", taskId: args.taskId, text, createdAt: now });
-    }
   },
 });
 
@@ -181,7 +172,6 @@ export const toggleDone = mutation({
           status: "todo",
           priority: task.priority,
           projectId: task.projectId,
-          categoryId: task.categoryId,
           dueDate: nextDue,
           createdAt: new Date().toISOString(),
           estimatedHours: task.estimatedHours ?? 0,
@@ -225,7 +215,6 @@ export const complete = mutation({
           status: "todo",
           priority: task.priority,
           projectId: task.projectId,
-          categoryId: task.categoryId,
           dueDate: nextDue,
           createdAt: new Date().toISOString(),
           estimatedHours: task.estimatedHours ?? 0,
@@ -331,7 +320,7 @@ export const duplicate = mutation({
     if (!source) return;
     const newId = await ctx.db.insert("tasks", {
       userId: args.userId, title: `${source.title} (cópia)`, description: source.description ?? "", status: "todo", priority: source.priority,
-      projectId: source.projectId, categoryId: source.categoryId, dueDate: source.dueDate, createdAt: new Date().toISOString(),
+      projectId: source.projectId, dueDate: source.dueDate, createdAt: new Date().toISOString(),
       estimatedHours: source.estimatedHours ?? 0, progress: 0, tags: [...(source.tags ?? [])], subtasks: (source.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
       favorite: false, recurrence: source.recurrence ?? undefined, cancelReason: undefined,
     });

@@ -9,7 +9,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 /**
- * Import all data: clears existing tasks, projects, categories, notes, activities,
+ * Import all data: clears existing tasks, projects, notes, activities,
  * and inserts the imported records. Preserves the userId.
  */
 export const importAll = mutation({
@@ -28,7 +28,6 @@ export const importAll = mutation({
           v.literal("high"), v.literal("urgent")
         ),
         projectId: v.optional(v.string()),
-        categoryId: v.optional(v.string()),
         dueDate: v.optional(v.string()),
         createdAt: v.string(),
         estimatedHours: v.optional(v.number()),
@@ -48,12 +47,6 @@ export const importAll = mutation({
         description: v.optional(v.string()),
         color: v.string(),
         due: v.optional(v.string()),
-      })
-    ),
-    categories: v.array(
-      v.object({
-        name: v.string(),
-        color: v.string(),
       })
     ),
     notes: v.array(
@@ -76,10 +69,6 @@ export const importAll = mutation({
       .query("projects").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     for (const p of existingProjects) await ctx.db.delete(p._id);
 
-    const existingCategories = await ctx.db
-      .query("categories").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    for (const c of existingCategories) await ctx.db.delete(c._id);
-
     const existingNotes = await ctx.db
       .query("notes").withIndex("by_user_task", (q) => q.eq("userId", userId)).collect();
     for (const n of existingNotes) await ctx.db.delete(n._id);
@@ -95,14 +84,11 @@ export const importAll = mutation({
     for (const project of args.projects) {
       await ctx.db.insert("projects", { userId, ...project });
     }
-    for (const category of args.categories) {
-      await ctx.db.insert("categories", { userId, ...category });
-    }
     for (const note of args.notes) {
       await ctx.db.insert("notes", { userId, ...note });
     }
 
-    return { imported: { tasks: args.tasks.length, projects: args.projects.length, categories: args.categories.length, notes: args.notes.length } };
+    return { imported: { tasks: args.tasks.length, projects: args.projects.length, notes: args.notes.length } };
   },
 });
 
@@ -120,9 +106,6 @@ export const resetAll = mutation({
     const projects = await ctx.db.query("projects").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     for (const p of projects) await ctx.db.delete(p._id);
 
-    const categories = await ctx.db.query("categories").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    for (const c of categories) await ctx.db.delete(c._id);
-
     const notes = await ctx.db.query("notes").withIndex("by_user_task", (q) => q.eq("userId", userId)).collect();
     for (const n of notes) await ctx.db.delete(n._id);
 
@@ -135,7 +118,7 @@ export const resetAll = mutation({
     const trashEntries = await ctx.db.query("trash").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     for (const e of trashEntries) await ctx.db.delete(e._id);
 
-    return { deleted: tasks.length + projects.length + categories.length + notes.length + activities.length + reminders.length + trashEntries.length };
+    return { deleted: tasks.length + projects.length + notes.length + activities.length + reminders.length + trashEntries.length };
   },
 });
 
@@ -149,7 +132,6 @@ export const exportAll = query({
 
     const tasks = await ctx.db.query("tasks").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     const projects = await ctx.db.query("projects").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    const categories = await ctx.db.query("categories").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     const allNotes = await ctx.db.query("notes").withIndex("by_user_task", (q) => q.eq("userId", userId)).collect();
     const activities = await ctx.db.query("activities").withIndex("by_user_created", (q) => q.eq("userId", userId)).collect();
     const profile = await ctx.db.query("profiles").withIndex("by_user", (q) => q.eq("userId", userId)).first();
@@ -157,7 +139,6 @@ export const exportAll = query({
     return {
       tasks: tasks.map(({ userId: _u, ...rest }) => rest),
       projects: projects.map(({ userId: _u, ...rest }) => rest),
-      categories: categories.map(({ userId: _u, ...rest }) => rest),
       notes: allNotes.map(({ userId: _u, ...rest }) => rest),
       activities: activities.map(({ userId: _u, ...rest }) => rest),
       me: profile ? { name: profile.name, bio: profile.bio } : { name: "Você", bio: "" },
