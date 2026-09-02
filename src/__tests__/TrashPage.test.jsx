@@ -13,7 +13,6 @@ const MOCK_TRASHED_TASK = {
   projectId: 'p1',
   dueDate: '2026-09-01T10:00:00Z',
   createdAt: '2026-08-01T10:00:00Z',
-  estimatedHours: 2,
   progress: 0,
   tags: ['test'],
   subtasks: [],

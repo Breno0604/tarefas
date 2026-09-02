@@ -6,8 +6,8 @@ const baseState = () => ({
   me: { id: 'me', name: 'Você', bio: 'Dev' },
   projects: [{ id: 'p1', name: 'Pessoal', color: '#6366f1' }],
   tasks: [
-    { id: 't1', title: 'Task 1', description: 'Desc', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: ['bug'], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
-    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: 'weekly', cancelReason: null }
+    { id: 't1', title: 'Task 1', description: 'Desc', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', progress: 0, tags: ['bug'], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
+    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', progress: 80, tags: [], subtasks: [], favorite: true, recurrence: 'weekly', cancelReason: null }
   ],
   notes: { t1: [{ id: 'n1', text: 'Comment', createdAt: '2026-08-01' }] },
   activities: [],
@@ -239,7 +239,6 @@ describe('persistence – undo/restore cycle', () => {
     expect(restored.projectId).toBe('p1')
     expect(restored.projectId).toBe('p1')
     expect(restored.dueDate).toBe('2026-09-01')
-    expect(restored.estimatedHours).toBe(8)
     expect(restored.tags).toEqual(['bug'])
     expect(next.notes.t1).toHaveLength(1)
     expect(next.notes.t1[0].text).toBe('Comment')
@@ -251,7 +250,6 @@ describe('persistence – undo/restore cycle', () => {
     const spawned = next.tasks.find((t) => t.title === 'Task 1' && t.id !== 't1')
     expect(spawned.recurrence).toBe('monthly')
     expect(spawned.tags).toEqual(['bug'])
-    expect(spawned.estimatedHours).toBe(8)
   })
 })
 
@@ -301,7 +299,6 @@ describe('persistence – import cycle (simulating JSON import)', () => {
           projectId: 'px',
           dueDate: '2026-09-01T12:00:00.000Z',
           createdAt: '2026-01-01T00:00:00.000Z',
-          estimatedHours: 5,
           progress: 40,
           tags: ['x'],
           subtasks: [],

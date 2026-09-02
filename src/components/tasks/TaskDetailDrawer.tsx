@@ -3,7 +3,6 @@ import {
   Pencil,
   Trash2,
   Calendar,
-  Clock,
   FolderKanban,
   StickyNote,
   History,
@@ -352,23 +351,6 @@ export default function TaskDetailDrawer({ open, onClose, taskId, onEdit }: any)
                     type="date"
                     value={task.dueDate || ''}
                     onChange={(e) => change({ dueDate: e.target.value || null }, e.target.value ? 'Vencimento alterado' : 'Vencimento removido')}
-                    className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 dark:border-slate-700 dark:text-slate-200 dark:focus:border-brand-500"
-                  />
-                </span>
-              </div>
-
-              {/* Horas estimadas editável */}
-              <div className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
-                <Clock size={16} className="shrink-0 text-slate-400" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Horas estimadas</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={task.estimatedHours || ''}
-                    onChange={(e) => change({ estimatedHours: Number(e.target.value) || 0 })}
-                    placeholder="0"
                     className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 transition focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 dark:border-slate-700 dark:text-slate-200 dark:focus:border-brand-500"
                   />
                 </span>

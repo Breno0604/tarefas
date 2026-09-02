@@ -30,7 +30,6 @@ export const importAll = mutation({
         projectId: v.optional(v.string()),
         dueDate: v.optional(v.string()),
         createdAt: v.string(),
-        estimatedHours: v.optional(v.number()),
         progress: v.number(),
         tags: v.array(v.string()),
         subtasks: v.array(v.object({ id: v.string(), title: v.string(), done: v.boolean() })),

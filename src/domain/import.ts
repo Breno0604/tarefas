@@ -30,7 +30,6 @@ export function normalizeImportedData(d: Record<string, any>, currentState: AppS
       projectId: t.projectId || null,
       dueDate: t.dueDate || null,
       createdAt: t.createdAt || new Date().toISOString(),
-      estimatedHours: Number(t.estimatedHours) || 0,
       progress: Math.max(0, Math.min(100, Number(t.progress) || 0)),
     tags: Array.isArray(t.tags) ? t.tags.filter((tag: any) => typeof tag === 'string') : [],
     subtasks: Array.isArray(t.subtasks) ? t.subtasks.map((s: Record<string, any>) => ({

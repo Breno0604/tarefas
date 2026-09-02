@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, Pencil, ListChecks, Clock } from 'lucide-react'
+import { Star, Pencil, ListChecks } from 'lucide-react'
 import { StatusBadge, PriorityBadge, Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import { useDismissable } from '../../hooks/useDismissable'
 
@@ -95,12 +95,6 @@ export default function TaskPreview({
             <span className="flex items-center gap-1">
               <ListChecks size={12} />
               {doneSubtasks}/{task.subtasks.length}
-            </span>
-          )}
-          {task.estimatedHours > 0 && (
-            <span className="flex items-center gap-1">
-              <Clock size={12} />
-              {task.estimatedHours}h
             </span>
           )}
           {noteCount > 0 && <span>{noteCount} nota(s)</span>}

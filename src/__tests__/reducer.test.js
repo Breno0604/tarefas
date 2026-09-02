@@ -6,8 +6,8 @@ const baseState = () => ({
   me: { id: 'me', name: 'Você', bio: '' },
   projects: [{ id: 'p1', name: 'Pessoal', color: '#6366f1' }],
   tasks: [
-    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', estimatedHours: 8, progress: 0, tags: [], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
-    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', estimatedHours: 4, progress: 80, tags: [], subtasks: [], favorite: true, recurrence: null, cancelReason: null }
+    { id: 't1', title: 'Task 1', description: '', status: 'todo', priority: 'high', projectId: 'p1', dueDate: '2026-09-01', createdAt: '2026-08-01', progress: 0, tags: [], subtasks: [], favorite: false, recurrence: null, cancelReason: null },
+    { id: 't2', title: 'Task 2', description: '', status: 'in_progress', priority: 'medium', projectId: 'p1', dueDate: '2026-09-05', createdAt: '2026-08-02', progress: 80, tags: [], subtasks: [], favorite: true, recurrence: null, cancelReason: null }
   ],
   notes: { t1: [{ id: 'n1', text: 'Old note', createdAt: '2026-08-01' }] },
   activities: [],
@@ -399,12 +399,6 @@ describe('reducer', () => {
       expect(validateTaskPayload({ title: '   ' }).length).toBe(1)
     })
 
-    it('returns error for negative estimatedHours', () => {
-      const errors = validateTaskPayload({ title: 'Ok', estimatedHours: -5 })
-      expect(errors.length).toBe(1)
-      expect(errors[0]).toMatch(/horas/i)
-    })
-
     it('returns error for invalid dueDate', () => {
       const errors = validateTaskPayload({ title: 'Ok', dueDate: 'not-a-date' })
       expect(errors.length).toBe(1)
@@ -412,7 +406,8 @@ describe('reducer', () => {
     })
 
     it('returns multiple errors for multiple invalid fields', () => {
-      expect(validateTaskPayload({ title: '', estimatedHours: -1, dueDate: 'bad' }).length).toBe(3)
+      const errors = validateTaskPayload({ title: '', dueDate: 'bad' })
+      expect(errors.length).toBe(2)
     })
 
     it('returns error for null/undefined payload', () => {

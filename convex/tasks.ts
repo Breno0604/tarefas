@@ -54,7 +54,6 @@ export const create = mutation({
     priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent"))),
     projectId: v.optional(v.string()),
     dueDate: v.optional(v.string()),
-    estimatedHours: v.optional(v.number()),
     tags: v.optional(v.array(v.string())),
     subtasks: v.optional(v.array(v.object({ id: v.string(), title: v.string(), done: v.boolean() }))),
     favorite: v.optional(v.boolean()),
@@ -72,7 +71,6 @@ export const create = mutation({
       projectId: args.projectId ?? undefined,
       dueDate: args.dueDate ?? undefined,
       createdAt: new Date().toISOString(),
-      estimatedHours: args.estimatedHours ?? 0,
       progress: 0,
       tags: args.tags ?? [],
       subtasks: args.subtasks ?? [],
@@ -103,7 +101,6 @@ export const update = mutation({
       priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent"))),
       projectId: v.optional(v.string()),
       dueDate: v.optional(v.string()),
-      estimatedHours: v.optional(v.number()),
       progress: v.optional(v.number()),
       tags: v.optional(v.array(v.string())),
       favorite: v.optional(v.boolean()),
@@ -174,7 +171,6 @@ export const toggleDone = mutation({
           projectId: task.projectId,
           dueDate: nextDue,
           createdAt: new Date().toISOString(),
-          estimatedHours: task.estimatedHours ?? 0,
           progress: 0,
           tags: [...(task.tags ?? [])],
           subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
@@ -217,7 +213,6 @@ export const complete = mutation({
           projectId: task.projectId,
           dueDate: nextDue,
           createdAt: new Date().toISOString(),
-          estimatedHours: task.estimatedHours ?? 0,
           progress: 0,
           tags: [...(task.tags ?? [])],
           subtasks: (task.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
@@ -321,7 +316,7 @@ export const duplicate = mutation({
     const newId = await ctx.db.insert("tasks", {
       userId: args.userId, title: `${source.title} (cópia)`, description: source.description ?? "", status: "todo", priority: source.priority,
       projectId: source.projectId, dueDate: source.dueDate, createdAt: new Date().toISOString(),
-      estimatedHours: source.estimatedHours ?? 0, progress: 0, tags: [...(source.tags ?? [])], subtasks: (source.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
+      progress: 0, tags: [...(source.tags ?? [])], subtasks: (source.subtasks ?? []).map((s: any) => ({ ...s, id: uid("s"), done: false })),
       favorite: false, recurrence: source.recurrence ?? undefined, cancelReason: undefined,
     });
     await ctx.db.insert("activities", { userId: args.userId, type: "create", text: `Você duplicou a tarefa "${source.title}"`, createdAt: new Date().toISOString() });

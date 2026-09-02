@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { StickyNote, ListChecks, MoreHorizontal, Clock, Star, Repeat } from 'lucide-react'
+import { StickyNote, ListChecks, MoreHorizontal, Star, Repeat } from 'lucide-react'
 import { Tag as TagChip, DueDateBadge } from '../ui/Badge'
 import Dropdown from '../ui/Dropdown'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -170,12 +170,6 @@ export default function TaskCard({
               <span />
             )}
             <div className="flex items-center gap-2.5">
-              {task.estimatedHours > 0 && (
-                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500" aria-label={`${task.estimatedHours} horas estimadas`}>
-                  <Clock size={11} />
-                  {task.estimatedHours}h
-                </span>
-              )}
               {noteCount > 0 && (
                 <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500" title={`${noteCount} nota(s)`}>
                   <StickyNote size={11} />

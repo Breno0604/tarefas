@@ -57,7 +57,6 @@ const T = (id, data) => ({
   projectId: null,
   dueDate: null,
   createdAt: iso(-7 - Math.floor(Math.random() * 15)),
-  estimatedHours: 1,
   progress: 0,
   tags: [],
   subtasks: [],
@@ -75,7 +74,6 @@ export const TASKS = [
     priority: 'high',
     projectId: 'p1',
     dueDate: iso(6),
-    estimatedHours: 8,
     progress: 40,
     favorite: true,
     tags: ['reforma'],
@@ -92,7 +90,6 @@ export const TASKS = [
     priority: 'medium',
     projectId: 'p1',
     dueDate: iso(14),
-    estimatedHours: 2,
     tags: ['reforma']
   }),
   T(nextId(), {
@@ -102,7 +99,6 @@ export const TASKS = [
     priority: 'urgent',
     projectId: 'p3',
     dueDate: iso(-1),
-    estimatedHours: 0.2,
     recurrence: 'monthly',
     tags: ['contas']
   }),
@@ -112,7 +108,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'medium',
     dueDate: iso(0),
-    estimatedHours: 1,
     recurrence: 'daily',
     tags: ['hábito']
   }),
@@ -123,7 +118,6 @@ export const TASKS = [
     priority: 'medium',
     projectId: 'p4',
     dueDate: iso(0),
-    estimatedHours: 0.5,
     recurrence: 'daily',
     favorite: true,
     tags: ['inglês']
@@ -135,7 +129,6 @@ export const TASKS = [
     priority: 'high',
     projectId: 'p4',
     dueDate: iso(2),
-    estimatedHours: 0.5,
     recurrence: 'weekly',
     progress: 50,
     tags: ['inglês']
@@ -147,7 +140,6 @@ export const TASKS = [
     priority: 'high',
     projectId: 'p2',
     dueDate: iso(-4),
-    estimatedHours: 1,
     progress: 100,
     tags: ['site']
   }),
@@ -158,7 +150,6 @@ export const TASKS = [
     priority: 'high',
     projectId: 'p2',
     dueDate: iso(8),
-    estimatedHours: 12,
     progress: 30,
     favorite: true,
     tags: ['site'],
@@ -175,7 +166,6 @@ export const TASKS = [
     priority: 'low',
     projectId: 'p3',
     dueDate: iso(5),
-    estimatedHours: 0.5,
     tags: ['gastos']
   }),
   T(nextId(), {
@@ -185,7 +175,6 @@ export const TASKS = [
     priority: 'high',
     projectId: 'p3',
     dueDate: iso(-2),
-    estimatedHours: 0.2,
     progress: 100,
     recurrence: 'monthly',
     tags: ['reserva']
@@ -197,7 +186,6 @@ export const TASKS = [
     priority: 'medium',
     projectId: 'p3',
     dueDate: iso(9),
-    estimatedHours: 1,
     recurrence: 'monthly',
     tags: ['orçamento']
   }),
@@ -207,7 +195,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'low',
     dueDate: iso(20),
-    estimatedHours: 1,
     tags: ['saúde']
   }),
   T(nextId(), {
@@ -217,7 +204,6 @@ export const TASKS = [
     priority: 'low',
     projectId: 'p1',
     dueDate: iso(-3),
-    estimatedHours: 2,
     tags: ['organização']
   }),
   T(nextId(), {
@@ -226,7 +212,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'high',
     dueDate: iso(1),
-    estimatedHours: 1,
     tags: ['presente']
   }),
   T(nextId(), {
@@ -235,7 +220,6 @@ export const TASKS = [
     status: 'in_progress',
     priority: 'medium',
     dueDate: iso(11),
-    estimatedHours: 3,
     progress: 60,
     tags: ['carreira']
   }),
@@ -245,7 +229,6 @@ export const TASKS = [
     status: 'todo',
     priority: 'medium',
     dueDate: iso(28),
-    estimatedHours: 4,
     tags: ['viagem'],
     subtasks: [
       { id: 's7', title: 'Listar 3 destinos possíveis', done: false },
@@ -259,7 +242,6 @@ export const TASKS = [
     status: 'in_progress',
     priority: 'low',
     dueDate: iso(-1),
-    estimatedHours: 0.5,
     progress: 20,
     tags: []
   }),
@@ -269,7 +251,6 @@ export const TASKS = [
     status: 'cancelled',
     priority: 'low',
     cancelReason: 'Prefiro focar no inglês neste semestre.',
-    estimatedHours: 6,
     tags: []
   })
 ]

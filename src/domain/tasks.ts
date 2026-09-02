@@ -63,9 +63,6 @@ export function validateTaskPayload(task: Partial<CreateTaskPayload> | Record<st
   if (task.title !== undefined && (!task.title || !String(task.title).trim())) {
     errors.push('Título é obrigatório')
   }
-  if (task.estimatedHours !== undefined && (isNaN(Number(task.estimatedHours)) || Number(task.estimatedHours) < 0)) {
-    errors.push('Horas estimadas deve ser um número não negativo')
-  }
   if (task.dueDate && isNaN(new Date(String(task.dueDate)).getTime())) {
     errors.push('Data de vencimento inválida')
   }
@@ -85,7 +82,6 @@ export function createTaskFromPayload(payload: CreateTaskPayload): Task {
     projectId: payload.projectId || null,
     dueDate: normalizeDueDate(payload.dueDate),
     createdAt: new Date().toISOString(),
-    estimatedHours: Number(payload.estimatedHours) || 0,
     progress: 0,
     tags: payload.tags || [],
     subtasks: payload.subtasks || [],
@@ -118,7 +114,6 @@ export function spawnRecurrence(state: AppState, task: Task): Task | null {
     projectId: task.projectId || null,
     dueDate: nextDue,
     createdAt: new Date().toISOString(),
-    estimatedHours: task.estimatedHours || 0,
     progress: 0,
     tags: [...(task.tags || [])],
     subtasks: (task.subtasks || []).map((s: Subtask) => ({

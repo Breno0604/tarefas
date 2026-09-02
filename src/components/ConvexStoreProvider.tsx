@@ -118,7 +118,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
         status: t.status as TaskStatus, priority: t.priority as TaskPriority,
         projectId: t.projectId ?? null,
         dueDate: t.dueDate ?? null, createdAt: t.createdAt,
-        estimatedHours: t.estimatedHours ?? 0, progress: t.progress ?? 0,
+        progress: t.progress ?? 0,
         tags: t.tags ?? [], subtasks: t.subtasks ?? [],
         favorite: t.favorite ?? false, recurrence: (t.recurrence ?? null) as RecurrenceType | null,
         cancelReason: t.cancelReason ?? null,
@@ -175,7 +175,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
 
       // ── Tasks ──
       case "CREATE_TASK":
-        createTask({ userId, title: action.task.title, description: action.task.description, status: action.task.status, priority: action.task.priority, projectId: action.task.projectId ?? undefined, dueDate: action.task.dueDate ?? undefined, estimatedHours: action.task.estimatedHours, tags: action.task.tags, subtasks: action.task.subtasks, favorite: action.task.favorite, recurrence: action.task.recurrence ?? undefined });
+        createTask({ userId, title: action.task.title, description: action.task.description, status: action.task.status, priority: action.task.priority, projectId: action.task.projectId ?? undefined, dueDate: action.task.dueDate ?? undefined, tags: action.task.tags, subtasks: action.task.subtasks, favorite: action.task.favorite, recurrence: action.task.recurrence ?? undefined });
         return;
       case "UPDATE_TASK":
         updateTask({ userId, taskId: action.taskId, patch: action.patch as any });
@@ -250,7 +250,7 @@ export function ConvexStoreProvider({ children }: { children: React.ReactNode })
             projectId: t.projectId || undefined,
             dueDate: t.dueDate || undefined,
             createdAt: t.createdAt || new Date().toISOString(),
-            estimatedHours: Number(t.estimatedHours) || 0,
+
             progress: Math.max(0, Math.min(100, Number(t.progress) || 0)),
             tags: Array.isArray(t.tags) ? t.tags : [],
             subtasks: Array.isArray(t.subtasks) ? t.subtasks.map((s: any) => ({ id: s.id || crypto.randomUUID(), title: s.title || "", done: Boolean(s.done) })) : [],

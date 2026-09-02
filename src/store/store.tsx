@@ -225,9 +225,6 @@ export function validateTaskPayload(task: Partial<CreateTaskPayload> | Record<st
   if (task.title !== undefined && (!task.title || !String(task.title).trim())) {
     errors.push('Título é obrigatório')
   }
-  if (task.estimatedHours !== undefined && (isNaN(Number(task.estimatedHours)) || Number(task.estimatedHours) < 0)) {
-    errors.push('Horas estimadas deve ser um número não negativo')
-  }
   if (task.dueDate && isNaN(new Date(task.dueDate as string).getTime())) {
     errors.push('Data de vencimento inválida')
   }
@@ -260,7 +257,6 @@ function spawnRecurrence(state: AppState, task: Task): Task | null {
     projectId: task.projectId || null,
     dueDate: nextDue,
     createdAt: new Date().toISOString(),
-    estimatedHours: task.estimatedHours || 0,
     progress: 0,
     tags: [...(task.tags || [])],
     subtasks: (task.subtasks || []).map((s) => ({
@@ -433,7 +429,6 @@ function normalizeImportedData(d: Record<string, any>, currentState: AppState): 
       projectId: t.projectId || null,
       dueDate: t.dueDate || null,
       createdAt: t.createdAt || new Date().toISOString(),
-      estimatedHours: Number(t.estimatedHours) || 0,
       progress: Math.max(0, Math.min(100, Number(t.progress) || 0)),
       tags: Array.isArray(t.tags) ? t.tags.filter((tag: unknown) => typeof tag === 'string') : [],
       subtasks: Array.isArray(t.subtasks) ? t.subtasks.map((s: Record<string, unknown>) => ({
@@ -534,7 +529,6 @@ function reducer(state: AppState, action: AppAction): AppState {
       projectId: action.task.projectId || null,
       dueDate: normalizeDueDate(action.task.dueDate),
         createdAt: new Date().toISOString(),
-        estimatedHours: Number(action.task.estimatedHours) || 0,
         progress: 0,
         tags: action.task.tags || [],
         subtasks: action.task.subtasks || [],

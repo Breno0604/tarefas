@@ -39,7 +39,7 @@ export default defineSchema({
     categoryId: v.optional(v.string()),  // kept for legacy data; no longer used by UI
     dueDate: v.optional(v.string()),       // "YYYY-MM-DD"
     createdAt: v.string(),
-    estimatedHours: v.optional(v.number()),
+    estimatedHours: v.optional(v.number()),  // kept for legacy data; no longer used by UI
     progress: v.number(),
     tags: v.array(v.string()),
     subtasks: v.array(
@@ -128,7 +128,7 @@ export default defineSchema({
       categoryId: v.optional(v.string()),  // kept for legacy data
       dueDate: v.optional(v.string()),
       createdAt: v.string(),
-      estimatedHours: v.optional(v.number()),
+      estimatedHours: v.optional(v.number()),  // kept for legacy data
       progress: v.number(),
       tags: v.array(v.string()),
       subtasks: v.array(v.object({ id: v.string(), title: v.string(), done: v.boolean() })),

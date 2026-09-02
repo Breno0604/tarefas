@@ -19,7 +19,6 @@ export interface Task {
   projectId: string | null
   dueDate: string | null
   createdAt: string
-  estimatedHours: number
   progress: number
   tags: string[]
   subtasks: Subtask[]
@@ -150,7 +149,6 @@ export interface CreateTaskPayload {
   priority?: TaskPriority
   projectId?: string | null
   dueDate?: string | null
-  estimatedHours?: number
   tags?: string[]
   subtasks?: Subtask[]
   favorite?: boolean
